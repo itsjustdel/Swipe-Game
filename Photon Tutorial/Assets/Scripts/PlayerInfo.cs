@@ -15,6 +15,7 @@ public class PlayerInfo : MonoBehaviour {
     public bool updateAdjacentCells = false;
     public bool updateCurrentCell = false;
     public float health = 100f;
+    public bool healthRegen = false;
     private float targetHealth = 100f;
     public float healthAnimationSpeed = 1f;
     public float healthRegenSpeed = 0.05f;
@@ -48,7 +49,9 @@ public class PlayerInfo : MonoBehaviour {
         //Health
         
         //if this gets any more complicated, put in own script
-        HealthRegen();
+        if(healthRegen)
+            HealthRegen();
+
         HealthVisualisation();
     }
     void HealthRegen()

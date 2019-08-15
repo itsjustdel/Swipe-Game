@@ -81,6 +81,12 @@ public class MeshGenerator : MonoBehaviour {
 
 
         Lloyds();
+
+        //disable all cells for tests
+        for (int i = 0; i < cells.Count; i++)
+        {
+            cells[i].SetActive(false);
+        }
     }
 
     void GeneratePoints(Vector3[] points,DualGraph dualGraph)

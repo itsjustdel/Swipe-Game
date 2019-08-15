@@ -90,7 +90,7 @@ namespace DellyWellyWelly
 
         }
 
-        public void SpawnPlayer()
+        public static void SpawnPlayer()
         {
             Debug.Log("Spawning");
             GameObject playerPrefab = Resources.Load("PlayerPrefab") as GameObject;

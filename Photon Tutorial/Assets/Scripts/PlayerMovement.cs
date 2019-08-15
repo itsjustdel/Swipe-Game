@@ -755,10 +755,11 @@ public class PlayerMovement : MonoBehaviourPun {
         object[] content = new object[] {walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID };
         //send to everyone but this client
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-        
-        SendOptions sendOptions = new SendOptions();
+
         //keep resending until server receives
-        sendOptions.DeliveryMode = DeliveryMode.Reliable;
+        SendOptions sendOptions = new SendOptions {Reliability = true};
+        
+        
         
         PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
 

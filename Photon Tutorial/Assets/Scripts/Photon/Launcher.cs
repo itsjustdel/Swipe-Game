@@ -169,6 +169,14 @@ namespace DellyWellyWelly
                 //start unity time again
                 Time.timeScale = 1f;
 
+
+
+                //we can now load our map
+                //GetComponent<GameManagerPhoton>().LoadArena();
+                //spawn with out map atm
+                GameManagerPhoton.SpawnPlayer();
+
+
                 /*
                 Debug.Log("PostSync -Photon Network time is =" + PhotonNetwork.Time);
                 Debug.Log("PostSync- Time = " + Time.time);
@@ -235,7 +243,6 @@ namespace DellyWellyWelly
            
             SyncClientAndNetwork();
 
-            GetComponent<GameManagerPhoton>().LoadArena();
         }
 
 
