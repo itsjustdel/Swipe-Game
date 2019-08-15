@@ -18,6 +18,9 @@ namespace DellyWellyWelly
     public class GameManagerPhoton : MonoBehaviourPunCallbacks
     {
 
+        private bool masterGetsPlayer = true;
+        
+
         public Vector3[] startData = new Vector3[0];
         bool mapLoaded = false;
 
@@ -78,7 +81,11 @@ namespace DellyWellyWelly
             }
 
             //now we have our map, spawn a player!
-            SpawnPlayer();
+            //check if master gets a player
+            if(!PhotonNetwork.IsMasterClient )
+                SpawnPlayer();
+            else if(masterGetsPlayer)
+                SpawnPlayer();
 
 
         }
@@ -93,6 +100,77 @@ namespace DellyWellyWelly
                 Debug.Log("found prefab");
 
             PhotonNetwork.Instantiate(playerPrefab.name, Vector3.zero, Quaternion.identity, 0);
+        }
+
+        void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,float swipeTimeStart,int photonViewID)
+        {
+            Debug.Log("creating new swipe object");
+
+            GameObject newSwipe = new GameObject();
+            newSwipe.name = "swipe Current " + type;
+            newSwipe.AddComponent<MeshFilter>();
+            newSwipe.AddComponent<MeshRenderer>();
+            SwipeObject sO = newSwipe.AddComponent<SwipeObject>();
+
+
+            sO.parentPlayer = PhotonView.Find(photonViewID).gameObject;
+            sO.parentPlayer.GetComponent<Swipe>().head =  sO.parentPlayer.transform.Find("Head").gameObject;
+            newSwipe.transform.position = sO.parentPlayer.GetComponent<Swipe>().head.transform.position;
+            newSwipe.layer = LayerMask.NameToLayer("Swipe");
+            newSwipe.AddComponent<MeshCollider>();
+            //currentSwipeObject = newSwipe;
+
+            
+            //find player by photon id
+
+            
+            sO.firstPullBackLookDir = firstPullBackLookDir;
+
+            sO.local = false;
+
+            //grabbing from swipe class attached to plyer - a bit jumbled
+            PlayerClassValues playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+            sO.playerClassValues = playerClassValues;
+            sO.activeTime = playerClassValues.overheadWhiffCooldown;
+            sO.firstPullBackLookDir = firstPullBackLookDir;
+            sO.swipeTimeStart = swipeTimeStart;
+
+            if (overhead)
+            {
+
+                sO.overheadSwipe = true;
+                //note time of the the user finishing their swipe plan            
+                //pass planned points
+                sO.centralPoints = new List<Vector3>(centralPoints);
+            }
+            if (sideSwipe)
+            {
+                sO.sideSwipe = true;
+            }
+            if (!overhead && !sideSwipe && !buttonSwipe)
+            {
+                //lunge
+                sO.lunge = true;
+            }
+            if (buttonSwipe)
+            {
+                sO.buttonSwipe = true;
+            }
+
+            //only have two current swipes
+            // if (currentSwipes.Count > 1 && currentSwipes.Count > 0)
+            {
+                //Destroy(currentSwipes[0]);
+                //currentSwipes.RemoveAt(0);
+
+
+            }
+            //audio
+            ProceduralAudioController pAC = newSwipe.AddComponent<ProceduralAudioController>();
+            pAC.swipeObject = true;
+            pAC.useSinusAudioWave = true;
+
+            /// currentSwipes.Add(newSwipe);
         }
 
         #endregion
@@ -156,6 +234,49 @@ namespace DellyWellyWelly
                     Debug.Log("Master sent itself map data");
 
               
+            }
+
+            //swipe object instantiation
+            if(eventCode == 20)
+            {
+                Debug.Log("Event 20 - instantiate swipe");
+
+                //get swipe start time
+                object[] customData = (object[])photonEvent.CustomData;
+                float swipeTimeStart = 0f;// (float)customData[0];
+                Debug.Log("swipe time start = " + swipeTimeStart);
+                Vector3 firstPullBackLookDir = (Vector3)customData[1];
+                Vector3[] centralPointsArray = (Vector3[])customData[2];
+                
+
+                List<Vector3> centralPoints = new List<Vector3>(centralPointsArray);
+                int photonViewID = (int)customData[3];
+                CreateNewSwipeObject("Networked", true, false, false, firstPullBackLookDir, centralPoints, swipeTimeStart,photonViewID);
+
+            }
+
+            //updating walk targets
+            if (eventCode == 21)
+            {
+               // Debug.Log("Event 21 - walk target update");
+                //walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID 
+                //get swipe start time
+                object[] customData = (object[])photonEvent.CustomData;
+                Vector3 walkStartPos = (Vector3)customData[0];
+                double walkStart = (double)customData[1];
+                Vector3 walkTarget = (Vector3)customData[2];
+                float walkSpeedThisFrame = (float)customData[3];
+                int photonViewID = (int)customData[4];
+
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
+                pM.walkStartPos = walkStartPos;
+                pM.walkStart = walkStart;
+                pM.walkTarget = walkTarget;
+                pM.walkSpeedThisFrame = walkSpeedThisFrame;
+                pM.walking = true;
+                
+
             }
         }
 

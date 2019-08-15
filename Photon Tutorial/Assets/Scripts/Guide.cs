@@ -23,7 +23,7 @@ public class Guide : MonoBehaviour {
       //  swordPivot.transform.parent = swipe.transform.transform;
       //  swordPivot.transform.localPosition = Vector3.up * swipe.playerClassValues.armLength;
         //meat //using trail renderer // use a prefab, can't be bothered figuring how to programitcally adjust curve values-character customisation would be a reason to change this
-        GameObject swordPrefab =Instantiate( Resources.Load("Prefabs/SwordPrefab")) as GameObject;
+        GameObject swordPrefab =Instantiate( Resources.Load("SwordPrefab")) as GameObject;
         swordPrefab.transform.parent = swipe.transform;
         swordPrefab.transform.localPosition = Vector3.zero;
         /*

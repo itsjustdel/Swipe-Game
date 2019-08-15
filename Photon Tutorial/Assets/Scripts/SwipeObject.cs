@@ -2,7 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SwipeObject : MonoBehaviour {
+using Photon.Pun;
+using Photon.Realtime;
+using ExitGames.Client.Photon;
+
+public class SwipeObject : MonoBehaviourPunCallbacks { 
+
 
     public GameObject parentPlayer;
     public List<Vector3> centralPoints = new List<Vector3>();
@@ -71,6 +76,9 @@ public class SwipeObject : MonoBehaviour {
     int startRenderCount = 0;
 
     public float per;//how far the swipe has made it through its animation
+
+    PhotonView thisPhotonView;
+    public bool local = true;
     private void Awake()
     {
        // enabled = false;
@@ -78,6 +86,25 @@ public class SwipeObject : MonoBehaviour {
 
     void Start ()
     {
+
+        //find network photon view
+        thisPhotonView = parentPlayer.GetComponent<PhotonView>();
+        //only control our own player - the network will move the rest
+        if (thisPhotonView.IsMine == false && PhotonNetwork.IsConnected == true)
+        {
+
+         
+
+            //  enabled = false;
+
+
+            //   return;
+        }
+        else
+        {
+           
+        }
+
         playerOriginalPosition = parentPlayer.transform.position;
 
         spline = gameObject.AddComponent<BezierSpline>();
@@ -105,10 +132,35 @@ public class SwipeObject : MonoBehaviour {
         }
 
 
+        // local call to instantiate this wipe across network
+        if(local)
+            SendToNetwork();
+
     }
-	
-	// Update is called once per frame
-	void FixedUpdate ()
+
+    void SendToNetwork()
+    {
+        // when this object is created, we need to tell every player (and the master client) about it
+        // we will instantiate it on every machine
+        // to do this will send all machines the data we will use to create the object
+        // what data do we need?
+        // swipes are made from a set of points which are used to create a curve "centralPoints" 
+        // we need to what time the swipe was started "swipeTimeStart"
+
+        byte evCode = 20; // Custom Event 20: Used as "Instantiate Swipe Object" event
+        //enter the data we need in to an object array to send over the network
+        int photonViewID = parentPlayer.GetComponent<PhotonView>().ViewID;
+
+        object[] content = new object[] { swipeTimeStart, firstPullBackLookDir, centralPoints.ToArray(), photonViewID }; 
+        //send to everyone but this client
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others }; 
+        SendOptions sendOptions = new SendOptions { Reliability = true };
+        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+    }
+
+    // Update is called once per frame
+    void FixedUpdate ()
     {
         if (swipeFinishedBuilding)
         {
@@ -565,8 +617,8 @@ public class SwipeObject : MonoBehaviour {
         //array is how far we have travelled
         //arrayrendercount is total
         Color red = (Resources.Load("Materials/Red0") as Material).color;
-        Debug.Log("array count = " + arrayRenderCount);
-        Debug.Log("points from curve count = " + pointsFromCurve.Count);
+       // Debug.Log("array count = " + arrayRenderCount);
+       // Debug.Log("points from curve count = " + pointsFromCurve.Count);
         // per = (float)arrayRenderCount / pointsFromCurve.Count;//gives a chanve for a mega hit even on short swipes
         //per = (float)arrayRenderCount/33f;//whats this number?
         per = arrayRenderCount*1.66f;

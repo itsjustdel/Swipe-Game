@@ -154,8 +154,8 @@ public class ProceduralAudioController : MonoBehaviour
         }
         else if(swipeObject)
         {
-            AudioSource audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.outputAudioMixerGroup = swipeMixer.FindMatchingGroups("SwipeObjects")[0];
+          //  AudioSource audioSource = gameObject.AddComponent<AudioSource>();
+         //   audioSource.outputAudioMixerGroup = swipeMixer.FindMatchingGroups("SwipeObjects")[0];
             
         }
         else if(walk)

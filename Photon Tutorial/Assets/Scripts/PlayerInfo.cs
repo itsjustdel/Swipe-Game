@@ -34,23 +34,7 @@ public class PlayerInfo : MonoBehaviour {
     {
         if(playerDespawned)
         {
-            //look for a respawn command
-            if (playerNumber == 0)
-            {
-                if (Input.GetButtonDown("Start_1"))
-                {
-                    Debug.Log("Respawning 0");
-                    RespawnPlayer();
-                }
-            }
-            if (playerNumber == 1)
-            {
-                if (Input.GetButtonDown("Start_2"))
-                {
-                    Debug.Log("Respawning 1");
-                    RespawnPlayer();
-                }
-            }
+           //need respawn code, auto respawn atm
         }
 
         if(respawn)

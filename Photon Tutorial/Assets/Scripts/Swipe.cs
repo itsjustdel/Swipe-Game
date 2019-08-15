@@ -165,8 +165,13 @@ public class Swipe : MonoBehaviour {
 
     public ProceduralAudioController proceduralAudioController;
 
+
+
     private void Start()
     {
+
+
+
         //tell sound script where we are at
         //GetComponent<SwipeSound>().swipe = this;
         //GetComponent<SwipeSound>().enabled = true;
@@ -1151,13 +1156,13 @@ public class Swipe : MonoBehaviour {
             // c.transform.position = centralPoints[centralPoints.Count - 1] + currentSwipeObject.transform.position;
             //Destroy(c, 3);
 
-            ProceduralAudioController proceduralAudioControllerForNewObject = currentSwipeObject.GetComponent<ProceduralAudioController>();
+          //  ProceduralAudioController proceduralAudioControllerForNewObject = currentSwipeObject.GetComponent<ProceduralAudioController>();
             //the frequency which this palyer's guide is buily from
-            double baseFrequency = GetComponent<ProceduralAudioController>().mainFrequency;
+          //  double baseFrequency = GetComponent<ProceduralAudioController>().mainFrequency;
             //create harmony
             //baseFrequency =baseFrequency/2 + ((baseFrequency / 8) * 12);
             //proceduralAudioControllerForNewObject.mainFrequency = baseFrequency;
-            proceduralAudioControllerForNewObject.mainFrequencyBase = (float)baseFrequency;
+          //  proceduralAudioControllerForNewObject.mainFrequencyBase = (float)baseFrequency;
 
         }
 
@@ -1834,7 +1839,7 @@ public class Swipe : MonoBehaviour {
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;                            
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;                            
 
-                            thisSwipeObjectScript.activeTime = playerClassValues.overheadHitCooldown;
+                            thisSwipeObjectScript.activeTime =thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
                             //Invoke("DeactivateSwipe", Time.fixedDeltaTime);
                             thisSwipeObjectScript.DeactivateSwipe();
                             thisSwipeObjectScript.hitOpponent = true;//set this to stop double hits
@@ -1875,7 +1880,7 @@ public class Swipe : MonoBehaviour {
                             thisSwipeObjectScript.hitOpponent = true;
                             //set new timer
                             thisSwipeObjectScript.timeSwingFinished = Time.time;
-                            thisSwipeObjectScript.activeTime = playerClassValues.overheadHitCooldown;
+                            thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
                             //reset opponent
                             //find parent of head mesh and reset it
 

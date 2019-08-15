@@ -45,7 +45,7 @@ public class PlayerAttacks : MonoBehaviour {
     public List<GameObject> currentAdjacents = new List<GameObject>();
 
     public bool skipFrame = true;
-    public List<GameObject> playerGlobalList;
+   // public List<GameObject> playerGlobalList;
     public GameObject targetCellRightStick;
     public Spawner spawner;
     public Vector3 stabberStartLocalPos;
@@ -77,10 +77,12 @@ public class PlayerAttacks : MonoBehaviour {
     }
     void Start ()
     {
+
+
         inputs = GetComponent<Inputs>();
         swipe = gameObject.GetComponent<Swipe>();
         
-        playerGlobalList = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
+      //  playerGlobalList = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
         spawner= GameObject.FindGameObjectWithTag("Code").GetComponent<Spawner>();
 
         playerNumber = GetComponent<PlayerInfo>().playerNumber;

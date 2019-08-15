@@ -47,7 +47,7 @@ public class PrefabCreator : MonoBehaviour
         //add cell height controller
         player.AddComponent<CellHeights>().enabled = false;//////*********disabling atm;
         //controller input
-        player.AddComponent<Inputs>();//.enabled = false;//////*********disabling atm;
+        player.AddComponent<Inputs>().enabled = false;//////*********disabling atm;
         //vibration info
         player.AddComponent<PlayerVibration>().enabled = false;//////*********disabling atm;
         //sound

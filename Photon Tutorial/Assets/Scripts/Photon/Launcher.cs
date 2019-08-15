@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+
+using System.Collections;
+
 using Photon.Pun;
 using Photon.Realtime;
 
@@ -39,6 +42,10 @@ namespace DellyWellyWelly
             // #Critical
             // this makes sure we can use PhotonNetwork.LoadLevel() on the master client and all clients in the same room sync their level automatically
             PhotonNetwork.AutomaticallySyncScene = true;
+
+            //make fast rate
+            PhotonNetwork.SendRate = 10;
+            PhotonNetwork.SerializationRate = 10;
         }
 
 
@@ -67,8 +74,10 @@ namespace DellyWellyWelly
             // we check if we are connected or not, we join if we are , else we initiate the connection to the server.
             if (PhotonNetwork.IsConnected)
             {
-               // PhotonNetwork.SendRate = 10;
-               // PhotonNetwork.SerializationRate = 10;
+                // PhotonNetwork.SendRate = 10;
+                // PhotonNetwork.SerializationRate = 10;
+
+                
 
                 // #Critical we need at this point to attempt joining a Random Room. If it fails, we'll get notified in OnJoinRandomFailed() and we'll create one.
                 PhotonNetwork.JoinRandomRoom();
@@ -78,6 +87,8 @@ namespace DellyWellyWelly
                 // #Critical, we must first and foremost connect to Photon Online Server.
                 PhotonNetwork.GameVersion = gameVersion;
                 PhotonNetwork.ConnectUsingSettings();
+
+                
             }
         }
 
@@ -86,6 +97,112 @@ namespace DellyWellyWelly
 
         #region MonoBehaviourPunCallbacks Callbacks
 
+        int tries = 0;
+        bool pauseForSync = false;
+        public void SyncClientAndNetwork()
+        {
+            /*
+            Debug.Log("PreSync -Photon Network time is =" + PhotonNetwork.Time);
+            Debug.Log("PreSync - Time = " + Time.time);
+            Debug.Log("PreSync - TimeScale = " + Time.timeScale);
+            float diff = ((float)PhotonNetwork.Time % 1) -(Time.time % 1);
+            Debug.Log("PreSync - Time difference = " + diff);
+            */
+
+            //we need to pause unity on a fixed update step
+            //to do this we need to be ona fixed update step, so set a flag for fixed update to grab
+            pauseForSync = true;
+           
+
+            //now we need to restart unity now we are on same pulse as network time
+        }
+
+        private void FixedUpdate()
+        {
+            if(pauseForSync)
+            {
+                //stop unity time
+                Time.timeScale = 0;
+
+                //start recursive function which waits for network time to be a whole number
+                WaitForNetworkTime();
+
+                //flag to false, we started the search on a fixed update step
+                pauseForSync = false;
+
+                /*
+                Debug.Log("PauseSync -Photon Network time is =" + PhotonNetwork.Time);
+                Debug.Log("PauseSync- Time = " + Time.time);
+                Debug.Log("PauseSync - TimeScale = " + Time.timeScale);
+                float diff = ((float)PhotonNetwork.Time % 1) - (Time.time % 1);
+                Debug.Log("PauseSync - Time difference = " + diff);
+                */
+            }
+        }
+
+        void WaitForNetworkTime()
+        {
+            //makes fixed update on unity tick at the same time as network time
+
+            
+
+            //add time difference to unity timescale
+
+            double difference = PhotonNetwork.Time % 1;
+            //Time.fixedDeltaTime = 0f;// (float)difference;
+
+
+
+           // Debug.Log("fixed update step = " + Time.fixedDeltaTime);
+
+            float startTime = Time.time;
+
+
+
+
+            tries++;
+            //wait for network time to be whole second
+            if (PhotonNetwork.Time % 1 < 0.0001f)//still to test what this number should be - the smaller, the mroe accurate but sync time longer?
+            {
+
+                Debug.Log("FOUND");
+                //start unity time again
+                Time.timeScale = 1f;
+
+                /*
+                Debug.Log("PostSync -Photon Network time is =" + PhotonNetwork.Time);
+                Debug.Log("PostSync- Time = " + Time.time);
+                Debug.Log("PostSync- TimeScale = " + Time.timeScale);
+                float diff = ((float)PhotonNetwork.Time % 1) -(Time.time % 1);
+                Debug.Log("PostSync - Time difference = " + diff);
+
+
+                Debug.Break();
+                */
+
+            }
+            else
+            {
+                //wait and try again
+                //using custom class which isnt affected by Unity's time - Probably just a coroutine class but it was easy to use so there we go
+                Invoker.InvokeDelayed(WaitForNetworkTime, 0.0001f);
+            }
+
+
+
+            if (tries > 5000)
+            {
+                Debug.Log("prob");
+                Debug.Break();
+
+            }
+
+
+
+           
+
+        }
+       
 
         public override void OnConnectedToMaster()
         {
@@ -113,6 +230,10 @@ namespace DellyWellyWelly
         public override void OnJoinedRoom()
         {
             Debug.Log("PUN Basics Tutorial/Launcher: OnJoinedRoom() called by PUN. Now this client is in a room.");
+
+            //start sync
+           
+            SyncClientAndNetwork();
 
             GetComponent<GameManagerPhoton>().LoadArena();
         }

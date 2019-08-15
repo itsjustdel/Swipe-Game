@@ -5,6 +5,7 @@ using UnityEngine;
 
 using Photon.Pun;
 using Photon.Realtime;
+using ExitGames.Client.Photon;
 
 public class PlayerMovement : MonoBehaviourPun {
 
@@ -83,7 +84,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public Vector3 jumpStartPos;
     public Vector3 jumpTarget;
     public Vector3 walkTarget;
-    public float walkStart;
+    public double walkStart;
 
    
     public Vector3 bumpTarget;
@@ -96,7 +97,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public float x;
     public float y;
     public float leftStickMagnitude;
-    float leftStickMagnitudeForStep;
+  //  float leftStickMagnitudeForStep;
   //  public bool buttonA;
   //  public bool buttonB;
   //  public bool buttonX;
@@ -120,10 +121,26 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void Start()
     {
-        inputs = GetComponent<Inputs>();
-        swipe = GetComponent<Swipe>();
-        playerAttacks = GetComponent<PlayerAttacks>();
+        playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
         currentWalkSpeed = walkSpeed;
+        //only control our own player - the network will move the rest
+        if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
+        {
+            
+            return;
+        }
+
+        //asign and enable all control scripts
+        inputs = GetComponent<Inputs>();
+        inputs.enabled = true;
+
+        swipe = GetComponent<Swipe>();
+        swipe.enabled = true;
+
+        playerAttacks = GetComponent<PlayerAttacks>();
+        playerAttacks.enabled = true;
+
+        
         pA = GetComponent<PlayerAttacks>();
         codeObject = GameObject.FindGameObjectWithTag("Code");
         lastTarget = transform.position;
@@ -131,19 +148,33 @@ public class PlayerMovement : MonoBehaviourPun {
 
         overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
-        playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+        
 
         head = transform.Find("Head").gameObject;
 
-        thisPhotonView = GetComponent<PhotonView>();
+       
     }
-
+    
     // Update is called once per frame
     void FixedUpdate()
     {
+        thisPhotonView = GetComponent<PhotonView>();
+
+        //adjust speed slowly if between states (bumper etc)
+        Inertias();
+
         //only control our own player - the network will move the rest
         if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
         {
+            //enabled = false;
+            //event will update target positions, start time etc. so all we need to do is move it
+            if (walking)
+                LerpPlayer();
+            
+
+            if (!bumped)
+                RotateToFaceClosestPlayer();
+
             return;
         }
 
@@ -154,9 +185,9 @@ public class PlayerMovement : MonoBehaviourPun {
 
         //rotations for body
 
-        //need global player list for network
-        //if (!bumped)
-          //  RotateToFaceClosestPlayer();
+        
+        if (!bumped)
+            RotateToFaceClosestPlayer();
 
         //rotations for head
         if(adjustingCellHeight)
@@ -212,24 +243,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         */
         //should theis be else ifs?
-        if(bumpedOther)
-        {
-            if (currentWalkSpeed < walkSpeedThisFrame)
-                currentWalkSpeed += bumpInertia;
-            if (currentWalkSpeed >= walkSpeedThisFrame)
-            {
-                currentWalkSpeed = walkSpeedThisFrame;
-                bumpedOther = false;
-            }                
-        }
-     
-        else
-        {
-            if (currentWalkSpeed < walkSpeedThisFrame)
-                currentWalkSpeed += inertiaSpeed;
-            if (currentWalkSpeed >= walkSpeedThisFrame)
-                currentWalkSpeed = walkSpeedThisFrame;
-        }
+       
         if (swipe.overheadSwiping)
         {
             //walkspeed during overhead swiping is set in Swipe when swipe is triggered
@@ -268,6 +282,28 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //jumps to cell chosen by player, cant move within each cell
             MovementHelper.MoveToAdjacent(this, transform);
+        }
+    }
+
+    void Inertias()
+    {
+        if (bumpedOther)
+        {
+            if (currentWalkSpeed < walkSpeedThisFrame)
+                currentWalkSpeed += bumpInertia;
+            if (currentWalkSpeed >= walkSpeedThisFrame)
+            {
+                currentWalkSpeed = walkSpeedThisFrame;
+                bumpedOther = false;
+            }
+        }
+
+        else
+        {
+            if (currentWalkSpeed < walkSpeedThisFrame)
+                currentWalkSpeed += inertiaSpeed;
+            if (currentWalkSpeed >= walkSpeedThisFrame)
+                currentWalkSpeed = walkSpeedThisFrame;
         }
     }
 
@@ -449,19 +485,19 @@ public class PlayerMovement : MonoBehaviourPun {
     void RotateToFaceClosestPlayer()
     {       
 
-        List<GameObject> players = pgi.playerGlobalList;
-
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        
         //find closest player to this player
         float distance = Mathf.Infinity;
         GameObject closestPlayer = players[0];
-        for (int i = 0; i < players.Count; i++)
+        for (int i = 0; i < players.Length; i++)
         {
             //don't check this player
             if (gameObject == players[i])
                 continue;
 
             //dont look at dead people
-            if (players[i].GetComponent<PlayerInfo>().playerDespawned)
+            if (players[i].GetComponent<PlayerInfo>()!=null && players[i].GetComponent<PlayerInfo>().playerDespawned)
                 continue;
 
             float temp = Vector3.Distance(transform.position, players[i].transform.position);
@@ -694,144 +730,184 @@ public class PlayerMovement : MonoBehaviourPun {
         
         //bool debug = false;
         //walking
-        float maxJumpDistance = 10f;
-        if (!walking)
+        
+        if (!walking && thisPhotonView.IsMine)
         {
-            fracComplete = 0f;
-            if (!blockNewStep)
-            {
-                if (leftStickMagnitude > 1f)
-                    leftStickMagnitude = 1f;//can be over by a small amount
-                if (!leftStickReset)
-                {
-                    walkSpeedThisFrame = walkSpeed *  leftStickMagnitude;
-
-                    //remember what the magnitude was
-                    leftStickMagnitudeForStep = leftStickMagnitude;//instead of doing this we could set start pos and end pos for slerp here?
-
-
-                    //speed
-
-
-                    //blocking
-                    if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
-                    {
-                        walkSpeedThisFrame = walkSpeedWhileBlockingOverhead * leftStickMagnitude;
-                    }
-                    else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
-                    {
-                        walkSpeedThisFrame = walkSpeedWhileBlocking * leftStickMagnitude;
-                    }
-                    else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
-                    {
-                        walkSpeedThisFrame = walkSpeedWhilePullBack * leftStickMagnitude;
-                    }
-
-                    //
-                    else if (swipe.overheadSwiping)
-                    {
-                        //set when swipe object is started
-                    }
-                    else if (inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
-                    {
-                        //sprinting
-                        walkSpeedThisFrame = sprintSpeed * leftStickMagnitude;
-                        sprinting = true;
-                    }
-
-                    //step size
-
-                    //apply stick amount 
-                    float walkStepDistanceThisFrame = walkStepDistance * leftStickMagnitude;
-
-                    //change step size if blocking
-                    if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
-                        walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
-
-                    else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
-                        walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;
-                  
-                    //also if holding swing
-                    else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)                    
-                        walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;  //need var?  using shield 
-
-                    else if (swipe.overheadSwiping)
-                    {
-                        //by not setting anythin here we keep the large arc for the swipe, looks cool basically. Makes player float
-                    }
-                    else if(inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
-                    {
-                        walkStepDistanceThisFrame = sprintStepDistance * leftStickMagnitude;
-                    }
-
-                    //start timer to use with calculating how far we ahve travelled
-                    walkStart = Time.time;
-                    //set flag
-                    walking = true;
-                    //remember where we started
-                    walkStartPos = transform.position;
-                    //add stick direction to player position
-
-                    RaycastHit hit2;
-                    bool targetFound = false;
-                    float add = 0;
-                    while (targetFound == false)
-                    {
-                        
-
-                        Vector3 shootFrom = transform.position + (thisLook * (walkStepDistanceThisFrame + add));
-
-                        if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit2, 100f, LayerMask.GetMask("Cells", "Wall")))//,"PlayerBody")))
-                        {
-
-                            //  Debug.Log("tr pos = " + transform.position.y);
-                            //  Debug.Log("hp pos = " + hit.point.y);
-                            // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                            //  c.transform.position = hit.point;
-                            //  Debug.Log("sum = " + (hit.point.y - transform.position.y).ToString());
-                            if (hit2.point.y - transform.position.y < playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
-                            {
-                                walkTarget = hit2.point;
-                            }
-                            else
-                            {
-                                //cancel walk 
-                                walking = false;
-                                Debug.Log("no move");
-                                walkTarget = transform.position;
-                            }
-
-                           // if ( transform.position.y - hit.point.y> 10)
-                           //     debug = true;
-
-                            targetFound = true;
-                        }
-
-                        else if (add >= maxJumpDistance)
-                        {
-                            //missed, will fall in to hole//??
-                            //walkTarget = transform.position;
-                            walking = false;
-                            break;
-                        }
-
-
-                        add += 0.1f;//accuracy? opto
-                    }
-                }
-            }
-
-            
-            Vector3 shootFrom2 = transform.position;
-            RaycastHit hit;
-            if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
-            {
-                transform.position = hit.point;
-            }
+            WalkTarget(blockNewStep, thisLook);
+           
 
         }
-        else if(walking)
+        else if (walking)
         {
+            LerpPlayer();
+        }
+           
+        
+    }
+
+    void SendWalkTargetToNetwork()
+    {      
+
+        byte evCode = 21; // Custom Event 21: Used to update player walk targets
+        //enter the data we need in to an object array to send over the network
+        int photonViewID = GetComponent<PhotonView>().ViewID;
+
+        object[] content = new object[] {walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID };
+        //send to everyone but this client
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+        
+        SendOptions sendOptions = new SendOptions();
+        //keep resending until server receives
+        sendOptions.DeliveryMode = DeliveryMode.Reliable;
+        
+        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+    }
+
+    void WalkTarget(bool blockNewStep,Vector3 thisLook)
+    {
+        float maxJumpDistance = 10f;
+
+        fracComplete = 0f;
+        if (!blockNewStep)
+        {
+            if (leftStickMagnitude > 1f)
+                leftStickMagnitude = 1f;//can be over by a small amount
+
+            if (!leftStickReset)
+            {
+                walkSpeedThisFrame = walkSpeed * leftStickMagnitude;
+
+                //remember what the magnitude was
+              //  leftStickMagnitudeForStep = leftStickMagnitude;//instead of doing this we could set start pos and end pos for slerp here?
+
+
+                //speed
+
+
+                //blocking //will need to make these bools, cant detect ipnut over network***
+                if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+                {
+                    walkSpeedThisFrame = walkSpeedWhileBlockingOverhead * leftStickMagnitude;
+                }
+                else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
+                {
+                    walkSpeedThisFrame = walkSpeedWhileBlocking * leftStickMagnitude;
+                }
+                else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+                {
+                    walkSpeedThisFrame = walkSpeedWhilePullBack * leftStickMagnitude;
+                }
+
+                //
+                else if (swipe.overheadSwiping)
+                {
+                    //set when swipe object is started
+                }
+                else if (inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
+                {
+                    //sprinting
+                    walkSpeedThisFrame = sprintSpeed * leftStickMagnitude;
+                    sprinting = true;
+                }
+
+                //step size
+
+                //apply stick amount 
+                float walkStepDistanceThisFrame = walkStepDistance * leftStickMagnitude;
+
+                //change step size if blocking
+                if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+                    walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
+
+                else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
+                    walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;
+
+                //also if holding swing
+                else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+                    walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;  //need var?  using shield 
+
+                else if (swipe.overheadSwiping)
+                {
+                    //by not setting anythin here we keep the large arc for the swipe, looks cool basically. Makes player float
+                }
+                else if (inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
+                {
+                    walkStepDistanceThisFrame = sprintStepDistance * leftStickMagnitude;
+                }
+
+                //start timer to use with calculating how far we ahve travelled
+                walkStart = PhotonNetwork.Time;// Time.time;
+                //set flag
+                walking = true;
+                //remember where we started
+                walkStartPos = transform.position;
+                //add stick direction to player position
+
+                RaycastHit hit2;
+                bool targetFound = false;
+                float add = 0;
+                while (targetFound == false)
+                {
+
+
+                    Vector3 shootFrom = transform.position + (thisLook * (walkStepDistanceThisFrame + add));
+
+                    if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit2, 100f, LayerMask.GetMask("Cells", "Wall")))//,"PlayerBody")))
+                    {
+
+                        //  Debug.Log("tr pos = " + transform.position.y);
+                        //  Debug.Log("hp pos = " + hit.point.y);
+                        // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        //  c.transform.position = hit.point;
+                        //  Debug.Log("sum = " + (hit.point.y - transform.position.y).ToString());
+                        if (hit2.point.y - transform.position.y < playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
+                        {
+                            walkTarget = hit2.point;
+                        }
+                        else
+                        {
+                            //cancel walk 
+                            walking = false;
+                            Debug.Log("no move");
+                            walkTarget = transform.position;
+                        }
+
+                        // if ( transform.position.y - hit.point.y> 10)
+                        //     debug = true;
+
+                        targetFound = true;
+
+                        //update other clients with this new walk target
+                        SendWalkTargetToNetwork();
+                    }
+
+                    else if (add >= maxJumpDistance)
+                    {
+                        //missed, will fall in to hole//??
+                        //walkTarget = transform.position;
+                        walking = false;
+                        break;
+                    }
+
+
+                    add += 0.1f;//accuracy? opto
+                }
+            }
+        }
+
+        //?
+
+        Vector3 shootFrom2 = transform.position;
+        RaycastHit hit;
+        if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
+        {
+            transform.position = hit.point;
+        }
+    }
+
+    void LerpPlayer()
+    {
             //now move player
             //this fraction makes it take longer for longer distances - gameplay option, make it take the same length of time for each jump?
 
@@ -849,12 +925,12 @@ public class PlayerMovement : MonoBehaviourPun {
             bool bigDrop = false;
             if (walkStartPos.y - walkTarget.y > playerClassValues.maxClimbHeight)
             {
-                
+
                 bigDrop = true;
             }
 
             float tempWalkSpeed = walkSpeedThisFrame;
-            
+
 
             if (bigDrop)
             {
@@ -863,14 +939,14 @@ public class PlayerMovement : MonoBehaviourPun {
 
             // float fracComplete = (Time.time - walkStart) / (1f / 4); //game play option *** same time for each cell jump
 
-            fracComplete = (Time.time - walkStart) / (walkDistance / tempWalkSpeed);
-            
+            fracComplete = (float)((PhotonNetwork.Time - walkStart) / (walkDistance / tempWalkSpeed));
+
             float fracCompleteForLerp = fracComplete;
 
             //disgusting hack for big jumps            
             if (bigDrop)
-            {   
-                fracCompleteForLerp*= 0.5f;    
+            {
+                fracCompleteForLerp *= 0.5f;
 
             }
 
@@ -879,10 +955,10 @@ public class PlayerMovement : MonoBehaviourPun {
 
 
             //finish drop
-            if(bigDrop)
+            if (bigDrop)
             {
-                
-                if(fracComplete > 0.5f)
+
+                if (fracComplete > 0.5f)
                 {
                     //last point of arc for this jump
                     Vector3 dropStartPos = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, 0.5f) + walkCenter;
@@ -891,7 +967,7 @@ public class PlayerMovement : MonoBehaviourPun {
                     RaycastHit hit;
                     if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells")))
                     {
-                        transform.position = Vector3.Lerp(dropStartPos,hit.point,(fracComplete-.5f)*2);
+                        transform.position = Vector3.Lerp(dropStartPos, hit.point, (fracComplete - .5f) * 2);
                     }
                 }
             }
@@ -903,16 +979,15 @@ public class PlayerMovement : MonoBehaviourPun {
                 //if (leftStickReset)
                 {
                     walking = false;
-                    
+
                     //tell sound script to make a noise now we have finished our step
 
                     GetComponent<PlayerSounds>().startWalk = true;
                 }
             }
         }
-       
-        
-    }
+
+    
 
     void Glide()
     {
