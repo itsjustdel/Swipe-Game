@@ -82,24 +82,24 @@ namespace DellyWellyWelly
 
             //now we have our map, spawn a player!
             //check if master gets a player
+
+            /*
             if(!PhotonNetwork.IsMasterClient )
                 SpawnPlayer();
             else if(masterGetsPlayer)
                 SpawnPlayer();
 
-
+            */
         }
+     
 
         public static void SpawnPlayer()
         {
             Debug.Log("Spawning");
             GameObject playerPrefab = Resources.Load("PlayerPrefab") as GameObject;
-            if (playerPrefab == null)
-                Debug.Log("didnt find prefab");
-            else
-                Debug.Log("found prefab");
-
-            PhotonNetwork.Instantiate(playerPrefab.name, Vector3.zero, Quaternion.identity, 0);
+          
+            Vector3 spawnPos = Vector3.zero;            
+            PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity, 0);
         }
 
         void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,float swipeTimeStart,int photonViewID)
@@ -235,9 +235,80 @@ namespace DellyWellyWelly
 
               
             }
+            //request position of others //client asks master this
+            if (eventCode == 10)
+            {
+                Debug.Log("Event 10 -[MASTER] - client requesting other positions on join");
+
+                //get photon view id of who passed this call
+                object[] customData = (object[])photonEvent.CustomData;                
+                int initialPhotonViewID = (int)customData[0];
+
+
+                GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+                int[] views = new int[players.Length];
+                Vector3[] positions = new Vector3[players.Length];
+
+                for (int i = 0; i < players.Length; i++)
+                {
+                    //get players photon view id (unique across network)                    
+                    views[i] = players[i].GetComponent<PhotonView>().ViewID;
+                    //get player position on master (this)
+                    positions[i] = players[i].transform.position;
+                }
+
+                //pass back a list of viewID and a list of positions, and the photonview id of who requested it
+                //To create less traffic, i could sen only to who requested it but i dont know how to do that atm
+
+                byte evCode = 11; // Custom Event 11: 
+                object[] content = new object[] { views, positions, initialPhotonViewID };
+                //send to everyone but this client
+                RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+                //keep resending until server receives
+                SendOptions sendOptions = new SendOptions { Reliability = true };
+
+                PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+            }
+
+            //positions sent from master            
+            if(eventCode == 11)
+            {
+                object[] customData = (object[])photonEvent.CustomData;
+                int viewID = (int)customData[2];
+                PhotonView myPhotonView = PhotonView.Find(viewID);
+                if (myPhotonView.IsMine)
+                {
+                    Debug.Log("Event 11 [CLIENT]- Received positions from master");
+
+                
+                    //check whether it was this client who requested positions
+                    
+                    Debug.Log("passed ID = " + viewID);
+
+                
+
+
+
+                    Debug.Log(myPhotonView);
+                
+                    Debug.Log("My id");
+                    
+                    int[] views = (int[])customData[0];
+                    Vector3[] positions = (Vector3[])customData[1];
+
+                    //find players with view ids in array and set positions
+                    for (int i = 0; i < views.Length; i++)
+                    {
+                        PhotonView pV = PhotonView.Find(views[i]);
+                        pV.transform.position = positions[i];
+                    }
+
+                }
+            }
 
             //swipe object instantiation
-            if(eventCode == 20)
+            if (eventCode == 20)
             {
                 Debug.Log("Event 20 - instantiate swipe");
 
@@ -260,7 +331,7 @@ namespace DellyWellyWelly
             {
                // Debug.Log("Event 21 - walk target update");
                 //walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID 
-                //get swipe start time
+                
                 object[] customData = (object[])photonEvent.CustomData;
                 Vector3 walkStartPos = (Vector3)customData[0];
                 double walkStart = (double)customData[1];
@@ -276,6 +347,26 @@ namespace DellyWellyWelly
                 pM.walkSpeedThisFrame = walkSpeedThisFrame;
                 pM.walking = true;
                 
+
+            }
+
+            //updating bump targets//movement script does the rest
+            if (eventCode == 22)
+            {                
+                object[] customData = (object[])photonEvent.CustomData;                
+                
+                Vector3 bumpTarget = (Vector3)customData[0];
+                
+                int photonViewID = (int)customData[1];
+
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+
+                PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
+                
+                pM.bumpTarget = bumpTarget;
+
+                pM.bumped = true;
+                pM.walking = false;
 
             }
         }

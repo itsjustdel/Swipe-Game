@@ -365,7 +365,6 @@ GameObject:
   - component: {fileID: 646830352}
   - component: {fileID: 646830351}
   - component: {fileID: 646830353}
-  - component: {fileID: 646830354}
   m_Layer: 0
   m_Name: Launcher
   m_TagString: Untagged
@@ -413,28 +412,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startData: []
---- !u!114 &646830354
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 646830350}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 1
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  ObservedComponents:
-  - {fileID: 0}
-  viewIdField: 1
-  InstantiationId: 1
-  isRuntimeInstantiated: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -508,7 +485,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 9.629944e-35, z: 5.7756e-41, w: 1.21431e-40}
+  m_BoundingSphereOverride: {x: 0, y: 2.1e-44, z: 3.386e-42, w: 1.05e-43}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0

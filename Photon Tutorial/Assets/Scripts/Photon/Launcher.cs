@@ -44,8 +44,8 @@ namespace DellyWellyWelly
             PhotonNetwork.AutomaticallySyncScene = true;
 
             //make fast rate
-            PhotonNetwork.SendRate = 10;
-            PhotonNetwork.SerializationRate = 10;
+           // PhotonNetwork.SendRate = 10;
+            //PhotonNetwork.SerializationRate = 10;
         }
 
 
@@ -143,29 +143,18 @@ namespace DellyWellyWelly
         void WaitForNetworkTime()
         {
             //makes fixed update on unity tick at the same time as network time
-
-            
-
             //add time difference to unity timescale
 
             double difference = PhotonNetwork.Time % 1;
-            //Time.fixedDeltaTime = 0f;// (float)difference;
-
-
-
            // Debug.Log("fixed update step = " + Time.fixedDeltaTime);
 
             float startTime = Time.time;
-
-
-
-
             tries++;
             //wait for network time to be whole second
-            if (PhotonNetwork.Time % 1 < 0.0001f)//still to test what this number should be - the smaller, the mroe accurate but sync time longer?
+            if (PhotonNetwork.Time % 1 < 0.01f)//still to test what this number should be - the smaller, the mroe accurate but sync time longer?
             {
 
-                Debug.Log("FOUND");
+               // Debug.Log("FOUND");
                 //start unity time again
                 Time.timeScale = 1f;
 
@@ -174,8 +163,9 @@ namespace DellyWellyWelly
                 //we can now load our map
                 //GetComponent<GameManagerPhoton>().LoadArena();
                 //spawn with out map atm
-                GameManagerPhoton.SpawnPlayer();
-
+              //  if(PhotonNetwork.IsMasterClient == false)
+                    GameManagerPhoton.SpawnPlayer();
+                
 
                 /*
                 Debug.Log("PostSync -Photon Network time is =" + PhotonNetwork.Time);
@@ -193,10 +183,8 @@ namespace DellyWellyWelly
             {
                 //wait and try again
                 //using custom class which isnt affected by Unity's time - Probably just a coroutine class but it was easy to use so there we go
-                Invoker.InvokeDelayed(WaitForNetworkTime, 0.0001f);
+                Invoker.InvokeDelayed(WaitForNetworkTime, 0.001f);
             }
-
-
 
             if (tries > 5000)
             {
@@ -204,11 +192,6 @@ namespace DellyWellyWelly
                 Debug.Break();
 
             }
-
-
-
-           
-
         }
        
 

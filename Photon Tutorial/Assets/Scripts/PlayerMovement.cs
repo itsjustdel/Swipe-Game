@@ -88,7 +88,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
    
     public Vector3 bumpTarget;
-    public float bumpStart;
+    public double bumpStart;
     public Vector3 bumpStartPos;
 
     //rotation stuff
@@ -168,8 +168,14 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //enabled = false;
             //event will update target positions, start time etc. so all we need to do is move it
-            if (walking)
+            if (walking && !bumped)
                 LerpPlayer();
+
+            else if (bumped)
+            {
+                BumpTarget();
+                LerpBump();
+            }
             
 
             if (!bumped)
@@ -632,98 +638,11 @@ public class PlayerMovement : MonoBehaviourPun {
 
         if (bumped)
         {
-            walking = false;
-            // Debug.Break();
-            if (!bumpInProgress)
-            {
+            //set bump target if we are in control of this player
+          //  if(thisPhotonView.IsMine)
+                BumpTarget();
 
-
-                bumpStart = Time.time;
-                bumpStartPos = transform.position;
-
-                RaycastHit hit;
-
-                float maxBumpDistance = 10f;
-                //what to use for radius? - review if gettin no hits
-                float add = 0f;
-                bool bumpTargetFound = false;
-                while (bumpTargetFound == false)
-                {
-                    Vector3 bumpDirection = (bumpTarget - transform.position).normalized;
-                    Vector3 shootFrom = bumpTarget + (bumpDirection * (add));
-                    if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
-                    {
-
-                      //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                      ////   c.transform.position = hit.point;
-                       //  c.transform.parent = transform;
-
-                        //stop at edge
-                        if (hit.point.y - transform.position.y < playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
-                        {
-                            bumpTarget = hit.point;
-                            bumpInProgress = true;
-                            bumpTargetFound = true;
-                        }
-                        else
-                        {
-                            //already at a wall, cancel bump
-                            bumped = false;
-                        }
-                    }
-                    
-
-                    else if (add >= maxBumpDistance)
-                    {
-                        //missed, will fall in to hole//??
-
-                        //already at edge
-                        bumped = false;
-                        
-                        return;
-                    }
-
-
-                    add += 0.1f;//accuracy? opto
-
-                    
-                }
-
-            }
-            float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
-            //add for arc //half way for arc loop for jumping animation
-            Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
-            
-            bumpCenter += new Vector3(0, -bumpDistance / bumpBounceAmount, 0);
-
-            //from unity slerp docs
-            Vector3 riseRelCenterBump = bumpStartPos- bumpCenter;
-            Vector3 setRelCenterBump = bumpTarget - bumpCenter;
-
-            //bumpspeed this step
-            
-             fracComplete = (Time.time - bumpStart) / (bumpDistance / bumpSpeed);
-            //Debug.Log(fracComplete);
-
-            transform.position = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracComplete);
-            transform.position += bumpCenter;
-            //transform.position = Vector3.Slerp(bumpStartPos, bumpTarget, fracComplete);
-            
-
-            if (fracComplete >= 1f)
-            {
-                //force the player to flick the tick again
-                //if (leftStickReset)
-                {
-                    bumped = false;
-                    bumpInProgress = false;
-                    fracComplete = 0f;
-                   
-                }
-            }
-
-            Debug.DrawLine(bumpStartPos,bumpTarget);
-            return;
+            LerpBump();
             
         }
 
@@ -763,6 +682,118 @@ public class PlayerMovement : MonoBehaviourPun {
         
         PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
 
+    }
+
+   
+
+    void BumpTarget()
+    {
+        walking = false;
+        // Debug.Break();
+        if (!bumpInProgress)
+        {
+
+
+            bumpStart = PhotonNetwork.Time;
+            bumpStartPos = transform.position;
+
+            RaycastHit hit;
+
+            float maxBumpDistance = 10f;
+            //what to use for radius? - review if gettin no hits
+            float add = 0f;
+            bool bumpTargetFound = false;
+            while (bumpTargetFound == false)
+            {
+                Vector3 bumpDirection = (bumpTarget - transform.position).normalized;
+                Vector3 shootFrom = bumpTarget + (bumpDirection * (add));
+                if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
+                {
+
+                    //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    ////   c.transform.position = hit.point;
+                    //  c.transform.parent = transform;
+
+                    //stop at edge
+                    if (hit.point.y - transform.position.y <5000)//PUT BACK!!//** playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
+                    {
+                        bumpTarget = hit.point;
+                        bumpInProgress = true;
+                        bumpTargetFound = true;
+
+                       // Debug.Break();
+                        Debug.DrawLine(transform.position + Vector3.up * 10, transform.position, Color.blue);
+                        Debug.DrawLine(bumpTarget + Vector3.up * 10, bumpTarget, Color.red);
+
+
+                      //  Debug.Log("setting target for bump");
+                    }
+                    else
+                    {
+                        //already at a wall, cancel bump
+                        bumped = false;
+                    }
+                }
+
+
+                else if (add >= maxBumpDistance)
+                {
+                    //missed, will fall in to hole//??
+
+                    //already at edge
+                    bumped = false;
+
+                    return;
+                }
+
+
+                add += 0.1f;//accuracy? opto
+
+
+            }
+        }
+    }
+
+    void LerpBump()
+    {
+        float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
+        //add for arc //half way for arc loop for jumping animation
+        Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
+
+        bumpCenter += new Vector3(0, -bumpDistance / bumpBounceAmount, 0);
+
+        //from unity slerp docs
+        Vector3 riseRelCenterBump = bumpStartPos - bumpCenter;
+        Vector3 setRelCenterBump = bumpTarget - bumpCenter;
+
+        //bumpspeed this step
+
+        fracComplete = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance / bumpSpeed));
+        //Debug.Log(fracComplete);
+        /*
+        Debug.Log("risRelCenterBump = " + riseRelCenterBump);
+        Debug.Log("setRelCenterBump = " + setRelCenterBump);
+        Debug.Log("fracComplete = " + fracComplete);
+        */
+        transform.position = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracComplete);
+        transform.position += bumpCenter;
+        //transform.position = Vector3.Slerp(bumpStartPos, bumpTarget, fracComplete);
+
+
+        if (fracComplete >= 1f)
+        {
+            //force the player to flick the tick again
+            //if (leftStickReset)
+            {
+                bumped = false;
+                bumpInProgress = false;
+                fracComplete = 0f;
+
+            }
+        }
+
+        Debug.DrawLine(bumpStartPos, bumpTarget);
+        return;
     }
 
     void WalkTarget(bool blockNewStep,Vector3 thisLook)
@@ -940,7 +971,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
             // float fracComplete = (Time.time - walkStart) / (1f / 4); //game play option *** same time for each cell jump
 
-            fracComplete = (float)((PhotonNetwork.Time - walkStart) / (walkDistance / tempWalkSpeed));
+            fracComplete = (float) ((PhotonNetwork.Time - walkStart) / (walkDistance / tempWalkSpeed));
 
             float fracCompleteForLerp = fracComplete;
 
