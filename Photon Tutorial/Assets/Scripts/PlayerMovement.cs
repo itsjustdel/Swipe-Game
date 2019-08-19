@@ -217,7 +217,7 @@ public class PlayerMovement : MonoBehaviourPun {
     void GetInputs()
     {
         //get input from correct controller
-        bool usePad = true;
+        bool usePad = false;
         if (usePad)
         {
             x = inputs.state.ThumbSticks.Left.X;

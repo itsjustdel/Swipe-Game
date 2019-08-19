@@ -20,9 +20,14 @@ public class PlayerCollision : MonoBehaviour
 
             pMother.bumped = true;
             pMthis.bumped = true;
+            
 
             pMother.walking = false;
             pMthis.walking = false;
+
+            //reset this flag in case we ahve way through another bump - will force to calculate new target
+            pMthis.bumpInProgress = false;
+            pMother.bumpInProgress = false;
 
           //  pMthis.bumpStart = PhotonNetwork.Time;//set after bump target spherecasted on master
            // pMother.bumpStart = PhotonNetwork.Time;
