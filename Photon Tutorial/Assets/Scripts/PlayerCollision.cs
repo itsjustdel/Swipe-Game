@@ -33,6 +33,7 @@ public class PlayerCollision : MonoBehaviour
                 //set vibration for our player only
                 pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 
+                
 
                 //tell other player its been bumped and set its targets
 
@@ -53,12 +54,17 @@ public class PlayerCollision : MonoBehaviour
 
             }
 
-            bool alterThis = true;
+            bool alterThis = true;//local
             if(alterThis)
             {
+
+                
                 //only move our player
-                if (pMthis.GetComponent<PhotonView>().IsMine)
+                if (pMthis.GetComponent<PhotonView>().IsMine && pMthis.bumped == false)
                 {
+
+                    Debug.Log("reporting hit");
+
                     //consider if other player hasd a walk target
                     Vector3 walkTargetThis = pMthis.transform.position;
                     if (pMthis.walking)
@@ -70,9 +76,30 @@ public class PlayerCollision : MonoBehaviour
                     pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 
                     pMthis.bumped = true;
+
                     pMthis.bumpTarget = thisBumpTarget;
+
+
+                    //tell others
+                    byte evCode = 22; // Custom Event 21: Used to update player walk targets
+                                      //enter the data we need in to an object array to send over the network
+                    int photonViewID = pMthis.GetComponent<PhotonView>().ViewID;
+
+                    object[] content = new object[] { thisBumpTarget, photonViewID };
+                    //send to everyone but this client
+                    RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+                    //keep resending until server receives
+                    SendOptions sendOptions = new SendOptions { Reliability = true };
+
+                    PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+
                 }
                 //some small desyncs happening
+                //tell everyone about my bump
+
+
 
 
 

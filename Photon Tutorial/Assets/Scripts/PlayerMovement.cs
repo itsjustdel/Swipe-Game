@@ -118,7 +118,7 @@ public class PlayerMovement : MonoBehaviourPun {
     Inputs inputs;
 
     PhotonView thisPhotonView;
-
+    public float keySpeed = .05f;
     void Start()
     {
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
@@ -217,9 +217,53 @@ public class PlayerMovement : MonoBehaviourPun {
     void GetInputs()
     {
         //get input from correct controller
-        
-        x = inputs.state.ThumbSticks.Left.X;
-        y = -inputs.state.ThumbSticks.Left.Y;//inverted
+        bool usePad = false;
+        if (usePad)
+        {
+            x = inputs.state.ThumbSticks.Left.X;
+            y = -inputs.state.ThumbSticks.Left.Y;//inverted
+         
+        }
+        else
+        {
+            KeyCode upKey = KeyCode.W;
+            KeyCode downKey = KeyCode.S;
+            KeyCode leftKey = KeyCode.A;
+            KeyCode rightKey = KeyCode.D;
+
+            if (GetComponent<PlayerInfo>().playerNumber == 1)
+            {
+                upKey = KeyCode.UpArrow;
+                downKey = KeyCode.DownArrow;
+                leftKey = KeyCode.LeftArrow;
+                rightKey = KeyCode.RightArrow;
+            }
+            //use keyboard
+            if (Input.GetKey(leftKey))
+                x -= keySpeed;
+            else if (Input.GetKey(rightKey))
+                x += keySpeed;
+            else if (x < 0)
+                x += keySpeed;
+            else if (x >0)
+                x -= keySpeed;
+
+
+            if (Input.GetKey(upKey))
+                y -= keySpeed;
+
+            else if (Input.GetKey(downKey))
+                y += keySpeed;
+            else if (y < 0)
+                y += keySpeed;
+            else if (y > 0)
+                y -= keySpeed;
+            
+
+            x = Mathf.Clamp(x, -1f, 1f);
+            y = Mathf.Clamp(y, -1f, 1f);
+        }
+
         leftStickMagnitude = new Vector3(x, 0f, y).magnitude;
     }
 
@@ -689,10 +733,13 @@ public class PlayerMovement : MonoBehaviourPun {
     void BumpTarget()
     {
         walking = false;
+        Debug.Log("setting bump target " + GetComponent<PlayerInfo>().playerNumber);
         // Debug.Break();
         if (!bumpInProgress)
         {
+            Debug.Log("if not bump in progress");
 
+            fracComplete = 0f;
 
             bumpStart = PhotonNetwork.Time;
             bumpStartPos = transform.position;
