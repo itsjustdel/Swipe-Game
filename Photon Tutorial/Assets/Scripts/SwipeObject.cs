@@ -66,13 +66,14 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public List<GameObject> voxels = new List<GameObject>();
 
     //for render
-    public float swipeTimeStart;
+    public double swipeTimeStart;
 
     public PlayerClassValues playerClassValues;
     public bool swipeFinishedBuilding = false;
     private Vector3 playerOriginalPosition;
 
-    float arrayRenderCount = 0;
+    //how far we have went around swipe - master client can change this value to catch up on time
+    public float arrayRenderCount = 0;
     int startRenderCount = 0;
 
     public float per;//how far the swipe has made it through its animation
@@ -86,24 +87,13 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     void Start ()
     {
+        //lets network client catch up to when the local client started swipe
+        CalculateStartArrayRenderCount();
 
         //find network photon view
         thisPhotonView = parentPlayer.GetComponent<PhotonView>();
         //only control our own player - the network will move the rest
-        if (thisPhotonView.IsMine == false && PhotonNetwork.IsConnected == true)
-        {
-
-         
-
-            //  enabled = false;
-
-
-            //   return;
-        }
-        else
-        {
-           
-        }
+     
 
         playerOriginalPosition = parentPlayer.transform.position;
 
@@ -138,6 +128,25 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     }
 
+    void CalculateStartArrayRenderCount()
+    {
+        //use swipe time start to figure out how many fixed updates have passed
+        double timeNow = PhotonNetwork.Time;
+
+        //how much time has passed? //** network time can switch from positive to negative, how to check? so, time start can be positive, and time now can be negative//how often can this happen?
+        if(timeNow < 0 && swipeTimeStart > 0)
+        {
+            Debug.Break();
+            Debug.Log("Photon network time flipped - will have to wait for authorative interjection ");
+            swipeTimeStart = timeNow;
+        }
+        double timePassed = timeNow - swipeTimeStart;
+        //how many steps have passed in this time
+        double stepsPassed = timePassed / Time.fixedDeltaTime;
+        //add
+        arrayRenderCount = (float)stepsPassed;
+    }
+
     void SendToNetwork()
     {
         // when this object is created, we need to tell every player (and the master client) about it
@@ -149,9 +158,9 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         byte evCode = 20; // Custom Event 20: Used as "Instantiate Swipe Object" event
         //enter the data we need in to an object array to send over the network
-        int photonViewID = parentPlayer.GetComponent<PhotonView>().ViewID;
+        int photonViewID = parentPlayer.GetComponent<PhotonView>().ViewID;        
 
-        object[] content = new object[] { swipeTimeStart, firstPullBackLookDir, centralPoints.ToArray(), photonViewID }; 
+        object[] content = new object[] { swipeTimeStart, firstPullBackLookDir, centralPoints.ToArray(), photonViewID}; 
         //send to everyone but this client
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others }; 
         SendOptions sendOptions = new SendOptions { Reliability = true };
@@ -262,6 +271,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     Mesh RenderCurve(out List<Vector3> pointsFromCurveReturning, List<Vector3> passedCurvePoints)
     {
+        //do we need to work out curve points every frame?(unless i inted to influence last curve point with movement, no)
+
         List<Vector3> pointsFromCurve = new List<Vector3>();
         List<Vector3> directions = new List<Vector3>();
 
@@ -576,6 +587,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         pointsFromCurveReturning = pointsFromCurve;
 
+        //used for animating swipe finishing/receding
         if (arrayRenderCount >=  pointsFromCurve.Count * parentPlayer.GetComponent<Swipe>().dragSize)
             startRenderCount++;
         //check for whiff, if strike has made it all the way to the end and not hit anything
@@ -686,7 +698,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         Mesh mesh = new Mesh();
 
-        float per = (Time.time - swipeTimeStart) / playerClassValues.lungeSpeed;
+        float per = (float)((Time.time - swipeTimeStart) / playerClassValues.lungeSpeed);
         per = Easings.CubicEaseIn(per);
 
          //Debug.Log(per);

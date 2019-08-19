@@ -102,7 +102,7 @@ namespace DellyWellyWelly
             PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity, 0);
         }
 
-        void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,float swipeTimeStart,int photonViewID)
+        void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,double swipeTimeStart,int photonViewID)
         {
             Debug.Log("creating new swipe object");
 
@@ -133,38 +133,18 @@ namespace DellyWellyWelly
             sO.playerClassValues = playerClassValues;
             sO.activeTime = playerClassValues.overheadWhiffCooldown;
             sO.firstPullBackLookDir = firstPullBackLookDir;
+
             sO.swipeTimeStart = swipeTimeStart;
 
             if (overhead)
             {
 
                 sO.overheadSwipe = true;
-                //note time of the the user finishing their swipe plan            
+                       
                 //pass planned points
                 sO.centralPoints = new List<Vector3>(centralPoints);
             }
-            if (sideSwipe)
-            {
-                sO.sideSwipe = true;
-            }
-            if (!overhead && !sideSwipe && !buttonSwipe)
-            {
-                //lunge
-                sO.lunge = true;
-            }
-            if (buttonSwipe)
-            {
-                sO.buttonSwipe = true;
-            }
 
-            //only have two current swipes
-            // if (currentSwipes.Count > 1 && currentSwipes.Count > 0)
-            {
-                //Destroy(currentSwipes[0]);
-                //currentSwipes.RemoveAt(0);
-
-
-            }
             //audio
             ProceduralAudioController pAC = newSwipe.AddComponent<ProceduralAudioController>();
             pAC.swipeObject = true;
@@ -314,11 +294,11 @@ namespace DellyWellyWelly
 
                 //get swipe start time
                 object[] customData = (object[])photonEvent.CustomData;
-                float swipeTimeStart = 0f;// (float)customData[0];
+                double swipeTimeStart = (double)customData[0];
                 Debug.Log("swipe time start = " + swipeTimeStart);
                 Vector3 firstPullBackLookDir = (Vector3)customData[1];
                 Vector3[] centralPointsArray = (Vector3[])customData[2];
-                
+               
 
                 List<Vector3> centralPoints = new List<Vector3>(centralPointsArray);
                 int photonViewID = (int)customData[3];
@@ -350,20 +330,25 @@ namespace DellyWellyWelly
 
             }
 
-            //updating bump targets//movement script does the rest
+            //clients receive info on a bump and overwrites any local prediction info
             if (eventCode == 22)
-            {                
-                object[] customData = (object[])photonEvent.CustomData;                
+            {
+                Debug.Log("[CLIENT] - Master overwriting bump target and bump start time");
+                object[] customData = (object[])photonEvent.CustomData;
+
                 
-                Vector3 bumpTarget = (Vector3)customData[0];
+                int photonViewID = (int)customData[0];
                 
-                int photonViewID = (int)customData[1];
+                double bumpStartTime = (double)customData[1];
+                Vector3 startPos = (Vector3)customData[2];
+                Vector3 target = (Vector3)customData[3];
 
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
-
+                
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
                 
-                pM.bumpTarget = bumpTarget;
+                pM.bumpTarget = target;
+                pM.bumpStart = bumpStartTime;
 
                 pM.bumped = true;
                 pM.walking = false;

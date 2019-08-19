@@ -18,110 +18,58 @@ public class PlayerCollision : MonoBehaviour
             PlayerMovement pMthis = transform.parent.parent.GetComponent<PlayerMovement>();
             PlayerMovement pMother = collision.transform.parent.parent.GetComponent<PlayerMovement>();
 
-            bool alterOther = false;
-            if (alterOther)
-            {
+            pMother.bumped = true;
+            pMthis.bumped = true;
 
+            pMother.walking = false;
+            pMthis.walking = false;
+
+          //  pMthis.bumpStart = PhotonNetwork.Time;//set after bump target spherecasted on master
+           // pMother.bumpStart = PhotonNetwork.Time;
+
+          //  pMthis.bumpStartPos = pMthis.transform.position;
+          //  pMother.bumpStartPos = pMother.transform.position;
+
+
+            //consider if other player hasd a walk target
+            Vector3 walkTargetOther = pMother.transform.position;
+            if (pMother.walking)
+                walkTargetOther = pMother.walkTarget;
+
+            Vector3 otherBumpTarget = pMother.transform.position + (pMother.transform.position - pMthis.transform.position);// * .5f + (pMother.transform.position - walkTargetOther); //how do we get this?
+
+            //set vibration for our player only
+            pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
+
+            Debug.DrawLine(otherBumpTarget, pMother.transform.position, Color.red);
+
+            //Debug.Break();
+
+            //local - set the client to start making this bump
+            pMother.bumpTarget = otherBumpTarget;
+
+            //only move our player
+          //  if (pMthis.GetComponent<PhotonView>().IsMine && pMthis.bumped == false)
+            {
+                Debug.Log("reporting hit");
 
                 //consider if other player hasd a walk target
-                Vector3 walkTargetOther = pMother.transform.position;
-                if (pMother.walking)
-                    walkTargetOther = pMother.walkTarget;
+                Vector3 walkTargetThis = pMthis.transform.position;
+                if (pMthis.walking)
+                    walkTargetThis = pMthis.walkTarget;
 
-                Vector3 otherBumpTarget = pMother.transform.position + (pMother.transform.position - pMthis.transform.position);// * .5f + (pMother.transform.position - walkTargetOther); //how do we get this?
+                Vector3 thisBumpTarget = pMthis.transform.position + (pMthis.transform.position - pMother.transform.position);// * .5f + (pMother.transform.position - walkTargetOther); //how do we get this?
 
                 //set vibration for our player only
                 pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 
-                
+               // pMthis.bumped = true;
 
-                //tell other player its been bumped and set its targets
-
-                byte evCode = 22; // Custom Event 21: Used to update player walk targets
-                                  //enter the data we need in to an object array to send over the network
-                int photonViewID = pMother.GetComponent<PhotonView>().ViewID;
-
-                object[] content = new object[] { otherBumpTarget, photonViewID };
-                //send to everyone but this client
-                RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-
-                //keep resending until server receives
-                SendOptions sendOptions = new SendOptions { Reliability = true };
-
-                PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+                pMthis.bumpTarget = thisBumpTarget;
 
 
 
             }
-
-            bool alterThis = true;//local
-            if(alterThis)
-            {
-
-                
-                //only move our player
-                if (pMthis.GetComponent<PhotonView>().IsMine && pMthis.bumped == false)
-                {
-
-                    Debug.Log("reporting hit");
-
-                    //consider if other player hasd a walk target
-                    Vector3 walkTargetThis = pMthis.transform.position;
-                    if (pMthis.walking)
-                        walkTargetThis = pMthis.walkTarget;
-
-                    Vector3 thisBumpTarget = pMthis.transform.position + (pMthis.transform.position - pMother.transform.position);// * .5f + (pMother.transform.position - walkTargetOther); //how do we get this?
-
-                    //set vibration for our player only
-                    pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
-
-                    pMthis.bumped = true;
-
-                    pMthis.bumpTarget = thisBumpTarget;
-
-
-                    //tell others
-                    byte evCode = 22; // Custom Event 21: Used to update player walk targets
-                                      //enter the data we need in to an object array to send over the network
-                    int photonViewID = pMthis.GetComponent<PhotonView>().ViewID;
-
-                    object[] content = new object[] { thisBumpTarget, photonViewID };
-                    //send to everyone but this client
-                    RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-
-                    //keep resending until server receives
-                    SendOptions sendOptions = new SendOptions { Reliability = true };
-
-                    PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
-
-
-                }
-                //some small desyncs happening
-                //tell everyone about my bump
-
-
-
-
-
-                //tell other player its been bumped and set its targets
-                /*
-                byte evCode = 22; // Custom Event 21: Used to update player walk targets
-                                  //enter the data we need in to an object array to send over the network
-                int photonViewID = pMother.GetComponent<PhotonView>().ViewID;
-
-                object[] content = new object[] { thisBumpTarget, photonViewID };
-                //send to everyone but this client
-                RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-
-                //keep resending until server receives
-                SendOptions sendOptions = new SendOptions { Reliability = true };
-
-                PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
-                */
-
-            }
-
         }
-
     }
 }

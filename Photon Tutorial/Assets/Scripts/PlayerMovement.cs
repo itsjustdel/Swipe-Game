@@ -217,7 +217,7 @@ public class PlayerMovement : MonoBehaviourPun {
     void GetInputs()
     {
         //get input from correct controller
-        bool usePad = false;
+        bool usePad = true;
         if (usePad)
         {
             x = inputs.state.ThumbSticks.Left.X;
@@ -728,6 +728,28 @@ public class PlayerMovement : MonoBehaviourPun {
 
     }
 
+    void SendBumpTargetToNetwork()
+    {
+
+        //now, if we are master tell the clients where the actual bump target is.
+        if (PhotonNetwork.IsMasterClient)//should be after bump target set in master client?
+        {
+            Debug.Log("[MASTER] - sending bump info to clients");
+            byte evCode = 22; // Custom Event 21: Used to update player walk targets
+                              //enter the data we need in to an object array to send over the network
+            int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
+
+            
+            object[] content = new object[] { thisPhotonViewID,bumpStart, bumpStartPos, bumpTarget};
+            //send to everyone but this client
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+            //keep resending until server receives
+            SendOptions sendOptions = new SendOptions { Reliability = true };
+
+            PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+        }
+    }
    
 
     void BumpTarget()
@@ -739,11 +761,10 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             Debug.Log("if not bump in progress");
 
+            /*  //applied from network or from bump collision script
             fracComplete = 0f;
-
-            bumpStart = PhotonNetwork.Time;
-            bumpStartPos = transform.position;
-
+         
+            */
             RaycastHit hit;
 
             float maxBumpDistance = 10f;
@@ -773,7 +794,13 @@ public class PlayerMovement : MonoBehaviourPun {
                         Debug.DrawLine(bumpTarget + Vector3.up * 10, bumpTarget, Color.red);
 
 
-                      //  Debug.Log("setting target for bump");
+                        bumpStart = PhotonNetwork.Time;
+                        bumpStartPos = transform.position;
+
+                        SendBumpTargetToNetwork();
+
+
+                        //  Debug.Log("setting target for bump");
                     }
                     else
                     {
@@ -847,7 +874,7 @@ public class PlayerMovement : MonoBehaviourPun {
     {
         float maxJumpDistance = 10f;
 
-        fracComplete = 0f;
+        
         if (!blockNewStep)
         {
             if (leftStickMagnitude > 1f)

@@ -27,10 +27,10 @@ public class Swipe : MonoBehaviour {
     //  public float maxSwipeTime = 5f;
     public float overheadWaitBeforeReset = .0f;//min at fixed update? // time to wait before allowing next strike, do we need different for every type of strike, do we need at all? *off atm
     public float wiggleRoom = .5f;
-    public float distanceForStillStickDetection = 0.01f;//matching fixed update
-    public float distanceForStillStickDetectionCentral = 0.1f;//alow more space. tiny amounts needed for quick detection for strike end
-    public int framesForCancel = 1;
-    public int stillStickFramesCurrent = 1;
+  //  public float distanceForStillStickDetection = 0.01f;//matching fixed update
+ //   public float distanceForStillStickDetectionCentral = 0.1f;//alow more space. tiny amounts needed for quick detection for strike end
+ //   public int framesForCancel = 1;
+ //   public int stillStickFramesCurrent = 1;
     public float maxThumbMagnitude = 0.85f;
 
     // float swordStart = 10f;
@@ -61,7 +61,7 @@ public class Swipe : MonoBehaviour {
     public bool sideCircle = false;
     //  public bool allowingFinishForLunge;
 
-    public bool rightStickStill;//detects if user is holding stick in one position or is moving it
+    //public bool rightStickStill;//detects if user is holding stick in one position or is moving it
     public bool rightStickLetGo;//flagged when stick is travelling back to center position
     public bool rSForward;
     public bool rSBackward;
@@ -291,14 +291,11 @@ public class Swipe : MonoBehaviour {
             // rightStickStill = true;
         }
 
-        if (Vector3.Distance(previousRightStickPos, pA.lookDirRightStick) < distanceForStillStickDetection)
-            rightStickStill = true;
-        else
-            rightStickStill = false;
+      
 
         //keep track of how long stick has been still for -- not working
-        if (rightStickStill)
-            stillStickFramesCurrent++;
+       // if (rightStickStill)
+      //      stillStickFramesCurrent++;
         
         
 
@@ -645,7 +642,8 @@ public class Swipe : MonoBehaviour {
         sO.playerClassValues = playerClassValues;
         sO.activeTime = playerClassValues.overheadWhiffCooldown;
         sO.firstPullBackLookDir = firstPullBackLookDir;
-        sO.swipeTimeStart = Time.time;
+        sO.swipeTimeStart = Photon.Pun.PhotonNetwork.Time;
+
         if (overhead)
         {
 
@@ -686,12 +684,14 @@ public class Swipe : MonoBehaviour {
 
     void LungePoints()
     {
+        /*
         //this functin constantly popultaes lunge points with stick movements. 
         //it will reset and clear its list if any other attack happesn or user stops moving stick
         if (!rightStickStill)// && currentDot < 0f)//does allow for backwards travelling in front half
             lungePoints.Add(swipePoint);
         else
             lungePoints.Clear();
+            */
     }
 
     void CheckForLungeStart()
@@ -746,6 +746,7 @@ public class Swipe : MonoBehaviour {
 
     void CheckForLungeEnd()
     {
+        /* 
         Debug.Log("checking for lunge end");
         if (rightStickStill)
         {
@@ -760,6 +761,7 @@ public class Swipe : MonoBehaviour {
                 // Debug.Log("ended lunge on timer");
             }
         }
+        */
     }
 
     void CheckForOverheadPullBack()
@@ -801,204 +803,9 @@ public class Swipe : MonoBehaviour {
         }
     }
 
-    void CheckForSideSwipePullBack()
-    {
+ 
 
-        //between -135 and -45 or between 45 and 135
-
-        // if (((startAngle > -overheadActivationAngle && startAngle < -sideSwipeActivationAngle) || (startAngle < overheadActivationAngle && startAngle > sideSwipeActivationAngle)) && swingMagnitude >= maxThumbMagnitude)
-        //if(pA.lookDirRightStick.magnitude >= maxThumbMagnitude)// && startAngle < sideSwipeActivationAngle && startAngle > -sideSwipeActivationAngle)
-        //if(rightStickStill)
-
-        {
-            //set flag to then look for player strike movement
-            pulledBackForSideSwipe = true;
-            pulledBackForOverhead = false;
-
-            lungeAvailable = false;
-            sideSwipeAvailable = false;
-            overheadAvailable = false;
-
-
-            swipeTimeStart = Time.time;
-            firstPullBackLookDir = swipePoint;
-            waitingOnResetPlanning = false;
-
-
-
-            // debugCube.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red2") as Material;
-
-            Debug.Log("checking for side swipe pull back");
-
-        }
-
-
-    }
-
-    void ButtonSwipe()
-    {
-        if (buttonSwipeAvailable)
-        {
-            //if rb is pressed, asign firstpullback
-            if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed && !buttonSwipeFirstLookDirSet)
-            {
-
-               //0 Debug.Log("Setting pull back dir");
-                firstPullBackLookDir = pA.lookDirRightStick;
-                
-                //adjust first pull back if not on the edge, it can be half way out by the time the game picks up it is moving
-                if (firstPullBackLookDir.magnitude < 0.5f)
-                    firstPullBackLookDir = Vector3.up + pA.lookDirRightStick;//making amore natural start angle but keeping start higher
-
-                //set flag
-                buttonSwipeFirstLookDirSet = true;
-                buttonSwipeAvailable = false;
-            }
-        }
-        //catch reset
-        if (!buttonSwipeAvailable && !waitingOnResetButtonSwipe)
-        {
-            if (pA.lookDirRightStick.magnitude < .2f && rightStickStill)
-            {
-                //Debug.Log("Catching reset");
-                if (!waitingOnResetOverhead)
-                {             
-                    buttonSwipeFirstLookDirSet = false;
-                    buttonSwipeAvailable = true;
-                    return;
-                }
-            }
-        }
-        if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Released && !waitingOnResetButtonSwipe)
-        {
-            if (!waitingOnResetOverhead)
-            {
-                //reset
-                //Debug.Log("Catching reset 2");
-                buttonSwipeFirstLookDirSet = false;
-                buttonSwipeAvailable = true;
-                return;
-            }
-        }
-
-        if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed && rightStickStill)
-        {
-            // buttonSwipeFirstLookDirSet = false;
-            // buttonSwipeAvailable = true;
-            // return;
-        }
-
-        if (buttonSwipeFirstLookDirSet && !waitingOnResetButtonSwipe)
-        {
-            if (rightStickStill && pA.RSMagnitude < .33f)
-            {
-                buttonSwipeFirstLookDirSet = false;
-                buttonSwipeAvailable = true;
-                Debug.Log("making button swipe available");
-                return;
-            }
-           // Debug.Log("looking for end");
-
-
-
-
-            bool sendToRender = false;
-
-            float distanceFromInitialPullBack = Vector3.Distance(firstPullBackLookDir, swipePoint);
-            //wiggle room too small to use for minimum swipe Length?
-            float minSwipeLength = wiggleRoom;
-            if (distanceFromInitialPullBack > minSwipeLength && pA.RSMagnitude > maxThumbMagnitude && rightStickStill)
-            {
-                //finish swipe
-                sendToRender = true;
-            }
-
-            
-            
-           
-
-            if (sendToRender)
-            {
-               
-
-                Debug.Log(angleTravelled);
-                //use this to stop checking for end
-                buttonSwipeFirstLookDirSet = false;
-
-
-                Debug.Log("sending to render");
-                yAdd = 1f - swingMagnitude;
-                //create cureve from this linear paramater
-                yAdd = Easings.CubicEaseOut(yAdd);
-
-
-                Vector3 firstPByAdd = firstPullBackLookDir.normalized + Vector3.up * (1f - firstPullBackLookDir.magnitude);
-                Vector3 outsideStart = firstPByAdd.normalized * (playerClassValues.armLength + playerClassValues.sideSwipeLength + playerClassValues.swordLength);
-                Vector3 outsideEnd = swipePoint.normalized * (playerClassValues.armLength + playerClassValues.sideSwipeLength + playerClassValues.swordLength);
-                Vector3 insideStart = firstPByAdd.normalized * (playerClassValues.armLength);
-                Vector3 insideEnd = swipePoint.normalized * (playerClassValues.armLength);
-                //float endDot = Vector3.Dot(outsideEnd, transform.forward);
-               // float startDot = Vector3.Dot(outsideStart, transform.forward);
-
-                //we need to d a quick check to see if we are going to try and slice our own player's body
-
-              //  Debug.Break();
-//                Debug.DrawLine(insideEnd + head.transform.position, insideStart + head.transform.position, Color.red);
-                RaycastHit hit;
-                Vector3 dir = (insideEnd - insideStart).normalized;
-                float distance = (insideEnd - insideStart).magnitude;
-                ///*****
-                float radius = 1f;//not sure if this should be a variable connected to cube size? working atm like this
-
-
-                if(Physics.SphereCast(insideStart + head.transform.position,radius,dir,out hit,distance,LayerMask.GetMask("PlayerBody")))
-                    //use sphere to allow a little space,( rotating cube can hit during strike)
-                {                    
-                    if(hit.transform == head.transform.GetChild(0))
-                    {
-                        //we will hit ourselves, alter start point
-                        firstPullBackLookDir = (Vector3.Lerp(insideStart, insideEnd, 0.5f)) + Vector3.up;
-                        Debug.DrawLine(head.transform.position, head.transform.position + firstPullBackLookDir,Color.red);
-                     //   Debug.Break();
-                        //and change poitns for swipe render
-                       // firstPByAdd = firstPullBackLookDir.normalized + Vector3.up * (1f - firstPullBackLookDir.magnitude);
-                        //ony need to change start points
-                        outsideStart = firstPullBackLookDir.normalized * (playerClassValues.armLength + playerClassValues.sideSwipeLength + playerClassValues.swordLength);
-                       
-                        insideStart = firstPullBackLookDir.normalized * (playerClassValues.armLength);                        
-                    }
-                }
-
-                List<Vector3> vertices = new List<Vector3>() { outsideStart, outsideEnd, insideEnd, insideStart };
-
-                //start swipe being rendered and being checked for any hits
-                buttonSwiping = true;
-
-                CreateNewSwipeObject("Button Swipe", false, false, true);
-                currentSwipeObject.GetComponent<SwipeObject>().activeSwipe = true;
-
-                currentSwipeObject.GetComponent<SwipeObject>().lungePointsFinal = vertices;
-
-                //note time of the the user finishing their swipe plan
-                currentSwipeObject.GetComponent<SwipeObject>().swipeTimeStart = Time.time;
-                //save audio data from the guide and send to the new swipe
-                ProceduralAudioController proceduralAudioControllerForNewObject = currentSwipeObject.GetComponent<ProceduralAudioController>();
-                //the frequency which this palyer's guide is buily from
-                double baseFrequency = GetComponent<ProceduralAudioController>().mainFrequency;
-                //create harmony
-                //baseFrequency =baseFrequency/2 + ((baseFrequency / 8) * 12);
-                //proceduralAudioControllerForNewObject.mainFrequency = baseFrequency;
-                proceduralAudioControllerForNewObject.mainFrequencyBase = (float)baseFrequency;
-
-                for (int i = 0; i < vertices.Count; i++)
-                {
-                    // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    //  c.transform.position = vertices[i] + head.transform.position;
-                }
-            }
-        }
-
-    }
+  
 
     void CalculateAngleTravelled()
     {
@@ -1021,28 +828,16 @@ public class Swipe : MonoBehaviour {
 
         CalculateAngleTravelled();
         //use a minumum strike amount
-        if (angleTravelled < 45 && rightStickStill) //45?, refine?
+       // if (angleTravelled < 45 && rightStickStill) //45?, refine?
         {
             //ResetFlags();
            // return;
         }
 
-        //allow slow movement over centre - working this out twice atm
-        float distanceToLastSwipe = Vector3.Distance(swipePoint, previousSwipePoint);
-        if (swipePoint == previousPreviousSwipePoint && pA.RSMagnitude <= maxThumbMagnitude)
-        {
-           // Debug.Break();
-            //keep going
-            //allow swipe points to keep being gathered, dont do checks for finish
-          //  Debug.Log("central skip");
-           // ResetFlags();
-           // return;
-        }
-
-
+    
 
         //detect if player stops moving the stick
-        if (swipePoint == previousSwipePoint)// && pA.lookDirRightStick.magnitude>0.95f)
+        if (swipePoint == previousPreviousSwipePoint)// && pA.lookDirRightStick.magnitude>0.95f)
         {
 
             if (pA.RSMagnitude < pA.deadzone)
@@ -1168,117 +963,7 @@ public class Swipe : MonoBehaviour {
 
     }
 
-    void ChecksSideSwipe()
-    {
-
-        //add to angle travelled counter
-        float smallAngle = Vector3.Angle(pA.lookDirRightStick, firstPullBackLookDir);
-
-        // Debug.Log(smallAngle);
-
-
-        //float angleToStop = 135;
-        if (rightStickStill)// ||  rSBackward || smallAngle > angleToStop)
-        {
-
-            //don't allow a cross over swipe.. so if if we start at the 90 degress to the left, don't allow a finish at 90 degrees to the right
-            //or if we do, put in a yellow curve strike?
-            //so allow a 180 degrees swipe?
-            bool finish = true;
-
-            //use dot product to test whether side swipe is going back the way
-            Vector3 p = sideSwipePoints[2];
-            float dot0 = Vector3.Dot(p, transform.forward);
-
-            //if right stick is flicked backwards fast enough, it can stikll slip through, double check with this
-            //find out if fornt point is facing back the way
-            p = sideSwipePoints[3];
-            float dot1 = Vector3.Dot(p, transform.forward);
-            if (dot0 < dot1)
-                finish = false;
-
-            if (finish)
-            {
-
-                //detect when the full motion has been completed
-                //StartCoolDownWhiff(); ///this fires at start
-
-                planningPhaseSideSwipe = false;
-                //start swipe being rendered and being checked for any hits
-                sideSwiping = true;
-
-                CreateNewSwipeObject("Side Swipe", false, true, false);
-                currentSwipeObject.GetComponent<SwipeObject>().activeSwipe = true;
-                currentSwipeObject.GetComponent<SwipeObject>().sideSwipe = true;
-                currentSwipeObject.GetComponent<SwipeObject>().originalVertices = sideSwipePoints;
-
-                //note time of the the user finishing their swipe plan
-                swipeTimeStart = Time.time;
-                //save audio data from the guide and send to the new swipe
-                ProceduralAudioController proceduralAudioControllerForNewObject = currentSwipeObject.GetComponent<ProceduralAudioController>();
-                //the frequency which this palyer's guide is buily from
-                double baseFrequency = GetComponent<ProceduralAudioController>().mainFrequency;
-                //create harmony
-                //baseFrequency =baseFrequency/2 + ((baseFrequency / 8) * 12);
-                //proceduralAudioControllerForNewObject.mainFrequency = baseFrequency;
-                proceduralAudioControllerForNewObject.mainFrequencyBase = (float)baseFrequency;
-
-
-                /*
-                for (int i = 0; i < sideSwipePoints.Count; i++)
-                {
-                    GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    c.transform.position = sideSwipePoints[i] + head.transform.position;
-                    Destroy(c, 1);
-
-
-                    Vector3 p0 = sideSwipePoints[i];// - transform.position;
-                    float dot = Vector3.Dot(p0, transform.forward);
-                    c.name = dot.ToString();
-                }
-                */
-
-            }
-            else if (!finish)
-            {
-                planningPhaseSideSwipe = false;
-                ResetFlags();
-            }
-
-
-        }
-
-
-        //put a reset here? stop thiin swipe across body
-
-        /*
-        //if cooling down
-        if (waitingOnResetPlanning)// && swipeAvailable)
-        {
-
-            //can be cancelled by another side swip action
-            //if user starts another side strike from the other side, we can cancel the cooldown
-            Vector3 lookDirPlusPlayerPosition = -pA.lookDirRightStick;
-            float dot = Vector3.Dot(lookDirPlusPlayerPosition, transform.right);
-
-            Vector3 lastStrikePosition = -firstPullBackLookDir;
-            float dot2 = Vector3.Dot(lastStrikePosition, transform.right);
-            //looks for last strike starting on one side and new strike starting on the other
-            //seem ok without this atm, was cancelling strikes in combo
-           // if((dot2 < 0 && dot > 0) || (dot < 0 && dot2 >0))
-           //     CheckForSideSwipePullBack();
-
-            //if ((startAngle < overheadFinishAngle && startAngle > -overheadFinishAngle))// && swingMagnitude >= .99f)
-            {
-                //wait for animation to play, governed by waepon speed, then allow user control again
-                if (Time.time - finishTimePlanning > weaponSpeed + overheadWaitBeforeReset)//overheadWaitBeforeReset
-                {
-                    ResetFlags();
-                }
-            }
-        }
-        */
-    }
+   
 
     void StickPathOverhead()
     {

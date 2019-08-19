@@ -296,8 +296,8 @@ public class ProceduralAudioController : MonoBehaviour
 
         float prevVol = targetVolume;
         float still = 0f;
-        if (swipe.rightStickStill)
-            still += guideRampUp;
+       // if (swipe.rightStickStill)
+       //     still += guideRampUp;
 
         targetVolume = -80f + swipe.pA.lookDirRightStick.magnitude * volumeMultiplier - still;
         //targetVolume = -80 + difference * volumeMultiplier;
