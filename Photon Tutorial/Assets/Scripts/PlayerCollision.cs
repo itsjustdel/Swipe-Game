@@ -35,8 +35,7 @@ public class PlayerCollision : MonoBehaviour
           //  pMthis.bumpStartPos = pMthis.transform.position;
           //  pMother.bumpStartPos = pMother.transform.position;
 
-
-            //consider if other player hasd a walk target
+            //consider if other players had a walk target
             Vector3 walkTargetOther = pMother.transform.position;
             if (pMother.walking)
                 walkTargetOther = pMother.walkTarget;
@@ -51,7 +50,8 @@ public class PlayerCollision : MonoBehaviour
             //Debug.Break();
 
             //local - set the client to start making this bump
-            pMother.bumpTarget = otherBumpTarget;
+            //pMother.bumpStartPos = pMother.transform.position;
+            pMother.bumpShootfrom = otherBumpTarget;
 
             //only move our player
           //  if (pMthis.GetComponent<PhotonView>().IsMine && pMthis.bumped == false)
@@ -63,14 +63,15 @@ public class PlayerCollision : MonoBehaviour
                 if (pMthis.walking)
                     walkTargetThis = pMthis.walkTarget;
 
-                Vector3 thisBumpTarget = pMthis.transform.position + (pMthis.transform.position - pMother.transform.position);// * .5f + (pMother.transform.position - walkTargetOther); //how do we get this?
+                Vector3 thisBumpTarget = pMthis.transform.position + (pMthis.transform.position - pMother.transform.position);// * .5f + (pMthis.transform.position - walkTargetThis); //how do we get this?
 
                 //set vibration for our player only
                 pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 
-               // pMthis.bumped = true;
+                // pMthis.bumped = true;
 
-                pMthis.bumpTarget = thisBumpTarget;
+                //pMthis.bumpStartPos = transform.position;
+                pMthis.bumpShootfrom = thisBumpTarget;
 
 
 

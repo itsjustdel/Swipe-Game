@@ -346,11 +346,11 @@ MonoBehaviour:
   overheadSpeed: 1
   sideSwipeSpeed: 1
   lungeSpeed: 1
-  overheadLength: 10
+  overheadLength: 3
   sideSwipeLength: 15
   lungeLength: 20
-  armLength: 10
-  swordLength: 10
+  armLength: 6
+  swordLength: 3
   swordWidth: 2
   overheadHitHealthReduce: 33.4
   lungeHitHealthReduce: 15
@@ -485,7 +485,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 2.1e-44, z: 3.386e-42, w: 1.05e-43}
+  m_BoundingSphereOverride: {x: 0.00000017062929, y: 1.0463835e-22, z: 7e-45, w: 8.6534633e-23}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0

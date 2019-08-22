@@ -118,7 +118,7 @@ namespace DellyWellyWelly
             newSwipe.transform.position = sO.parentPlayer.GetComponent<Swipe>().head.transform.position;
             newSwipe.layer = LayerMask.NameToLayer("Swipe");
             newSwipe.AddComponent<MeshCollider>();
-            //currentSwipeObject = newSwipe;
+            sO.parentPlayer.GetComponent<Swipe>().currentSwipeObject = newSwipe;
 
             
             //find player by photon id
@@ -346,14 +346,70 @@ namespace DellyWellyWelly
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
                 
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
-                
+
+                pM.bumpStartPos = startPos;
                 pM.bumpTarget = target;
                 pM.bumpStart = bumpStartTime;
 
+                //should already be set unless desync?
                 pM.bumped = true;
+                pM.bumpInProgress = true;
                 pM.walking = false;
 
             }
+
+            //30+ predictive
+            if(eventCode == 30)
+            {
+                //receiving constant stream of unreliable client input
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                float[] inputs = (float[])customData[1];
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
+                if (viewOwner != null)//happens on connect
+                {
+                    pM.x = inputs[0];
+                    pM.y = inputs[1];
+                }
+
+            }
+
+            //resolutions 40+
+            //swipe on swipe hit
+            if (eventCode == 40)
+            {
+                //receiving constant stream of unreliable client input
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                Swipe swipe = viewOwner.GetComponent<Swipe>();
+             
+                
+                SwipeObject sO = swipe.currentSwipeObject.GetComponent<SwipeObject>();
+
+                sO.impactDirection = (Vector3)customData[1];//need impact point? check when reworking
+                sO.DestroySwipe();
+            }
+            //swipe on player
+            if (eventCode == 41)
+            {
+                //receiving constant stream of unreliable client input
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+
+                SwipeObject thisSwipeObjectScript = viewOwner.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>();
+                thisSwipeObjectScript.impactDirection = (Vector3)customData[1];
+                thisSwipeObjectScript.impactPoint = (Vector3)customData[2];
+                thisSwipeObjectScript.hitSelf = true;
+                thisSwipeObjectScript.DestroySwipe();
+                thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+
+            }
+
         }
 
 

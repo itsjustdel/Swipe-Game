@@ -198,7 +198,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             {
                 Mesh mesh = GetComponent<MeshFilter>().mesh;
                 List<Vector3> verticesToCheck = new List<Vector3>(mesh.vertices);
-                parentPlayer.GetComponent<Swipe>().CurveHitCheck2(verticesToCheck, activeSwipe, gameObject, true, false);
+
+                //only do checks on master
+                if(PhotonNetwork.IsMasterClient)
+                    parentPlayer.GetComponent<Swipe>().CurveHitCheck2(verticesToCheck, activeSwipe, gameObject, true, false);
             }
         }
 
@@ -1328,12 +1331,15 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                         //reset opponent
                         //find parent of head mesh and reset it
                         PlayerInfo playerInfo = thisHits[j].transform.parent.parent.GetComponent<PlayerInfo>();
-                        playerInfo.health -= playerClassValues.lungeHitHealthReduce;
+
+                        playerInfo.health -= playerClassValues.lungeHitHealthReduce;/////*******put back!
+                        
+                        
                         //interrupt if swinging? 
 
 
-                            GameObject parentOfHitHeadMesh = thisHits[j].transform.parent.parent.gameObject;
-                            parentOfHitHeadMesh.GetComponent<Swipe>().ResetFlags();
+                        GameObject parentOfHitHeadMesh = thisHits[j].transform.parent.parent.gameObject;
+                        parentOfHitHeadMesh.GetComponent<Swipe>().ResetFlags();
 
                         thisSwipeObjectScript.impactDirection = (thisHits[j].point - head.transform.position).normalized;
                         thisSwipeObjectScript.impactPoint = thisHits[j].point;
@@ -1376,9 +1382,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                             DeactivateSwipe();
                             hitOpponent = true;//set this to stop double hits
                             Debug.Log("health > 0 lunge");
-                            return;
+                            
                         }
-                            //we have a hit!, no need to keep looking
+                         
+                            
                             
 
                     }
@@ -1405,6 +1412,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     public void DestroySwipe()
     {
+
+        GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+        parentPlayer.GetComponent<Swipe>().ResetFlags();
+
         enabled = false;
         //stop raycasting calling multiple times
         if (destroyingInProgress)

@@ -86,7 +86,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public Vector3 walkTarget;
     public double walkStart;
 
-   
+    public Vector3 bumpShootfrom;
     public Vector3 bumpTarget;
     public double bumpStart;
     public Vector3 bumpStartPos;
@@ -163,6 +163,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //adjust speed slowly if between states (bumper etc)
         Inertias();
 
+        /*
         //only control our own player - the network will move the rest
         if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
         {
@@ -181,19 +182,47 @@ public class PlayerMovement : MonoBehaviourPun {
             if (!bumped)
                 RotateToFaceClosestPlayer();
 
+
+            MovePlayer();
+
+            RotateToFaceClosestPlayer();
+
+
             return;
         }
+        */
 
-        GetInputs();
-        UpdateCurrentCell();
+        if ((photonView.IsMine))
+        {
+            GetInputs();
+
+            //send inputs to other clients for prediction            
+            SendInputsToNetwork();//this is happening every fixed update - meaning the messaages per room will be high, perhaps lower the frequency of this
+        }
+        else
+        {
+            //user inputs sent from other clients
+            //x,y inserted from network event 30
+        }
+
+        CalculateLookDir();
+
+
+
+        //rotate player
+        if (!bumped)
+            RotateToFaceClosestPlayer();
+
+        BasicMove();
+
+        //UpdateCurrentCell();//to go back in
         
-        MovePlayer();
+       
 
         //rotations for body
 
         
-        if (!bumped)
-            RotateToFaceClosestPlayer();
+      /*  //to go back in
 
         //rotations for head
         if(adjustingCellHeight)
@@ -210,14 +239,13 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (!swipe.whiffed && !swipe.overheadSwiping)
             RotateHeadToFaceRightStick();
-      //  else
-      //      RotateForWhiff();
+      */
     }
 
     void GetInputs()
     {
         //get input from correct controller
-        bool usePad = false;
+        bool usePad = true;
         if (usePad)
         {
             x = inputs.state.ThumbSticks.Left.X;
@@ -267,45 +295,8 @@ public class PlayerMovement : MonoBehaviourPun {
         leftStickMagnitude = new Vector3(x, 0f, y).magnitude;
     }
 
-    void MovePlayer()
+    void CalculateLookDir()
     {
-        //happens on setup
-        if (GetComponent<Swipe>() == null)
-            return;
-
-        ////********* review, swiping isnt used anymore
-
-        //dont start new movement if player is attacking, allow walk to finish (or jump?)
-        /*
-        bool swiping = false;
-        //check if attacking - no support for different walk speeds for diff swipes
-        if (transform.GetComponent<Swipe>().overheadSwiping ||
-            transform.GetComponent<Swipe>().lunging ||
-            transform.GetComponent<Swipe>().sideSwiping)
-        {
-            swiping = true;
-        }
-        
-        if (swiping && (walking == true))//&& jumping == false))
-        {
-            if(currentWalkSpeed > walkSpeedWhileAttacking )
-                currentWalkSpeed -= inertiaSpeed; //different amounts for different swipes?
-        }
-        */
-        //should theis be else ifs?
-       
-        if (swipe.overheadSwiping)
-        {
-            //walkspeed during overhead swiping is set in Swipe when swipe is triggered
-
-
-        }
-        if(swipe.pulledBackForOverhead || swipe.planningPhaseOverheadSwipe)
-        {
-         //   walkSpeedThisFrame = walkSpeedWhileBlocking;//make own var?   
-         //doing in step calculation
-        }
-
         Vector3 right = x * Camera.main.transform.parent.right;
         Vector3 forward = y * Camera.main.transform.parent.forward;
         //public var so helper class can access
@@ -318,21 +309,6 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else
             leftStickReset = false;
-
-        
-        if (doBasicMove)
-        {
-            //user moves player around with left stick, can move within cells
-            //don't move if attacking
-            //if(!GetComponent<PlayerAttacks>().rightStickReset)
-            BasicMove();
-        }
-       
-        if (moveToAdjacent)
-        {
-            //jumps to cell chosen by player, cant move within each cell
-            MovementHelper.MoveToAdjacent(this, transform);
-        }
     }
 
     void Inertias()
@@ -559,9 +535,16 @@ public class PlayerMovement : MonoBehaviourPun {
 
         }
 
-        if (distance < 70f)
+        if(players.Length ==1 || distance > 70f)
         {
-
+           // Debug.Log("rotating to face look dir");
+                
+            freeWalk = true;
+            RotateToMovementDirection();
+        }
+        else
+        {
+            //Debug.Log("rotating to face closest player");
             //rotate to face closest player
 
             //face the way way the stick is pushed
@@ -577,13 +560,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
             freeWalk = false;
         }
-        else
-        {
-            //look at fdirection stick is pushed
-            freeWalk = true;
-            RotateToMovementDirection();
-            
-        }
+        
     }
 
     void RotateToMovementDirection()
@@ -620,6 +597,8 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     if (!leftStickReset)
                     {
+
+                        
                         //face the way way the stick is pushed
                         Vector3 targetY = lookDir;
                         Quaternion targetRotation = Quaternion.LookRotation(targetY);
@@ -650,12 +629,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void BasicMove()//needs factored
     {
-
-        Vector3 right = x * Camera.main.transform.parent.right;
-        Vector3 forward = y * Camera.main.transform.parent.forward;
-        //public var so helper class can access
-        lookDir = right - forward;
-
+        
         Vector3 thisLook = lookDir;
 
         bool blockNewStep = false;
@@ -684,6 +658,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //set bump target if we are in control of this player
           //  if(thisPhotonView.IsMine)
+          if(!bumpInProgress)
                 BumpTarget();
 
             LerpBump();
@@ -694,7 +669,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //bool debug = false;
         //walking
         
-        if (!walking && thisPhotonView.IsMine)
+        if (!walking && !bumped)// && thisPhotonView.IsMine)
         {
             WalkTarget(blockNewStep, thisLook);
            
@@ -751,6 +726,26 @@ public class PlayerMovement : MonoBehaviourPun {
         }
     }
    
+    void SendInputsToNetwork()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            
+            byte evCode = 30; // Custom Event 30: client inputs
+                              
+            int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
+
+            object[] content = new object[] { thisPhotonViewID, new float[] { x, y } };
+            //send to everyone but this client
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+            //send every fixed update
+            SendOptions sendOptions = new SendOptions { Reliability = false };
+
+            PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+        }
+        
+    }
 
     void BumpTarget()
     {
@@ -774,7 +769,7 @@ public class PlayerMovement : MonoBehaviourPun {
             while (bumpTargetFound == false)
             {
                 Vector3 bumpDirection = (bumpTarget - transform.position).normalized;
-                Vector3 shootFrom = bumpTarget + (bumpDirection * (add));
+                Vector3 shootFrom = bumpShootfrom + (bumpDirection * (add));
                 if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
                 {
 
@@ -797,6 +792,7 @@ public class PlayerMovement : MonoBehaviourPun {
                         bumpStart = PhotonNetwork.Time;
                         bumpStartPos = transform.position;
 
+                        //send results to everyone//only if master client
                         SendBumpTargetToNetwork();
 
 
