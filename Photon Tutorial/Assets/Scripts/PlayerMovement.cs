@@ -110,7 +110,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public OverlayDrawer overlayDrawer;
     PlayerAttacks pA;
 
-    GameObject head;
+    public GameObject head;
     bool freeWalk = false;
 
     Swipe swipe;
@@ -122,35 +122,39 @@ public class PlayerMovement : MonoBehaviourPun {
     void Start()
     {
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+        overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
+        pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
+        head = transform.Find("Head").gameObject;
         currentWalkSpeed = walkSpeed;
+        swipe = GetComponent<Swipe>();
         //only control our own player - the network will move the rest
         if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
         {
-            
+
             return;
         }
+
+        
+        playerAttacks = GetComponent<PlayerAttacks>();
+        pA = GetComponent<PlayerAttacks>();//??
+        codeObject = GameObject.FindGameObjectWithTag("Code");
+        playerNumber = GetComponent<PlayerInfo>().playerNumber;
+      
+        
 
         //asign and enable all control scripts
         inputs = GetComponent<Inputs>();
         inputs.enabled = true;
 
-        swipe = GetComponent<Swipe>();
+       
         swipe.enabled = true;
 
-        playerAttacks = GetComponent<PlayerAttacks>();
+        
         playerAttacks.enabled = true;
-
         
-        pA = GetComponent<PlayerAttacks>();
-        codeObject = GameObject.FindGameObjectWithTag("Code");
-        lastTarget = transform.position;
-        playerNumber = GetComponent<PlayerInfo>().playerNumber;
-
-        overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
-        pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
+        lastTarget = transform.position;//using?>
         
 
-        head = transform.Find("Head").gameObject;
 
        
     }
@@ -196,6 +200,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             GetInputs();
 
+
             //send inputs to other clients for prediction            
             SendInputsToNetwork();//this is happening every fixed update - meaning the messaages per room will be high, perhaps lower the frequency of this
         }
@@ -205,6 +210,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //x,y inserted from network event 30
         }
 
+        //work out which player is looking compared to camera - might need to send lookdir after camera for each player??
         CalculateLookDir();
 
 
@@ -669,7 +675,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //bool debug = false;
         //walking
         
-        if (!walking && !bumped)// && thisPhotonView.IsMine)
+        if (!walking && !bumped && thisPhotonView.IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
         {
             WalkTarget(blockNewStep, thisLook);
            
@@ -881,11 +887,12 @@ public class PlayerMovement : MonoBehaviourPun {
                 walkSpeedThisFrame = walkSpeed * leftStickMagnitude;
 
                 //remember what the magnitude was
-              //  leftStickMagnitudeForStep = leftStickMagnitude;//instead of doing this we could set start pos and end pos for slerp here?
+                //  leftStickMagnitudeForStep = leftStickMagnitude;//instead of doing this we could set start pos and end pos for slerp here?
 
 
                 //speed
 
+                /*
 
                 //blocking //will need to make these bools, cant detect ipnut over network***
                 if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
@@ -900,24 +907,29 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     walkSpeedThisFrame = walkSpeedWhilePullBack * leftStickMagnitude;
                 }
+                */
 
                 //
-                else if (swipe.overheadSwiping)
+                //else
+                if (swipe.overheadSwiping)
                 {
                     //set when swipe object is started
                 }
+                /*
                 else if (inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
                 {
                     //sprinting
                     walkSpeedThisFrame = sprintSpeed * leftStickMagnitude;
                     sprinting = true;
                 }
-
+                */
+                
                 //step size
 
                 //apply stick amount 
                 float walkStepDistanceThisFrame = walkStepDistance * leftStickMagnitude;
 
+                /*
                 //change step size if blocking
                 if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
                     walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
@@ -925,10 +937,13 @@ public class PlayerMovement : MonoBehaviourPun {
                 else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
                     walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;
 
+                */
                 //also if holding swing
-                else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+                //else 
+                if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
                     walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;  //need var?  using shield 
 
+                /*
                 else if (swipe.overheadSwiping)
                 {
                     //by not setting anythin here we keep the large arc for the swipe, looks cool basically. Makes player float
@@ -937,6 +952,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     walkStepDistanceThisFrame = sprintStepDistance * leftStickMagnitude;
                 }
+                */
 
                 //start timer to use with calculating how far we ahve travelled
                 walkStart = PhotonNetwork.Time;// Time.time;

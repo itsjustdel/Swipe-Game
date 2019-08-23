@@ -42,7 +42,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     //public GameObject head;
 
-    public float timeSwingFinished;
+    public double timeSwingFinished;
     public float activeTime = 100;
     //attach this script to a swipe patter, it will render it and check for hits
     public List<Vector3> originalVertices;
@@ -69,7 +69,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public double swipeTimeStart;
 
     public PlayerClassValues playerClassValues;
-    public bool swipeFinishedBuilding = false;
+    //public bool swipeFinishedBuilding = false;
     private Vector3 playerOriginalPosition;
 
     //how far we have went around swipe - master client can change this value to catch up on time
@@ -171,9 +171,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     // Update is called once per frame
     void FixedUpdate ()
     {
+        /*
         if (swipeFinishedBuilding)
         {
-            if (Time.time - activeTime > timeSwingFinished)
+            if (PhotonNetwork.Time - activeTime > timeSwingFinished) //probs isnt happening ever now swipe follows itself to its death
             {
 
                 //find this object in swipe list and remove it
@@ -188,10 +189,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
             }
         }
-       
+       */
         if (overheadSwipe)
         {
-            if (!swipeFinishedBuilding)
+           // if (!swipeFinishedBuilding)
                 RenderOverHead();
 
             if (!hitOpponent)
@@ -208,7 +209,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         if(buttonSwipe)
         {
 
-            if (!swipeFinishedBuilding)
+           // if (!swipeFinishedBuilding)
                 RenderButtonSwipe();
 
             if (!hitOpponent)
@@ -608,10 +609,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //   Debug.Log("Resetting within render function");
 
             //we have finished rendering, start cooldown timer
-            swipeFinishedBuilding = true;
-            timeSwingFinished = Time.time;
+          //  swipeFinishedBuilding = true;
+            timeSwingFinished = PhotonNetwork.Time;
             //let player object know when we finished this swing too
-            parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;
+            parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;
             parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
             parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
             
@@ -858,7 +859,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     void StartTimerForLunge()
     {
-        swipeFinishedBuilding = true;
+       // swipeFinishedBuilding = true;
         timeSwingFinished = Time.time;
 
         //let player object know when we finished this swing too
@@ -1368,7 +1369,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                         {
                             
                             //stop swipe
-                            swipeFinishedBuilding = true;
+                            //swipeFinishedBuilding = true;
                             timeSwingFinished = Time.time;
                             //let player object know when we finished this swing too
                             parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;

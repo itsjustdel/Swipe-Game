@@ -86,10 +86,10 @@ public class Swipe : MonoBehaviour {
 
     //counters
     // public float finishTimePlanning;
-    public float finishTimeSriking;
+    public double finishTimeSriking;
     //public int deadzoneTimesInSwipe;
-    public float pullBackTimeStart;
-    public float swipeTimeStart;
+    public double pullBackTimeStart;
+    public double swipeTimeStart;
     public float firstPullBackAngle;
     public float angleTravelled = 0;
 
@@ -102,7 +102,7 @@ public class Swipe : MonoBehaviour {
     float previousDot = 0f;
     public float currentDot = 0f;
 
-    public bool overheadHit;
+   // public bool overheadHit;
     public bool overheadBlock;
     public bool overheadWhiff;
 
@@ -376,7 +376,7 @@ public class Swipe : MonoBehaviour {
         {
             if (whiffed)
             {
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterOverheadWhiff)
+                if (PhotonNetwork.Time- finishTimeSriking > playerClassValues.playerCooldownAfterOverheadWhiff)
                 {
                     Debug.Log("making overhead available after cooldown wait");
                     waitingOnResetOverhead = false;
@@ -389,7 +389,7 @@ public class Swipe : MonoBehaviour {
             else if (blocked)
             {
                 
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterOverheadBlock)
+                if (PhotonNetwork.Time - finishTimeSriking > playerClassValues.playerCooldownAfterOverheadBlock)
                 {
                     Debug.Log("making overhead available after cooldown wait - block");
                     waitingOnResetOverhead = false;
@@ -402,7 +402,7 @@ public class Swipe : MonoBehaviour {
             else if (hit)
             {
 
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterOverheadHit)
+                if (PhotonNetwork.Time - finishTimeSriking > playerClassValues.playerCooldownAfterOverheadHit)
                 {
                     Debug.Log("making overhead available after cooldown wait - hit");
                     waitingOnResetOverhead = false;
@@ -783,13 +783,13 @@ public class Swipe : MonoBehaviour {
             overheadAvailable = false;
             sideSwipeAvailable = false;
 
-            swipeTimeStart = Time.time;
+            swipeTimeStart = PhotonNetwork.Time;
             firstPullBackLookDir = swipePoint;
 
             firstPullBackAngle = MovementHelper.SignedAngle(firstPullBackLookDir, transform.forward, Vector3.up);
             angleTravelled = 0f;
 
-            pullBackTimeStart = Time.time;
+            pullBackTimeStart = PhotonNetwork.Time;
             stopwatch.Start();
 
             //clear mesh
@@ -1323,7 +1323,7 @@ public class Swipe : MonoBehaviour {
 
                     if (thisSwipeObjectScript.activeSwipe)
                     {
-                        finishTimeSriking = Time.time;
+                        finishTimeSriking = PhotonNetwork.Time;
                         waitingOnResetOverhead = true;
                         buttonSwipeAvailable = false;
                         blocked = true;
@@ -1583,49 +1583,65 @@ public class Swipe : MonoBehaviour {
                         //if (p > 1f)
                         //    p = 1f;
 
-                       // playerInfo.health -= Mathf.RoundToInt(p);// playerClassValues.overheadHitHealthReduce; ///put back mathf round
+                        playerInfo.health -= Mathf.RoundToInt(p);// playerClassValues.overheadHitHealthReduce; ///put back mathf round
+                       //network needs to know?
                         Debug.Log("hit power = " + p);
 
                         //if hit player is swiping, interrupt swipe and reset him // should this only be when killed?, or allow strike to continue if only been popped
                         Swipe otherSwipeScript = totalRayList[i][j].transform.parent.parent.GetComponent<Swipe>();
+                        //player got hit, cancel anything they were doing
                         otherSwipeScript.ResetFlags();
+                        //network**
+
+                        
                         if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
                         {
                             //let player know it was cancelled with visual aid
                             otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
                             otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring
                             otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
+
+                            //network ** 
                         }
+
+
+                       
+                        thisSwipeObjectScript.hitOpponent = true;
+                        thisSwipeObjectScript.timeSwingFinished = PhotonNetwork.Time;
+
+                        //for bumping player
+                        GameObject parentOfHitHeadMesh = totalRayList[i][j].transform.parent.parent.gameObject;
+                        PlayerMovement pMother = parentOfHitHeadMesh.GetComponent<PlayerMovement>();
+
+                        Vector3 impactDir = Vector3.zero;
+
+                        thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
 
                         if (playerInfo.health > 0 )
                         {
                             
                             //stop swipe
-                            thisSwipeObjectScript.swipeFinishedBuilding = true;
-                            thisSwipeObjectScript.timeSwingFinished = Time.time;
+                            //thisSwipeObjectScript.swipeFinishedBuilding = true;
+                          
                             //let player object know when we finished this swing too
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;
+                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;                            
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;                            
 
-                            thisSwipeObjectScript.activeTime =thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
-                            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);
+                          
                             thisSwipeObjectScript.DeactivateSwipe();
-                            thisSwipeObjectScript.hitOpponent = true;//set this to stop double hits
+                            
                             Debug.Log("health > 0 overhead");
 
                             //destroy this swipe
                             thisSwipeObjectScript.impactDirection = (totalRayList[i][j].point - head.transform.position).normalized;
-                            thisSwipeObjectScript.impactPoint = totalRayList[i][j].point;
-                            thisSwipeObjectScript.hitOpponent = true;
-                          //  thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Red0") as Material; //unsure
+                            //overwrite impact dir for network that we worked out above
+                            impactDir = thisSwipeObjectScript.impactDirection;
+                            thisSwipeObjectScript.impactPoint = totalRayList[i][j].point;                            
 
                             thisSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                            //bump player
-                            GameObject parentOfHitHeadMesh = totalRayList[i][j].transform.parent.parent.gameObject;
-                            PlayerMovement pMother = parentOfHitHeadMesh.GetComponent<PlayerMovement>();
+                            
                             pMother.bumped = true;
                             //hit point is on the near side, so get dir to hit transform and extend it through. point will now be on the rear side of hit transform
                             float hitBumpAmount = 1f;//*global var
@@ -1637,38 +1653,31 @@ public class Swipe : MonoBehaviour {
                             //tell player who successfully hit too - just use non lethal for hit confirm
                             pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
                             pV.shakeTimerHit += pV.nonLethatHitLength;
-
-                            return;
+                            
                         }
                         else if (playerInfo.health <= 0f)
                         {
 
                             //flag for this player
                             Debug.Log("overhead hit opponent");
-                            overheadHit = true;
-                            //hitOpponent = true;
-                            thisSwipeObjectScript.hitOpponent = true;
-                            //set new timer
-                            thisSwipeObjectScript.timeSwingFinished = Time.time;
-                            thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
-                            //reset opponent
-                            //find parent of head mesh and reset it
-
-                            GameObject parentOfHitHeadMesh = totalRayList[i][j].transform.parent.parent.gameObject;
+                            
+                            
                             //reset other player
                             parentOfHitHeadMesh.GetComponent<Swipe>().ResetFlags();
 
+
+                            //impact dir
                             Vector3 l0 = pointsFromCurve[pointsFromCurve.Count - 3];
                             Vector3 l1 = pointsFromCurve[pointsFromCurve.Count - 2];
-
-                            Vector3 impactDir = Vector3.Cross(l0, l1).normalized;
+                            impactDir = Vector3.Cross(l0, l1).normalized;
 
                             thisSwipeObjectScript.impactDirection = impactDir;
+
                             thisSwipeObjectScript.impactPoint = totalRayList[i][j].point;
 
                             BreakUpPlayer(totalRayList[i][j].transform.gameObject, thisSwipeObjectScript);
                             DeSpawnPlayer(parentOfHitHeadMesh);
-                            // thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Red0") as Material;
+                            
 
                             //reset this player
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
@@ -1682,10 +1691,46 @@ public class Swipe : MonoBehaviour {
                             pV.shakeTimerHit += pV.nonLethatHitLength;
 
 
-                            //we have found what we were looking, finish looking
-                            return;
+                            
+                           
                         }
 
+                        //gather network info
+                        //send hit info to clients
+                        //send resolution to network
+                        // Custom Event 41: send player hit to clients
+                        //i need to send, 
+                        //who got hit
+                        int photonViewIDVictim = otherSwipeScript.GetComponent<PhotonView>().ViewID;
+                        //how powerful the hit was
+                        float healthReduction = Mathf.RoundToInt(p);
+                        //put destroy swipe if not null in event code
+                        //send bump update too
+                        Vector3 bumpShootFrom = pMother.bumpShootfrom;
+                        //we also need to update the player who's hit was successful
+                        int photonViewIDAttacker = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
+                        double timeSwingFinished = PhotonNetwork.Time;
+                        double finishTimeStriking = PhotonNetwork.Time;
+                        //update waiting on reset overhead on event code
+                        //update hit bool on event code
+                        //update active time on event code
+                        //deactivate swipe (the swipe that hit)
+                        //tell swipe it hit opponent on event code
+                        //impact dir
+                        
+                        //impact point
+                        Vector3 impactPoint = thisSwipeObjectScript.impactPoint;
+                        //destroy swipe on event code
+
+                        byte evCode = 42;//send hit player
+
+                        object[] content = new object[] { photonViewIDVictim, healthReduction, bumpShootFrom, photonViewIDAttacker, timeSwingFinished, finishTimeStriking, impactDir, impactPoint };
+                        //send to everyone but this client
+                        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+                        SendOptions sendOptions = new SendOptions { Reliability = true };
+                        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+                        return;
                     }
                 }
             }
@@ -1837,7 +1882,7 @@ public class Swipe : MonoBehaviour {
 
         //result flags reset
         sideSwipeHit = false;
-        overheadHit = false;
+      //  overheadHit = false;
         lungeHit = false;
 
         sideSwipeBlock = false;
