@@ -7,13 +7,13 @@ namespace DellyWellyWelly
     public class PrefabCreator : MonoBehaviour
     {
 
-        public int teamNumber = 0;
-        public float baseSize = 1f;
-        public float headSize = 3f;
-        public float headHeight = 3f;
-        public float shieldX = 1f;
-        public float shieldY = 1f;
-        public float shieldZ = 1f;
+        private int teamNumber = 0;
+        private float baseSize = 1f;
+        private float headSize = 3f;
+        private float headHeight = 3f;
+        private float shieldX = 3f;
+        private float shieldY = 3f;
+        private float shieldZ = 0.5f;
         // Start is called before the first frame update
         void Start()
         {

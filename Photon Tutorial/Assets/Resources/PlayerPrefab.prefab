@@ -66,10 +66,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9020aa0df4e987f41befeaae45e130ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamNumber: 0
-  baseSize: 1
-  headSize: 3
-  headHeight: 3
-  shieldX: 1
-  shieldY: 1
-  shieldZ: 1

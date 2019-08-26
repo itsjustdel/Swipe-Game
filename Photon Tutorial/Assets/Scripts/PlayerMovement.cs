@@ -228,7 +228,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //rotations for body
 
         
-      /*  //to go back in
+        //to go back in
 
         //rotations for head
         if(adjustingCellHeight)
@@ -245,7 +245,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (!swipe.whiffed && !swipe.overheadSwiping)
             RotateHeadToFaceRightStick();
-      */
+      
     }
 
     void GetInputs()
@@ -388,9 +388,6 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
         {
-            
-
-            
              Quaternion targetRotation = Quaternion.LookRotation(swipe.firstPullBackLookDir);
              head.transform.rotation = Quaternion.Lerp(head.transform.rotation, targetRotation, pA.headRotationSpeed);
         }
@@ -417,7 +414,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             Vector3 rotateTargetForHead = pA.lookDirRightStick.normalized;
             //angle for block
-            if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+            if (inputs.blocking0 && inputs.blocking1)
                 rotateTargetForHead += Vector3.up;
 
             rotateTargetForHead.Normalize();
@@ -435,7 +432,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //stops look direction zero problem
             Quaternion targetRotation = Quaternion.identity;
             //angle for block
-            if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+            if (inputs.blocking0 && inputs.blocking1)
                 targetRotation = Quaternion.LookRotation(Vector3.up + Vector3.forward);
 
             targetRotation.Normalize();
@@ -876,7 +873,6 @@ public class PlayerMovement : MonoBehaviourPun {
     {
         float maxJumpDistance = 10f;
 
-        
         if (!blockNewStep)
         {
             if (leftStickMagnitude > 1f)
@@ -892,14 +888,12 @@ public class PlayerMovement : MonoBehaviourPun {
 
                 //speed
 
-                /*
-
-                //blocking //will need to make these bools, cant detect ipnut over network***
-                if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+                //blocking 
+                if (inputs.blocking0 && inputs.blocking1)
                 {
                     walkSpeedThisFrame = walkSpeedWhileBlockingOverhead * leftStickMagnitude;
                 }
-                else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
+                else if (inputs.blocking0)
                 {
                     walkSpeedThisFrame = walkSpeedWhileBlocking * leftStickMagnitude;
                 }
@@ -907,7 +901,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     walkSpeedThisFrame = walkSpeedWhilePullBack * leftStickMagnitude;
                 }
-                */
+                
 
                 //
                 //else
@@ -915,6 +909,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     //set when swipe object is started
                 }
+                //sprint
                 /*
                 else if (inputs.state.Buttons.A == XInputDotNetPure.ButtonState.Pressed)
                 {
@@ -929,15 +924,15 @@ public class PlayerMovement : MonoBehaviourPun {
                 //apply stick amount 
                 float walkStepDistanceThisFrame = walkStepDistance * leftStickMagnitude;
 
-                /*
+                
                 //change step size if blocking
-                if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed && inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+                if (inputs.blocking0 && inputs.blocking1)
                     walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
 
-                else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
+                else if (inputs.blocking0)
                     walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;
 
-                */
+                
                 //also if holding swing
                 //else 
                 if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)

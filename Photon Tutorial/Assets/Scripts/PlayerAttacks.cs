@@ -1,6 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
+using Photon.Realtime;
+using ExitGames.Client.Photon;
 
 public class PlayerAttacks : MonoBehaviour {
 
@@ -59,6 +62,7 @@ public class PlayerAttacks : MonoBehaviour {
    // GameObject shield;
     GameObject shieldPivot;
     GameObject shield;
+    public bool blocking;
    public  float shieldStartingScaleX;
     public float shieldStartingScaleY;
     float shieldStartingScaleZ;
@@ -78,7 +82,7 @@ public class PlayerAttacks : MonoBehaviour {
     void Start ()
     {
 
-
+        
         inputs = GetComponent<Inputs>();
         swipe = gameObject.GetComponent<Swipe>();
         
@@ -111,17 +115,25 @@ public class PlayerAttacks : MonoBehaviour {
             skipFrame = false;
             return;
         }
-
-        GetInputs();
+        if (GetComponent<PhotonView>().IsMine)
+        {
+            GetInputs();
+        }
+        else
+        {
+            //we will wait on network event codes to update shield use
+        }
 
 
         //check for any attacks and control them if they are attacking
         
-        
+        //we are not sending right thumbstick over network atm so dont need to check if photonView is mine (check anyway?)--dont have time check now
         swipe.SwipeOrder();
         
 
         //can block if not attacking, or changing cell height
+
+        //do all of these get updated on network player? -will block ever be called?
         if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && !GetComponent<PlayerMovement>().adjustingCellHeight)            
             Block();
     }
@@ -167,6 +179,8 @@ public class PlayerAttacks : MonoBehaviour {
 
         playerMoving = GetComponent<PlayerMovement>().moving;
 
+        //block
+
         //create a magnitude which doesn't consider camera angle, more precise, tells us exactly what the user put in the stick
       
     }
@@ -186,15 +200,15 @@ public class PlayerAttacks : MonoBehaviour {
 
         if (!autoShield)
         {
-            
-            if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)// && shieldActive)
+            //need to change this to blocking bool. only update if client is ours, else we will update from event code
+            if (inputs.blocking0)// && shieldActive)
             {
                 //if button pushed, raise shield and embiggen
 
                 //rotate towards fwd if not at level
                 Quaternion targetRot = Quaternion.LookRotation(Vector3.forward);
                    
-                    if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+                    if (inputs.blocking1)
                     {
 
                         targetRot = Quaternion.LookRotation(Vector3.forward + Vector3.up * .5f);
@@ -213,8 +227,16 @@ public class PlayerAttacks : MonoBehaviour {
 
 
                     }
-                    
 
+                //will need to change this to a roation with a start rotation and an end rotation and move it be slerp/lerp with a start time
+                //when button is pressed set this
+                Quaternion startingRotation = Quaternion.identity;
+                double startingTime = PhotonNetwork.Time;//put this up top and asign when button is pressed
+                float lerpT =(float)( PhotonNetwork.Time - startingTime);
+                //new
+                //shieldPivot.transform.localRotation  =Quaternion.Lerp(startingRotation, targetRot, lerpT);
+
+                //old
                 shieldPivot.transform.localRotation = Quaternion.RotateTowards(shieldPivot.transform.localRotation, targetRot, shieldRotationSpeed);
 
 
@@ -229,7 +251,7 @@ public class PlayerAttacks : MonoBehaviour {
                 shieldActive = true;
 
             }
-            else if (inputs.state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Released)
+            else if (!inputs.blocking0)
             {
                 //if button is let go lower shield and ensmallen
 

@@ -14,6 +14,9 @@ public class Inputs : MonoBehaviour {
     public float rightStickAxisY;
     public int playerNumber;
 
+    public bool blocking0 = false;
+    public bool blocking1 = false;
+
     private void Start()
     {
         
@@ -40,9 +43,25 @@ public class Inputs : MonoBehaviour {
         rightStickAxisX =  state.ThumbSticks.Right.X;
         rightStickAxisY = state.ThumbSticks.Right.Y;
 
+
+        if (state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
+        {
+            blocking0 = true;
+        }
+        else
+            blocking0 = false;
+
+        if (state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+        {
+            blocking1 = true;
+        }
+        else
+            blocking1 = false;
+
         
-        
-     
-        
+
+
+
     }
 }
+
