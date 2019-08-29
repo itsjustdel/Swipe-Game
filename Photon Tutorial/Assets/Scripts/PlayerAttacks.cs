@@ -38,8 +38,9 @@ public class PlayerAttacks : MonoBehaviour {
     //shield
     public float shieldActiveLength = 0.5f;
     public float shieldActiveStart = 0f;
-    public bool shieldActive = false;
-    public float shieldRotationSpeed = 20f;
+    
+    public float shieldRotationSpeed = 0.2f;
+    public float shieldScaleSpeed = 0.2f;
     public float duckSpeed = 0.1f;
 
     public Swipe swipe;
@@ -63,9 +64,18 @@ public class PlayerAttacks : MonoBehaviour {
     GameObject shieldPivot;
     GameObject shield;
     public bool blocking;
-   public  float shieldStartingScaleX;
-    public float shieldStartingScaleY;
+    public bool blockStartTimeSetRaise = false;
+    public bool blockStartTimeSetLower = true;//we can have this set at the start, the prefab will always start with shield down
+    public bool blocking1UpdatedPressed = false;
+    public bool blocking1UpdatedReleased = true;
+    public double blockStartTimeRaise;
+    public double blockStartTimeLower;
+    public Quaternion shieldStartingRotation;
+    public Vector3 shieldScaleOnButtonPress;
+    float shieldStartingScaleX;
+    float shieldStartingScaleY;
     float shieldStartingScaleZ;
+
     // GameObject swiper;
     // Use this for initialization
     public Vector3[] startStabberVertices;
@@ -118,17 +128,21 @@ public class PlayerAttacks : MonoBehaviour {
         if (GetComponent<PhotonView>().IsMine)
         {
             GetInputs();
+
+            CalculateRightStickReset();
+            //check for any attack with the right thumbstick
+            swipe.SwipeOrder();
         }
         else
         {
             //we will wait on network event codes to update shield use
+            CalculateRightStickReset();
         }
 
 
         //check for any attacks and control them if they are attacking
         
-        //we are not sending right thumbstick over network atm so dont need to check if photonView is mine (check anyway?)--dont have time check now
-        swipe.SwipeOrder();
+        
         
 
         //can block if not attacking, or changing cell height
@@ -137,13 +151,53 @@ public class PlayerAttacks : MonoBehaviour {
         if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && !GetComponent<PlayerMovement>().adjustingCellHeight)            
             Block();
     }
-  
 
-    
+    void SendShieldUpToNetwork()
+    {
+        //only send updates on shield if we are controlling this player
+        if (!GetComponent<PhotonView>().IsMine)
+            return;
+
+        byte evCode = 23; // Custom Event 23 - shield up
+        //enter the data we need in to an object array to send over the network
+        int photonViewID = GetComponent<PhotonView>().ViewID;
+        //sending ID, when shield was triggered, what rotation it was when sent, and whether second block was also used
+        object[] content = new object[] {photonViewID,blockStartTimeRaise,shieldStartingRotation, inputs.blocking1, shieldScaleOnButtonPress };
+        //send to everyone but this client
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+        //keep resending until server receives
+        SendOptions sendOptions = new SendOptions { Reliability = true };
+
+        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+    }
+
+    void SendShieldDownToNetwork()
+    {
+        //only send updates on shield if we are controlling this player
+        if (!GetComponent<PhotonView>().IsMine)
+            return;
+
+        byte evCode = 24; // Custom Event 24 - shield up
+        //enter the data we need in to an object array to send over the network
+        int photonViewID = GetComponent<PhotonView>().ViewID;
+
+        //sending ID, when shield was triggered, what rotation it was when sent, and whether second block was also used
+        object[] content = new object[] { photonViewID, blockStartTimeLower, shieldStartingRotation, inputs.blocking1, shieldScaleOnButtonPress };
+        //send to everyone but this client
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+        //keep resending until server receives
+        SendOptions sendOptions = new SendOptions { Reliability = true };
+
+        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+    }
+
 
     void GetInputs()
     {
-
 
         x = inputs.state.ThumbSticks.Right.X;
         y = -inputs.state.ThumbSticks.Right.Y;//inverted
@@ -167,15 +221,10 @@ public class PlayerAttacks : MonoBehaviour {
         //use for comparing states
         previousRightStickReset = rightStickReset;
 
-        RSMagnitude = new Vector2(x, y).magnitude;
+        //RSMagnitude = new Vector2(x, y).magnitude;
         //Debug.Log("RS playerAttacks " + RSMagnitude);
 
-        if (RSMagnitude < deadzone)
-        {
-            rightStickReset = true;
-        }
-        else
-            rightStickReset = false;
+        
 
         playerMoving = GetComponent<PlayerMovement>().moving;
 
@@ -185,6 +234,17 @@ public class PlayerAttacks : MonoBehaviour {
       
     }
 
+    void CalculateRightStickReset()
+    {
+        RSMagnitude = lookDirRightStick.magnitude;
+        if (RSMagnitude < deadzone)
+        {
+            rightStickReset = true;
+        }
+        else
+            rightStickReset = false;
+    }
+
    
 
     void Block()
@@ -192,88 +252,127 @@ public class PlayerAttacks : MonoBehaviour {
         //place shield in front of player if block button pushed
         //rotate shield high by pushin stick towards?
 
-        float shieldScaleSpeed = shieldRotationSpeed*Time.deltaTime*Mathf.PI*2;//just using cos it is a very magic number :)
-
-        Vector3 scale = (new Vector3(1f,1f,0f) * shieldScaleSpeed);//z value stays at shield thickness
-        
-      
+        Vector3 scale = (new Vector3(1f,1f,0f) * shieldScaleSpeed);//z value stays at shield thickness//also need to put this from time start?
 
         if (!autoShield)
         {
             //need to change this to blocking bool. only update if client is ours, else we will update from event code
             if (inputs.blocking0)// && shieldActive)
             {
-                //if button pushed, raise shield and embiggen
-
                 //rotate towards fwd if not at level
                 Quaternion targetRot = Quaternion.LookRotation(Vector3.forward);
+                //targets, only set if we control this player
+                if (GetComponent<PhotonView>().IsMine)
+                {
+                    //reset lower flag so next tiome the button is relesaed, we reset the time start
+                    blockStartTimeSetLower = false;
+                    //note the time we first pushed this button
+                    if (!blockStartTimeSetRaise)
+                    {
+                        //will need to change this to a roation with a start rotation and an end rotation and move it be slerp/lerp with a start time
+
+                        blockStartTimeRaise = PhotonNetwork.Time;
+                        blockStartTimeSetRaise = true;
+                        shieldStartingRotation = shieldPivot.transform.localRotation;
+                        shieldScaleOnButtonPress = shield.transform.localScale;
+
+                        SendShieldUpToNetwork();
+                    }
+
+                    //if button pushed, raise shield and embiggen
+
                    
+
                     if (inputs.blocking1)
                     {
 
                         targetRot = Quaternion.LookRotation(Vector3.forward + Vector3.up * .5f);
 
-                        //duck
-                        if (headOriginalPos.y - head.transform.localPosition.y < head.transform.localScale.y)
-                            head.transform.localPosition -= Vector3.up * duckSpeed;
+                      //  //duck
+                      //  if (headOriginalPos.y - head.transform.localPosition.y < head.transform.localScale.y)
+                      //      head.transform.localPosition -= Vector3.up * duckSpeed;
 
+                        //reset flag- we have pressed the button se when we rlease again this check will happen
+                        blocking1UpdatedReleased = false;
+
+                        if (!blocking1UpdatedPressed)
+                        {
+                            SendShieldUpToNetwork();
+                            //use bool to stop continual sending
+                            blocking1UpdatedPressed = true;
+                        }
                     }
                     else
                     {
-                        //unduck
-                        head.transform.localPosition += Vector3.up * duckSpeed;
-                        if (head.transform.localPosition.y > headOriginalPos.y)
-                            head.transform.localPosition = headOriginalPos;
+                        //reset flag for block net update - we have let go of the button
+                        blocking1UpdatedPressed = false;
+                        if (!blocking1UpdatedReleased)
+                        {
+                            SendShieldDownToNetwork();
+                            blocking1UpdatedReleased = true;
+                        }
 
-
+                    //    //unduck //do we need to lerp this and reverse time?
+                    //    head.transform.localPosition += Vector3.up * duckSpeed;
+                    //    if (head.transform.localPosition.y > headOriginalPos.y)
+                    //        head.transform.localPosition = headOriginalPos;
                     }
-
-                //will need to change this to a roation with a start rotation and an end rotation and move it be slerp/lerp with a start time
-                //when button is pressed set this
-                Quaternion startingRotation = Quaternion.identity;
-                double startingTime = PhotonNetwork.Time;//put this up top and asign when button is pressed
-                float lerpT =(float)( PhotonNetwork.Time - startingTime);
+                }
+                
+                
+                float lerpT =(float)( (PhotonNetwork.Time - blockStartTimeRaise) / shieldRotationSpeed);
+                //can put easings function here?
+                lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
                 //new
-                //shieldPivot.transform.localRotation  =Quaternion.Lerp(startingRotation, targetRot, lerpT);
+                shieldPivot.transform.localRotation  = Quaternion.Lerp(shieldStartingRotation, targetRot, lerpT);
 
-                //old
-                shieldPivot.transform.localRotation = Quaternion.RotateTowards(shieldPivot.transform.localRotation, targetRot, shieldRotationSpeed);
-
-
+               
                 //scale
+                
+                shield.transform.localScale = Vector3.Lerp(shieldScaleOnButtonPress, new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), lerpT);
 
-                if (shield.transform.localScale.x < shieldStartingScaleX)
-                    shield.transform.localScale += scale;
-
-                if (shield.transform.localScale.x > shieldStartingScaleX)
-                    shield.transform.localScale = new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ);
-
-                shieldActive = true;
+            
+                
+               
 
             }
             else if (!inputs.blocking0)
             {
+                //targets, only set if we control this player
+                if (GetComponent<PhotonView>().IsMine)
+                {
+                    //reset raise flag
+                    blockStartTimeSetRaise = false;
+
+                    if (!blockStartTimeSetLower)
+                    {
+                        blockStartTimeLower = PhotonNetwork.Time;
+                        blockStartTimeSetLower = true;
+                        shieldStartingRotation = shieldPivot.transform.localRotation;
+                        shieldScaleOnButtonPress = shield.transform.localScale;
+
+                        SendShieldDownToNetwork();
+                    }
+                }
+
+
                 //if button is let go lower shield and ensmallen
 
 
                 Quaternion targetRot = Quaternion.LookRotation(Vector3.down);
-                //targetRot = 
-                shieldPivot.transform.localRotation = Quaternion.RotateTowards(shieldPivot.transform.localRotation, targetRot, shieldRotationSpeed);
+                float lerpT = (float)((PhotonNetwork.Time - blockStartTimeLower) / shieldRotationSpeed);
+                //can put easings function here?
+                lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
+                //new
+                shieldPivot.transform.localRotation = Quaternion.Lerp(shieldStartingRotation, targetRot, lerpT);
 
-                if (shield.transform.localScale.x > 0f)
-                    shield.transform.localScale -= scale;
-
-                if (shield.transform.localScale.x < 0f)
-                    shield.transform.localScale = new Vector3(0f, 0f, shieldStartingScaleZ);
-
-
-                if (shieldPivot.transform.localRotation == targetRot)
-                    shieldActive = false;
+              
+                shield.transform.localScale = Vector3.Lerp(shieldScaleOnButtonPress, Vector3.zero, lerpT);
 
                 //unduck
-                head.transform.localPosition += Vector3.up * duckSpeed;
-                if (head.transform.localPosition.y > headOriginalPos.y)
-                    head.transform.localPosition = headOriginalPos;
+            ////    head.transform.localPosition += Vector3.up * duckSpeed;
+             //   if (head.transform.localPosition.y > headOriginalPos.y)
+             //       head.transform.localPosition = headOriginalPos;
 
             }
               
@@ -284,7 +383,7 @@ public class PlayerAttacks : MonoBehaviour {
         else if(autoShield)
         {
             shieldPivot.SetActive(true);
-            shieldActive = true;
+           
 
             Quaternion targetRot = Quaternion.LookRotation(Vector3.forward);
             shieldPivot.transform.localRotation = Quaternion.RotateTowards(shieldPivot.transform.localRotation, targetRot, shieldRotationSpeed);
@@ -298,7 +397,7 @@ public class PlayerAttacks : MonoBehaviour {
             if (shield.transform.localScale.x > shieldStartingScaleX)
                 shield.transform.localScale = new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ);
 
-            shieldActive = true;
+           
 
         }
         

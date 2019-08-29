@@ -43,8 +43,8 @@ namespace DellyWellyWelly
             player.AddComponent<PlayerStarter>();
             //add movementy script
             player.AddComponent<PlayerMovement>();//.enabled = false;//////*********disabling atm; //all enabled after sync in player starter
-                                              //add attack script
-            player.AddComponent<PlayerAttacks>().enabled = false;//////*********disabling atm
+                                                  //add attack script
+            player.AddComponent<PlayerAttacks>();//
                                                                  //add swipe attack script
             player.AddComponent<Swipe>().enabled = false;//////*********disabling atm;
                                                          //add cell height controller

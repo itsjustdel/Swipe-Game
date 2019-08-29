@@ -10,8 +10,9 @@ public class Guide : MonoBehaviour {
 
     public PlayerAttacks playerAttacks;
     public Swipe swipe;
-    Inputs inputs;
-	public static GameObject GenerateGuide(Swipe swipe)
+    public Inputs inputs;
+
+    public static GameObject GenerateGuide(Swipe swipe)
     {
         
         
@@ -39,7 +40,9 @@ public class Guide : MonoBehaviour {
         //attaching this script to player. Means we can customise from here rather than calling on geneeric statics all the time
         Guide guide = swordPrefab.AddComponent<Guide>();
         guide.swipe = swipe;
+        guide.inputs = swipe.inputs;
 
+        
         return swordPrefab;
     }
     
@@ -93,7 +96,7 @@ public class Guide : MonoBehaviour {
 
         //ChangeColourOnAngle(); //old
 
-        if (swipe.pA.shieldActive || swipe.GetComponent<PlayerMovement>().adjustingCellHeight)
+        if (inputs.blocking0 || swipe.GetComponent<PlayerMovement>().adjustingCellHeight)
         {
             GetComponent<MeshRenderer>().enabled = false;
             GetComponent<TrailRenderer>().enabled = false;

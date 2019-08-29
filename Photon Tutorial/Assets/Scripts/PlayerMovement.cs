@@ -114,7 +114,7 @@ public class PlayerMovement : MonoBehaviourPun {
     bool freeWalk = false;
 
     Swipe swipe;
-    PlayerAttacks playerAttacks;
+    //PlayerAttacks playerAttacks;
     Inputs inputs;
 
     PhotonView thisPhotonView;
@@ -127,30 +127,32 @@ public class PlayerMovement : MonoBehaviourPun {
         head = transform.Find("Head").gameObject;
         currentWalkSpeed = walkSpeed;
         swipe = GetComponent<Swipe>();
+        pA = GetComponent<PlayerAttacks>();//??
+        inputs = GetComponent<Inputs>();
+       // playerAttacks = GetComponent<PlayerAttacks>();
         //only control our own player - the network will move the rest
-        if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
+        if (!GetComponent<PhotonView>().IsMine)// && PhotonNetwork.IsConnected == true)
         {
 
             return;
         }
 
         
-        playerAttacks = GetComponent<PlayerAttacks>();
-        pA = GetComponent<PlayerAttacks>();//??
+        
+       
         codeObject = GameObject.FindGameObjectWithTag("Code");
         playerNumber = GetComponent<PlayerInfo>().playerNumber;
       
         
-
-        //asign and enable all control scripts
-        inputs = GetComponent<Inputs>();
+        //enable if we are controlling this
+      
         inputs.enabled = true;
 
        
         swipe.enabled = true;
 
-        
-        playerAttacks.enabled = true;
+        pA.enabled = true;
+       // playerAttacks.enabled = true;
         
         lastTarget = transform.position;//using?>
         
@@ -162,7 +164,7 @@ public class PlayerMovement : MonoBehaviourPun {
     // Update is called once per frame
     void FixedUpdate()
     {
-        thisPhotonView = GetComponent<PhotonView>();
+        //thisPhotonView = GetComponent<PhotonView>();
 
         //adjust speed slowly if between states (bumper etc)
         Inertias();
@@ -196,9 +198,9 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         */
 
-        if ((photonView.IsMine))
+        if (GetComponent<PhotonView>().IsMine)
         {
-            GetInputs();
+            GetInputs();//this should all be done in inputs script and then referenced from here
 
 
             //send inputs to other clients for prediction            
@@ -235,17 +237,26 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             LookToGround();
         }
-        else if(playerAttacks.shieldActive)
+        else if(inputs.blocking0)
         {
             RotateHeadToFaceRightStick();
+
+            if (inputs.blocking1)
+            {
+                //enter duck state
+            }
         }
         else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
         {
             RotateForSwipe();
         }
+        
         else if (!swipe.whiffed && !swipe.overheadSwiping)
             RotateHeadToFaceRightStick();
       
+        
+        
+
     }
 
     void GetInputs()
@@ -255,8 +266,7 @@ public class PlayerMovement : MonoBehaviourPun {
         if (usePad)
         {
             x = inputs.state.ThumbSticks.Left.X;
-            y = -inputs.state.ThumbSticks.Left.Y;//inverted
-         
+            y = -inputs.state.ThumbSticks.Left.Y;//inverted         
         }
         else
         {
@@ -672,7 +682,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //bool debug = false;
         //walking
         
-        if (!walking && !bumped && thisPhotonView.IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
+        if (!walking && !bumped && GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
         {
             WalkTarget(blockNewStep, thisLook);
            
@@ -731,14 +741,14 @@ public class PlayerMovement : MonoBehaviourPun {
    
     void SendInputsToNetwork()
     {
-        if (!PhotonNetwork.IsMasterClient)
+      //  if (!PhotonNetwork.IsMasterClient) ///**** testing. otherwise master wont get rotation info otherwise?
         {
             
             byte evCode = 30; // Custom Event 30: client inputs
                               
             int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
 
-            object[] content = new object[] { thisPhotonViewID, new float[] { x, y } };
+            object[] content = new object[] { thisPhotonViewID, new float[] { x, y }, pA.lookDirRightStick };
             //send to everyone but this client
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 

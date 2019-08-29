@@ -138,7 +138,10 @@ namespace DellyWellyWelly
 
             if (overhead)
             {
-
+                Swipe swipe = sO.parentPlayer.GetComponent<Swipe>();
+                swipe.overheadSwiping = true;
+                swipe.overheadAvailable = false;
+                //add lunge/side swipe?
                 sO.overheadSwipe = true;
                        
                 //pass planned points
@@ -358,21 +361,76 @@ namespace DellyWellyWelly
 
             }
 
+            //shield
+
+            if (eventCode == 23)
+            {
+                Debug.Log("[CLIENT] - Getting shield UP data");
+                object[] customData = (object[])photonEvent.CustomData;
+
+                int photonViewID = (int)customData[0];
+
+                double shieldStartTime = (double)customData[1];
+                Quaternion shieldStartRotation = (Quaternion)customData[2];
+                bool blocking1 = (bool)customData[3];
+                Vector3 shieldScaleOnButtonPress = (Vector3)customData[4];
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+
+                //enter the block button into the inputs class on client player
+                Inputs inputs = viewOwner.GetComponent<Inputs>();
+                //and tell where shield is/size etc
+                PlayerAttacks pA = viewOwner.GetComponent<PlayerAttacks>();
+                inputs.blocking0= true;
+                inputs.blocking1 = blocking1;
+                pA.blockStartTimeRaise = shieldStartTime;
+                pA.shieldStartingRotation = shieldStartRotation;
+                pA.shieldScaleOnButtonPress = shieldScaleOnButtonPress;
+            }
+
+            if (eventCode == 24)
+            {
+                Debug.Log("[CLIENT] - Getting shield DOWN data");
+                object[] customData = (object[])photonEvent.CustomData;
+
+                int photonViewID = (int)customData[0];
+
+                double shieldStartTime = (double)customData[1];
+                Quaternion shieldStartRotation = (Quaternion)customData[2];
+                bool blocking1 = (bool)customData[3];
+                Vector3 shieldScaleOnButtonPress = (Vector3)customData[4];
+
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+
+                //enter the block button into the inputs class on client player
+                Inputs inputs = viewOwner.GetComponent<Inputs>();
+                //and tell where shield is/size etc
+                PlayerAttacks pA = viewOwner.GetComponent<PlayerAttacks>();
+                inputs.blocking0 = false;
+                inputs.blocking1 = blocking1;
+                pA.blockStartTimeLower = shieldStartTime;
+                pA.shieldStartingRotation = shieldStartRotation;
+                pA.shieldScaleOnButtonPress = shieldScaleOnButtonPress;
+            }
+
             //30+ predictive
-            if(eventCode == 30)
+            if (eventCode == 30)
             {
                 
                 //receiving constant stream of unreliable client input
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
                 float[] inputs = (float[])customData[1];
+                Vector3 rightStickLookDir = (Vector3)customData[2];
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
-                if (viewOwner != null)// || !PhotonNetwork.IsMasterClient)//happens on connect // master doesnt need predcition?
+                if (pM != null)// && inputs !=null)// || !PhotonNetwork.IsMasterClient)//happens on connect // master doesnt need predcition?
                 {
                     pM.x = inputs[0];
                     pM.y = inputs[1];
                 }
+
+                Debug.Log("sending unreliable");
+                viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
 
             }
 
@@ -380,7 +438,7 @@ namespace DellyWellyWelly
             //swipe on swipe hit
             if (eventCode == 40)
             {
-                //receiving constant stream of unreliable client input
+                
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
                 
@@ -393,10 +451,10 @@ namespace DellyWellyWelly
                 sO.impactDirection = (Vector3)customData[1];//need impact point? check when reworking
                 sO.DestroySwipe();
             }
-            //swipe on player
+            //swipe on self player
             if (eventCode == 41)
             {
-                //receiving constant stream of unreliable client input
+                
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
                 
@@ -410,7 +468,7 @@ namespace DellyWellyWelly
                 thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
             }
-
+            //swipe on other player
             if (eventCode == 42)
             {
 

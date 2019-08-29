@@ -619,8 +619,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             parentPlayer.GetComponent<Swipe>().whiffed = true;
 
             activeTime = playerClassValues.overheadWhiffCooldown;
-            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);
-            
+            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);            
+
             DeactivateSwipe();
             Destroy(this.gameObject);
 

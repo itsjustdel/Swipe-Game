@@ -58,10 +58,8 @@ public class Inputs : MonoBehaviour {
         else
             blocking1 = false;
 
-        
-
-
-
     }
+
+    
 }
 

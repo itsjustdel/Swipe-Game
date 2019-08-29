@@ -14,7 +14,7 @@ public class Swipe : MonoBehaviour {
     public List<Vector3> recordedInput = new List<Vector3>();
     //classes we need access to
     public PlayerAttacks pA;
-    Inputs inputs;
+    public Inputs inputs;
     public GameObject head;
     public GameObject swiper;
 
@@ -236,13 +236,13 @@ public class Swipe : MonoBehaviour {
 
         GetSwipePoint();
 
-        if (!pA.shieldActive && !GetComponent<PlayerMovement>().adjustingCellHeight)
+        if (!inputs.blocking0 && !GetComponent<PlayerMovement>().adjustingCellHeight)
         {
             //look for user input and determine which swing to start
 
             SwipePlanning();
         }
-        else if (pA.shieldActive || !GetComponent<PlayerMovement>().adjustingCellHeight)
+        else if (inputs.blocking0 || !GetComponent<PlayerMovement>().adjustingCellHeight)
         {
             ResetFlags();
         }
