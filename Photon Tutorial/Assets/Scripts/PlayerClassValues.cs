@@ -46,6 +46,12 @@ public class PlayerClassValues : MonoBehaviour {
 
     public float overheadHitHealthReduce = 33.4f;
     public float lungeHitHealthReduce = 15f;
+
+    //time to lean in and pull shield up
+    public float blockRaise = .5f;
+    public float blockLower = .5f;
+    //smallest time block will be locked and activated
+    public float blockMinimum = 2f;
     //
 
 

@@ -217,45 +217,50 @@ public class PlayerMovement : MonoBehaviourPun {
 
 
 
-        //rotate player
-        if (!bumped)
-            RotateToFaceClosestPlayer();
+        
 
         BasicMove();
 
         //UpdateCurrentCell();//to go back in
-        
-       
+
+
 
         //rotations for body
 
-        
+
         //to go back in
 
+        //rotate player
+
         //rotations for head
-        if(adjustingCellHeight)
+        if (GetComponent<PlayerAttacks>().blocking)//test blocking- if blocking, should be stuck in animation -ok it seems)
+        {
+            //rotations are done in player attacks in Block()
+        }
+        else if (adjustingCellHeight)
         {
             LookToGround();
         }
-        else if(inputs.blocking0)
-        {
-            RotateHeadToFaceRightStick();
-
-            if (inputs.blocking1)
-            {
-                //enter duck state
-            }
-        }
         else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
         {
+            Debug.Log("rotating for swipe");
             RotateForSwipe();
         }
-        
         else if (!swipe.whiffed && !swipe.overheadSwiping)
+        {
+            //Debug.Log("Rotating to face right stick");
+            
+
+            //rotate transform to either look at closest player or face the direciton of movement(left stick)
+                RotateToFaceClosestPlayer();
+            //rotate head back to neutral
             RotateHeadToFaceRightStick();
-      
-        
-        
+        }
+    
+
+
+
+
 
     }
 
@@ -349,7 +354,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
     }
 
-    void RotateToFaceRightStick()
+    void RotateToFaceRightStick()//old
     {
         //get target cell, cell which stick is pointing closest to
         pA.targetCellRightStick = pA.NearestCellToStickAngle(pA.lookDirRightStick);
@@ -403,7 +408,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (swipe.currentSwipeObject == null)
         {
-            RotateHeadToFaceRightStick();
+            RotateHeadToFaceRightStick(); 
         }
 
 
@@ -418,13 +423,13 @@ public class PlayerMovement : MonoBehaviourPun {
         //look out for overhead block, this is cosmetic
 
 
-
+        //if blocking, we shouldnt be here
 
         if (!pA.rightStickReset)
         {
             Vector3 rotateTargetForHead = pA.lookDirRightStick.normalized;
             //angle for block
-            if (inputs.blocking0 && inputs.blocking1)
+            if (inputs.blocking0 && inputs.blocking1)//?
                 rotateTargetForHead += Vector3.up;
 
             rotateTargetForHead.Normalize();
@@ -899,11 +904,13 @@ public class PlayerMovement : MonoBehaviourPun {
                 //speed
 
                 //blocking 
-                if (inputs.blocking0 && inputs.blocking1)
-                {
-                    walkSpeedThisFrame = walkSpeedWhileBlockingOverhead * leftStickMagnitude;
-                }
-                else if (inputs.blocking0)
+
+                //if (inputs.blocking0 && inputs.blocking1) //second block not in
+                //{
+                //    walkSpeedThisFrame = walkSpeedWhileBlockingOverhead * leftStickMagnitude;
+                // }
+                //else 
+                if (pA.blocking)
                 {
                     walkSpeedThisFrame = walkSpeedWhileBlocking * leftStickMagnitude;
                 }
@@ -934,12 +941,13 @@ public class PlayerMovement : MonoBehaviourPun {
                 //apply stick amount 
                 float walkStepDistanceThisFrame = walkStepDistance * leftStickMagnitude;
 
-                
-                //change step size if blocking
-                if (inputs.blocking0 && inputs.blocking1)
-                    walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
 
-                else if (inputs.blocking0)
+                //change step size if blocking
+                // if (inputs.blocking0 && inputs.blocking1)
+                //   walkStepDistanceThisFrame = shieldStepDistanceOverhead * leftStickMagnitude;
+
+                //else 
+                if (pA.blocking)
                     walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;
 
                 

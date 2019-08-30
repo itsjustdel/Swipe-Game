@@ -236,13 +236,13 @@ public class Swipe : MonoBehaviour {
 
         GetSwipePoint();
 
-        if (!inputs.blocking0 && !GetComponent<PlayerMovement>().adjustingCellHeight)
+        if (!pA.blocking && !GetComponent<PlayerMovement>().adjustingCellHeight)
         {
             //look for user input and determine which swing to start
 
             SwipePlanning();
         }
-        else if (inputs.blocking0 || !GetComponent<PlayerMovement>().adjustingCellHeight)
+        else if (pA.blocking || !GetComponent<PlayerMovement>().adjustingCellHeight)
         {
             ResetFlags();
         }
