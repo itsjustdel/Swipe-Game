@@ -365,51 +365,51 @@ namespace DellyWellyWelly
 
             if (eventCode == 23)
             {
+
                 Debug.Log("[CLIENT] - Getting shield UP data");
                 object[] customData = (object[])photonEvent.CustomData;
 
                 int photonViewID = (int)customData[0];
 
-                double shieldStartTime = (double)customData[1];
-                Quaternion shieldStartRotation = (Quaternion)customData[2];
-                bool blocking1 = (bool)customData[3];
-                Vector3 shieldScaleOnButtonPress = (Vector3)customData[4];
+                //unpack
+                bool blocking = (bool)customData[1];
+                bool blockRaising = (bool)customData[2];
+                bool blockLowering = (bool)customData[3];
+                Quaternion shieldStartingRotation = (Quaternion)customData[4];
+                Vector3 shieldScaleOnButtonPress = (Vector3)customData[5];
+                Quaternion headStartingRotationOnBlock = (Quaternion)customData[6];
+                Vector3 headTargetDirectionOnBlock = (Vector3)customData[7];
+                Vector3 headStartPos = (Vector3)customData[8];
+                double blockStartTime = (double)customData[9];
+
+                //apply data from network master to this client
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
-
                 //enter the block button into the inputs class on client player
-                Inputs inputs = viewOwner.GetComponent<Inputs>();
-                //and tell where shield is/size etc
+
                 PlayerAttacks pA = viewOwner.GetComponent<PlayerAttacks>();
-                inputs.blocking0= true;
-                inputs.blocking1 = blocking1;
-                pA.blockStartTimeRaise = shieldStartTime;
-                pA.shieldStartingRotation = shieldStartRotation;
+                //apply
+                pA.blocking = blocking;
+                pA.blockRaising = blockRaising;
+                pA.blockLowering = blockLowering;
+                pA.shieldStartingRotation = shieldStartingRotation;
                 pA.shieldScaleOnButtonPress = shieldScaleOnButtonPress;
-            }
+                pA.headStartingRotationOnBlock = headStartingRotationOnBlock;
+                pA.headTargetDirectionOnBlock = headTargetDirectionOnBlock;
+                pA.headStartingRotationOnBlock = headStartingRotationOnBlock;
+                pA.headStartPos = headStartPos;
+                pA.blockStartTime = blockStartTime;
 
-            if (eventCode == 24)
-            {
-                Debug.Log("[CLIENT] - Getting shield DOWN data");
-                object[] customData = (object[])photonEvent.CustomData;
-
-                int photonViewID = (int)customData[0];
-
-                double shieldStartTime = (double)customData[1];
-                Quaternion shieldStartRotation = (Quaternion)customData[2];
-                bool blocking1 = (bool)customData[3];
-                Vector3 shieldScaleOnButtonPress = (Vector3)customData[4];
-
-                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
-
-                //enter the block button into the inputs class on client player
+                /*
+                //do we need, ? - just make sure other scripts are referencing pA.blocking and not any inputs
                 Inputs inputs = viewOwner.GetComponent<Inputs>();
-                //and tell where shield is/size etc
-                PlayerAttacks pA = viewOwner.GetComponent<PlayerAttacks>();
-                inputs.blocking0 = false;
-                inputs.blocking1 = blocking1;
-                pA.blockStartTimeLower = shieldStartTime;
-                pA.shieldStartingRotation = shieldStartRotation;
-                pA.shieldScaleOnButtonPress = shieldScaleOnButtonPress;
+                if (blocking)
+                    inputs.blocking0 = true;
+                //blocking1 still to be done (if used in the end)
+                else
+                    inputs.blocking0 = false;
+                */
+
+
             }
 
             //30+ predictive
@@ -429,7 +429,7 @@ namespace DellyWellyWelly
                     pM.y = inputs[1];
                 }
 
-                Debug.Log("sending unreliable");
+               // Debug.Log("sending unreliable");
                 viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
 
             }
