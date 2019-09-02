@@ -334,7 +334,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void Inertias()
     {
-        if (bumpedOther)
+        if (bumpedOther)//confsued about bumped other. why not just bumped?
         {
             if (currentWalkSpeed < walkSpeedThisFrame)
                 currentWalkSpeed += bumpInertia;
@@ -417,7 +417,7 @@ public class PlayerMovement : MonoBehaviourPun {
     {
 
         float tempRotSpeed = pA.headRotationSpeed;
-        if (GetComponent<PlayerMovement>().bumpedOther)
+        if (bumpedOther)
             tempRotSpeed = pA.headRotationSpeedWhenBumping;
 
         //look out for overhead block, this is cosmetic

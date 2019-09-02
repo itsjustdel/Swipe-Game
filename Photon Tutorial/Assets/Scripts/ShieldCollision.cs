@@ -16,20 +16,34 @@ public class ShieldCollision : MonoBehaviour {
 
             PlayerMovement pMthis = transform.parent.parent.parent.GetComponent<PlayerMovement>();
             PlayerMovement pMother = collision.transform.parent.parent.GetComponent<PlayerMovement>();
-            pMother.bumped = true;
+            
 
             //consider if other player hasd a walk target
             Vector3 walkTargetOther = pMother.transform.position;
+            Vector3 walkTargetThis = pMthis.transform.position;
             if (pMother.walking)
                 walkTargetOther = pMother.walkTarget;
+            if (pMthis.walking)
+                walkTargetThis = pMthis.walkTarget;
 
-            pMother.bumpTarget = pMother.transform.position + (pMother.transform.position - pMthis.transform.position) + (pMother.transform.position - walkTargetOther);
-
+            //calculate where to shoot a ray from. 
+            Vector3 otherBumpTarget = pMother.transform.position + (pMother.transform.position - pMthis.transform.position) + (pMother.transform.position - walkTargetOther);
+            Vector3 thisbumpTarget = pMthis.transform.position;// + (pMthis.transform.position - pMother.transform.position) + (pMthis.transform.position - walkTargetThis);
+            //tell movement script where to search for a bump point - doing this in case there is an edge near
+            pMother.bumpShootfrom = otherBumpTarget;
+            pMthis.bumpShootfrom = thisbumpTarget;
             //alter shield beares move speed to infer hit
-            pMthis.currentWalkSpeed = 0f;
+            pMother.currentWalkSpeed = 0f;
+            
             //reset walk so it makes a new start and end point with slowed walk speed
+            //pMthis.walking = false;
+            //pMthis.bumped = true;
+
+            //this? - 
+            pMthis.currentWalkSpeed = 0f;
             pMthis.walking = false;
-            pMthis.bumpedOther = true;
+            pMother.bumped = true;
+            
 
             //set vibration  - not just re using bump instead of making shield bump var
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;

@@ -624,7 +624,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             DeactivateSwipe();
             Destroy(this.gameObject);
 
-            // parentPlayer.GetComponent<Swipe>().ResetFlags();
+            parentPlayer.GetComponent<Swipe>().ResetFlags();
 
             //  Debug.Log("swipe time taken = " + (Time.time - swipeTimeStart));
 

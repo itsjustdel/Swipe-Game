@@ -172,9 +172,9 @@ namespace DellyWellyWelly
             shield.name = "Shield";
             shield.layer = LayerMask.NameToLayer("Shield");
             shield.transform.localScale = new Vector3(shieldX, shieldY, shieldZ);
-            shield.AddComponent<ShieldCollision>().enabled = false; /////disabling atm//on trigger disabled on disable, dont think so..
+            shield.AddComponent<ShieldCollision>();//.enabled = false; /////disabling atm//on trigger disabled on disable, dont think so..//enabled doesnt amtter anyway, ontriggerenable happens in late updaye automatically
             shield.GetComponent<BoxCollider>().isTrigger = true;
-            shield.GetComponent<BoxCollider>().enabled = false;/////disabling
+            shield.GetComponent<BoxCollider>();//.enabled = false;/////disabling
             shield.AddComponent<Rigidbody>().isKinematic = true;
             //we will use a shield pivot
             GameObject shieldPivot = new GameObject();

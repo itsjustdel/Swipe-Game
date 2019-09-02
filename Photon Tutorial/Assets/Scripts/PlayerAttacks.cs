@@ -434,7 +434,7 @@ public class PlayerAttacks : MonoBehaviour {
             shield.transform.localScale = Vector3.Lerp(new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), Vector3.zero, lerpT);
 
             //once animation has got to 1f lerp (copmplete) reset flag to allow another block
-            if (lerpT > 1f)
+            if (lerpT >= 1f)
             {
                 blocking = false;
                 blockLowering = false;
