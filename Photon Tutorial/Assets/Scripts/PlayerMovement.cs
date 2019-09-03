@@ -243,7 +243,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
         {
-            Debug.Log("rotating for swipe");
+            //Debug.Log("rotating for swipe");
             RotateForSwipe();
         }
         else if (!swipe.whiffed && !swipe.overheadSwiping)
@@ -252,16 +252,10 @@ public class PlayerMovement : MonoBehaviourPun {
             
 
             //rotate transform to either look at closest player or face the direciton of movement(left stick)
-                RotateToFaceClosestPlayer();
+            RotateToFaceClosestPlayer();
             //rotate head back to neutral
             RotateHeadToFaceRightStick();
         }
-    
-
-
-
-
-
     }
 
     void GetInputs()

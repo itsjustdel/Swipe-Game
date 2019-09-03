@@ -1340,6 +1340,17 @@ public class Swipe : MonoBehaviour {
                     pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
                     pV.shakeTimerShield += pV.shieldHitLength;
 
+                    //send resolution to network
+                    byte evCode = 43; // Custom Event 43: send shield hit to clients
+
+                    int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
+
+                    object[] content = new object[] { photonViewID };
+                    //send to everyone but this client
+                    RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+                    SendOptions sendOptions = new SendOptions { Reliability = true };
+                    PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
                     //don't look any further, shield trumps all
                     return;
                 }

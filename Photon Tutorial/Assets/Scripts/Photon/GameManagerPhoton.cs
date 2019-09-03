@@ -604,7 +604,40 @@ namespace DellyWellyWelly
                 }
             }
 
+            //swipe on shield
+            if(eventCode == 43)
+            {
+                
+
+
+                //tell client's palyer to destroy swipe and rest player - they hit a shield
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                Swipe swipe = viewOwner.GetComponent<Swipe>();
+
+                GameObject thisSwipeObject = swipe.currentSwipeObject;
+
+                thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+
+                SwipeObject thisSwipeObjectScript = thisSwipeObject.GetComponent<SwipeObject>();
+                thisSwipeObjectScript.hitShield = true;
+                thisSwipeObjectScript.DestroySwipe();
+
+                if (thisSwipeObjectScript.activeSwipe)
+                {
+                    swipe.finishTimeSriking = PhotonNetwork.Time;
+                    swipe.waitingOnResetOverhead = true;
+                    swipe.buttonSwipeAvailable = false;
+                    swipe.blocked = true;
+
+                    //reset so clients avatar is looking where they are meant to be looking or not etc
+                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                }
+
             }
+
+        }
 
 
         #endregion

@@ -994,7 +994,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                 if (thisHits[j].transform.gameObject.layer == LayerMask.NameToLayer("Shield"))
                 {
                     // hitShield = true;
-                    thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                   // thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
 
                     SwipeObject thisSwipeObjectScript = thisSwipeObject.GetComponent<SwipeObject>();//
                     thisSwipeObjectScript.impactDirection = impactDir;// (thisHits[j].point - transform.position).normalized;
@@ -1413,8 +1413,9 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     public void DestroySwipe()
     {
+        if(hitShield || hitByOverhead)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
 
-        GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
         parentPlayer.GetComponent<Swipe>().ResetFlags();
 
         enabled = false;

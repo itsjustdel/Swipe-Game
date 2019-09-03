@@ -154,8 +154,6 @@ public class PlayerAttacks : MonoBehaviour {
         
 
         //can block if not attacking, or changing cell height
-
-        //do all of these get updated on network player? -will block ever be called?
         if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && !GetComponent<PlayerMovement>().adjustingCellHeight)            
             Block();
     }
@@ -242,41 +240,23 @@ public class PlayerAttacks : MonoBehaviour {
         //rotate shield high by pushin stick towards?
 
         Vector3 scale = (new Vector3(1f,1f,0f) * shieldScaleSpeed);//z value stays at shield thickness//also need to put this from time start?
-        
-        if (!autoShield)
+
+        if (autoShield)
+            inputs.blocking0 = true;
+
+        //if we control this player, we can update any block events
+        if (GetComponent<PhotonView>().IsMine)
         {
-            //if we control this player, we can update any block events
-            if (GetComponent<PhotonView>().IsMine)
-            {
-                //update locally
-                BlockTargets();
-                //update network
-                SendBlockTargetsToNetwork();
-            }
-
-            //move shield etc if values allow
-            BlockLerp();
-
+            //update locally
+            BlockTargets();
+            //update network
+            SendBlockTargetsToNetwork();
         }
 
-        else if(autoShield)
-        {
-            shieldPivot.SetActive(true);
-           
-
-            Quaternion targetRot = Quaternion.LookRotation(Vector3.forward);
-            shieldPivot.transform.localRotation = Quaternion.RotateTowards(shieldPivot.transform.localRotation, targetRot, shieldRotationSpeed);
+        //move shield etc if values allow
+        BlockLerp();
 
 
-            //scale
-
-            if (shield.transform.localScale.x < shieldStartingScaleX)
-                shield.transform.localScale += scale;
-
-            if (shield.transform.localScale.x > shieldStartingScaleX)
-                shield.transform.localScale = new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ);
-
-        }
     }
 
     void BlockTargets()
@@ -285,7 +265,7 @@ public class PlayerAttacks : MonoBehaviour {
 
         //need to change this to blocking bool. only update if client is ours, else we will update from event code
         //player needs to input block button and direction to start a block action, can't set new block until old block is finished
-        if (inputs.blocking0 && lookDirRightStick.magnitude > deadzone && !blocking)
+        if (inputs.blocking0  && !blocking)
         {
             //set flag to keep track, this will be set to false after timer runs out
             blocking = true;
@@ -298,7 +278,13 @@ public class PlayerAttacks : MonoBehaviour {
 
             //set start and end rotation targets
             headStartingRotationOnBlock = head.transform.rotation;
-            headTargetDirectionOnBlock = lookDirRightStick;
+
+            //if no right stick input, point shield in the direction the player is facing
+            //else face towards the stick direction
+            if (lookDirRightStick.magnitude > deadzone)
+                headTargetDirectionOnBlock = lookDirRightStick;
+            else
+                headTargetDirectionOnBlock = head.transform.forward;//or transform fwd?
 
             headStartPos = head.transform.localPosition;
 
@@ -313,7 +299,7 @@ public class PlayerAttacks : MonoBehaviour {
 
         }
         //if timer has run its course we can reset the block, we can keep block input down if we wish to hold on for longer
-        else if (PhotonNetwork.Time - blockStartTime > swipe.playerClassValues.blockMinimum && blockRaising == true && (lookDirRightStick.magnitude < deadzone || !inputs.blocking0))
+        else if (PhotonNetwork.Time - blockStartTime > swipe.playerClassValues.blockMinimum && blockRaising == true &&  !inputs.blocking0)//)//(lookDirRightStick.magnitude < deadzone ||
         {
             Debug.Log("unblocking");
             //start unwind animation
