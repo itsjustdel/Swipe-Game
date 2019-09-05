@@ -27,7 +27,7 @@ namespace DellyWellyWelly
             GetPlayerPositions();
         }
 
-        public void GetPlayerPositions()
+        public void GetPlayerPositions()//called from game manager photon
         {
             Debug.Log("Get Player Positions - Client");
 

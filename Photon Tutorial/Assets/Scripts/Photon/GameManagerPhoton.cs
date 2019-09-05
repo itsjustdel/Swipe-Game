@@ -82,14 +82,14 @@ namespace DellyWellyWelly
 
             //now we have our map, spawn a player!
             //check if master gets a player
-
-            /*
+            
+             
             if(!PhotonNetwork.IsMasterClient )
                 SpawnPlayer();
             else if(masterGetsPlayer)
                 SpawnPlayer();
 
-            */
+            
         }
      
 

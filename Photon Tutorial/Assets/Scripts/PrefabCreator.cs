@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using Photon.Pun;
+using Photon.Realtime;
+//using ExitGames.Client.Photon;
+
 namespace DellyWellyWelly
 {
     public class PrefabCreator : MonoBehaviour
     {
 
-        private int teamNumber = 0;
+        
         private float baseSize = 1f;
         private float headSize = 3f;
         private float headHeight = 3f;
@@ -17,10 +21,34 @@ namespace DellyWellyWelly
         // Start is called before the first frame update
         void Start()
         {
-            Meshes();//and sound   
+            //team number
+            int teamNumber = 0;
+            if (PhotonNetwork.PlayerList.Length % 2 != 0)
+            {
+                teamNumber = 0;
+            }
+            else
+                teamNumber = 1; 
+
+            //make player
+            GameObject player = Meshes(teamNumber);//and sound
+
+            //find spawn
+            List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
+            List<GameObject> spawns = Spawner.SpawnCells(cells, 2);//teams    
+            
+            GameObject homeCell = null;
+            if (teamNumber == 0)
+                homeCell = spawns[0];
+            else
+                homeCell = spawns[1];
+            
+            player.GetComponent<PlayerInfo>().homeCell = homeCell;
+
+
         }
 
-        void Meshes()
+        GameObject Meshes(int teamNumber)
         {
             GameObject player = gameObject;
             player.name = "Player " + teamNumber.ToString();
@@ -35,7 +63,7 @@ namespace DellyWellyWelly
 
             //add info script
             PlayerInfo pI = player.AddComponent<PlayerInfo>();
-            pI.playerNumber = teamNumber;
+            //pI.playerNumber = teamNumber;
             // pI.homeCell = homeCell;
 
 
@@ -251,7 +279,7 @@ namespace DellyWellyWelly
 
             }
 
-
+            return player;
 
 
             //audio
@@ -268,5 +296,13 @@ namespace DellyWellyWelly
                 //player.transform.position = Vector3.right * Photon.Pun.PhotonNetwork.PlayerList.Length *2;
 
         }
+
+        void Colours()
+        {
+
+        }
+
+
     }
 }
+

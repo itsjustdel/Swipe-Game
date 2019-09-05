@@ -24,7 +24,7 @@ public class Spawner : MonoBehaviour {
     public float shieldX = .66f;
     public float shieldY= .66f;
     public float shieldZ = 0.2f;
-    public int playerAmount = 1;
+    public int playerAmount = 2;//set this?
     public List<GameObject> spawnedCells = new List<GameObject>();
      List<GameObject> cells;
     
@@ -38,13 +38,13 @@ public class Spawner : MonoBehaviour {
         cells = GetComponent<MeshGenerator>().cells;
 
 
-        List<GameObject> spawnCells = SpawnCells();
+        List<GameObject> spawnCells = SpawnCells(cells, playerAmount);
         SpawnPlayers(spawnCells);
 
 
     }
 
-    List<GameObject> SpawnCells()
+    public static List<GameObject> SpawnCells(List<GameObject> cells, int teams)
     {
 
         List<GameObject> spawnCells = new List<GameObject>();
@@ -71,7 +71,7 @@ public class Spawner : MonoBehaviour {
         //move round an amount randomly to keep any advantage random (only applicable to 3 player i think)
         float rValue = 0.1026664f;// Random.Range(0f, 0.5f);// 0.9758801f;//  Random.value;
        // Debug.Log(rValue);
-        float spin = (360f / playerAmount) * rValue;
+        float spin = (360f / teams) * rValue;
         bool allFound = false;
         float i = -180;// + spin;
         int found = 0;
@@ -105,10 +105,10 @@ public class Spawner : MonoBehaviour {
                 spawnCells.Add(toSort[j]);
 
                 found++;
-                if (found == playerAmount)
+                if (found == teams)
                     allFound = true;
 
-                i += 360f / playerAmount;
+                i += 360f / teams;
                 //restart loop
                 if (i >= 180)
                 {

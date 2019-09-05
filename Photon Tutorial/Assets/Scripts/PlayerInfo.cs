@@ -5,10 +5,11 @@ using UnityEngine;
 public class PlayerInfo : MonoBehaviour {
 
     //holds info about player, player number, health, points etc
-    public bool respawn = false;
-    public bool playerDespawned = false;
+    public bool respawn = true;//forces a respawn instantly
+    public bool playerDespawned = true;
     public bool playerCanRespawn = true;
-    public int playerNumber;
+    public int playerNumber;//controller
+    public int teamNumber = 0;
     public GameObject currentCell;
     public GameObject homeCell;
     public bool beenHit = false;

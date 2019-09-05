@@ -161,10 +161,10 @@ namespace DellyWellyWelly
 
 
                 //we can now load our map
-                //GetComponent<GameManagerPhoton>().LoadArena();
+                GetComponent<GameManagerPhoton>().LoadArena();
                 //spawn with out map atm
               //  if(PhotonNetwork.IsMasterClient == false)
-                    GameManagerPhoton.SpawnPlayer();
+              //    GameManagerPhoton.SpawnPlayer();
                 
 
                 /*
