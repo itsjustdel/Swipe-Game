@@ -55,6 +55,9 @@ namespace DellyWellyWelly
                 SendOptions sendOptions = new SendOptions { Reliability = true };
                 RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient };
                 PhotonNetwork.RaiseEvent(evCode, null,raiseEventOptions,sendOptions);
+
+
+                
             }
             //if we are the master client, we need to generate a map
             else
@@ -77,17 +80,14 @@ namespace DellyWellyWelly
 
                 mapLoaded = true;
 
-                
+                if(masterGetsPlayer)
+                    SpawnPlayer();
+
+                ActivatePlayers();
+
             }
 
-            //now we have our map, spawn a player!
-            //check if master gets a player
-            
              
-            if(!PhotonNetwork.IsMasterClient )
-                SpawnPlayer();
-            else if(masterGetsPlayer)
-                SpawnPlayer();
 
             
         }
@@ -100,6 +100,21 @@ namespace DellyWellyWelly
           
             Vector3 spawnPos = Vector3.zero;            
             PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity, 0);
+        }
+
+        void ActivatePlayers()
+        {
+            //and enable all network players photon instantiated on join -  we kept them disabled
+            List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
+            
+            Debug.Log("players count = " + players.Count);
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].GetComponent<PlayerStarter>() == null)
+                    Debug.Log("no player start");
+
+                players[i].GetComponent<PlayerStarter>().enabled = true;
+            }
         }
 
         void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,double swipeTimeStart,int photonViewID)
@@ -209,6 +224,14 @@ namespace DellyWellyWelly
                         //start generation
                         mg.Lloyds();
 
+                        //now we can spawn player, we need the map to havew been created before we could do this
+                        SpawnPlayer();
+
+                        //turn all players on!
+                        ActivatePlayers();
+
+
+
                     }
                     else
                         Debug.Log("Client already received map data - ignore");
@@ -218,33 +241,52 @@ namespace DellyWellyWelly
 
               
             }
-            //request position of others //client asks master this
+            //game state request
+            //request position of others //client asks master this //
             if (eventCode == 10)
             {
-                Debug.Log("Event 10 -[MASTER] - client requesting other positions on join");
+                Debug.Log("Event 10 -[MASTER] - client requesting game state");
 
                 //get photon view id of who passed this call
                 object[] customData = (object[])photonEvent.CustomData;                
                 int initialPhotonViewID = (int)customData[0];
 
+                //The first thing we will do is find the gameobject which matches the photon view and enable it, building the meshes and setting team
+                PhotonView passedPhotonView = PhotonView.Find(initialPhotonViewID);
+                //start script to build
+                passedPhotonView.GetComponent<PlayerStarter>().enabled = true;
 
-                GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-                int[] views = new int[players.Length];
-                Vector3[] positions = new Vector3[players.Length];
 
-                for (int i = 0; i < players.Length; i++)
+                List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;// GameObject.FindGameObjectsWithTag("Player");
+                int[] views = new int[players.Count];
+                Vector3[] positions = new Vector3[players.Count];
+                float[] healths = new float[players.Count];
+                int[] teams = new int[players.Count];
+
+                for (int i = 0; i < players.Count; i++)
                 {
                     //get players photon view id (unique across network)                    
                     views[i] = players[i].GetComponent<PhotonView>().ViewID;
                     //get player position on master (this)
                     positions[i] = players[i].transform.position;
+                  //  if (players[i].GetComponent<PlayerInfo>() == null)
+                    {
+                        //player needs new spawn, spawnerscript will take care of this
+                    }
+                   // else
+                    {
+                        //current health
+                        healths[i] = players[i].GetComponent<PlayerInfo>().health;
+                        //which team
+                        teams[i] = players[i].GetComponent<PlayerInfo>().teamNumber;
+                    }
                 }
 
                 //pass back a list of viewID and a list of positions, and the photonview id of who requested it
                 //To create less traffic, i could sen only to who requested it but i dont know how to do that atm
 
                 byte evCode = 11; // Custom Event 11: 
-                object[] content = new object[] { views, positions, initialPhotonViewID };
+                object[] content = new object[] { initialPhotonViewID, views, positions, healths, teams};
                 //send to everyone but this client
                 RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
@@ -258,33 +300,42 @@ namespace DellyWellyWelly
             if(eventCode == 11)
             {
                 object[] customData = (object[])photonEvent.CustomData;
-                int viewID = (int)customData[2];
-                PhotonView myPhotonView = PhotonView.Find(viewID);
-                if (myPhotonView.IsMine)
+                int viewID = (int)customData[0];
+                
+
+                PhotonView passedPhotonView = PhotonView.Find(viewID);
+                //only update if it the client who requested data
+                if (passedPhotonView.IsMine)
                 {
-                    Debug.Log("Event 11 [CLIENT]- Received positions from master");
-
-                
+                    Debug.Log("Event 11 [CLIENT]- Received game state from master");
                     //check whether it was this client who requested positions
-                    
-                    Debug.Log("passed ID = " + viewID);
-
-                
-
+                    //Debug.Log("passed ID = " + viewID);
+                    //Debug.Log(passedPhotonView);                
+                    //Debug.Log("My id");
 
 
-                    Debug.Log(myPhotonView);
-                
-                    Debug.Log("My id");
-                    
-                    int[] views = (int[])customData[0];
-                    Vector3[] positions = (Vector3[])customData[1];
+                    //unpack more of what we need
+                    int[] views = (int[])customData[1];
+                    Vector3[] positions = (Vector3[])customData[2];
+                    float[] healths = (float[])customData[3];
+                    int[] teams = (int[])customData[4];
 
-                    //find players with view ids in array and set positions
+                    //find players with view ids in array and set positions, health, teams etc
                     for (int i = 0; i < views.Length; i++)
                     {
+                        //don't update own
+                        
                         PhotonView pV = PhotonView.Find(views[i]);
+
+                        //use data passed from the network to update other clients
                         pV.transform.position = positions[i];
+                        pV.GetComponent<PlayerInfo>().health = healths[i];
+                        pV.GetComponent<PlayerInfo>().teamNumber = teams[i];
+
+                        //start avator
+                        pV.GetComponent<PrefabCreator>().enabled = true;
+
+
                     }
 
                 }
@@ -430,7 +481,8 @@ namespace DellyWellyWelly
                 }
 
                // Debug.Log("sending unreliable");
-                viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
+               if(viewOwner.GetComponent<PlayerAttacks>() != null)
+                    viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
 
             }
 

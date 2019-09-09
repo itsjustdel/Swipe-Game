@@ -19,33 +19,37 @@ namespace DellyWellyWelly
         private float shieldY = 3f;
         private float shieldZ = 0.5f;
         // Start is called before the first frame update
-        void Start()
-        {
-            //team number
-            int teamNumber = 0;
-            if (PhotonNetwork.PlayerList.Length % 2 != 0)
-            {
-                teamNumber = 0;
-            }
-            else
-                teamNumber = 1; 
 
+
+        public void Start()
+        {
+
+            int teamNumber = GetComponent<PlayerInfo>().teamNumber;
             //make player
             GameObject player = Meshes(teamNumber);//and sound
 
-            //find spawn
-            List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
-            List<GameObject> spawns = Spawner.SpawnCells(cells, 2);//teams    
-            
-            GameObject homeCell = null;
-            if (teamNumber == 0)
-                homeCell = spawns[0];
-            else
-                homeCell = spawns[1];
-            
-            player.GetComponent<PlayerInfo>().homeCell = homeCell;
+            HomeCell(player,teamNumber);
+        }
 
+       
 
+        void HomeCell(GameObject player, int teamNumber)
+        {
+
+            //find spawn if client's player - do on master too so master client knows everything
+            // if (GetComponent<PhotonView>().IsMine)
+            {
+                List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
+                List<GameObject> spawns = Spawner.SpawnCells(cells, 2);//teams    //broken on 2?
+
+                GameObject homeCell = null;
+                if (teamNumber == 0)
+                    homeCell = spawns[0];
+                else
+                    homeCell = spawns[1];
+
+                player.GetComponent<PlayerInfo>().homeCell = homeCell;
+            }
         }
 
         GameObject Meshes(int teamNumber)
@@ -61,14 +65,10 @@ namespace DellyWellyWelly
 
             playerMesh.transform.parent = player.transform;
 
-            //add info script
-            PlayerInfo pI = player.AddComponent<PlayerInfo>();
-            //pI.playerNumber = teamNumber;
-            // pI.homeCell = homeCell;
+       
 
 
-            //add gaem state starter - positions - health etc
-            player.AddComponent<PlayerStarter>();
+          
             //add movementy script
             player.AddComponent<PlayerMovement>();//.enabled = false;//////*********disabling atm; //all enabled after sync in player starter
                                                   //add attack script
@@ -87,6 +87,7 @@ namespace DellyWellyWelly
             GameObject soundParent = new GameObject();
             soundParent.name = "Sounds";
             soundParent.transform.parent = player.transform;
+            soundParent.transform.position = transform.position;
             //walk noise
             GameObject walkObject = new GameObject();
             walkObject.name = "Walk";
@@ -99,7 +100,7 @@ namespace DellyWellyWelly
 
             //head
             GameObject child = new GameObject();
-            child.transform.position = Vector3.up * headHeight;
+            child.transform.position =transform.position + Vector3.up * headHeight;
             child.name = "Head";
             //add mesh object
             GameObject headMesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -254,10 +255,10 @@ namespace DellyWellyWelly
             else if (teamNumber == 1)
             {
                 //  playerMesh.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
-                headMesh.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
+                headMesh.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1a") as Material;
                 //  stabber.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red2") as Material;
-                shield.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange1") as Material;
-                headMesh.transform.GetChild(1).GetChild(0).GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
+                shield.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1a") as Material;
+                headMesh.transform.GetChild(1).GetChild(0).GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1a") as Material;
                 //   swiper.GetComponent<MeshRenderer>().sharedMaterials = new Material[] { Resources.Load("Blue1") as Material };//, Resources.Load("Red1") as Material };
             }
             else if (teamNumber == 2)
@@ -278,6 +279,9 @@ namespace DellyWellyWelly
                 shield.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/DeepBlue2") as Material;
 
             }
+
+            //now set player info script which holds respawn fucntion to enabled
+            GetComponent<PlayerInfo>().enabled = true;
 
             return player;
 

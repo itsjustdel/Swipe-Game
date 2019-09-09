@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3990679284012222267}
   - component: {fileID: 3990679284012222265}
+  - component: {fileID: 7766524065914400650}
   - component: {fileID: 3990679284012222264}
   m_Layer: 0
   m_Name: PlayerPrefab
@@ -54,7 +55,7 @@ MonoBehaviour:
   viewIdField: 0
   InstantiationId: 3
   isRuntimeInstantiated: 0
---- !u!114 &3990679284012222264
+--- !u!114 &7766524065914400650
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -62,6 +63,18 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3990679284012222244}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01efef612abd7d442a9090cc27b4880c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3990679284012222264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3990679284012222244}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9020aa0df4e987f41befeaae45e130ba, type: 3}
   m_Name: 

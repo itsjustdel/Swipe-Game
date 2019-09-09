@@ -24,7 +24,7 @@ public class Spawner : MonoBehaviour {
     public float shieldX = .66f;
     public float shieldY= .66f;
     public float shieldZ = 0.2f;
-    public int playerAmount = 2;//set this?
+    public int playerAmount = 3;//set this where ?
     public List<GameObject> spawnedCells = new List<GameObject>();
      List<GameObject> cells;
     
@@ -44,9 +44,9 @@ public class Spawner : MonoBehaviour {
 
     }
 
-    public static List<GameObject> SpawnCells(List<GameObject> cells, int teams)
+    public static List<GameObject> SpawnCells(List<GameObject> cells, int teams)//if teams = 2, breaks?
     {
-
+        Debug.Log("Cells count = " + cells.Count);
         List<GameObject> spawnCells = new List<GameObject>();
         //gather edge cells
 

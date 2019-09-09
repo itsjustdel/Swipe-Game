@@ -1,15 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Photon.Pun;
 public class PlayerInfo : MonoBehaviour {
 
     //holds info about player, player number, health, points etc
-    public bool respawn = true;//forces a respawn instantly
+    public bool respawn = true;
     public bool playerDespawned = true;
     public bool playerCanRespawn = true;
     public int playerNumber;//controller
-    public int teamNumber = 0;
+    public int teamNumber = -1;
     public GameObject currentCell;
     public GameObject homeCell;
     public bool beenHit = false;
@@ -27,6 +27,15 @@ public class PlayerInfo : MonoBehaviour {
     public List<GameObject> cellsUnderControl = new List<GameObject>();
     private void Start()
     {
+        //force a respawn if this is our network player
+
+        if(GetComponent<PhotonView>().IsMine)
+        {
+            playerDespawned = true;
+            respawn = true;
+        }
+
+
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
     }
 
