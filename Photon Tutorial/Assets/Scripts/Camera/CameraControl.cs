@@ -11,7 +11,7 @@ public class CameraControl : MonoBehaviour {
     public GameObject p0;
     public GameObject p1;
     private PlayerGlobalInfo pgi;
-    private List<GameObject> players;
+    public  List<GameObject> players;
     public bool bumped;
     OverlayDrawer overlayDrawer;
     public GameObject winner;
@@ -22,7 +22,8 @@ public class CameraControl : MonoBehaviour {
     public float extraSpace = 5f;
 
     // Use this for initialization
-    public void Start () {
+    public void Start ()
+    {
         overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
         players = pgi.playerGlobalList;
@@ -31,7 +32,7 @@ public class CameraControl : MonoBehaviour {
         showWinner = false;
 
 
-        GetComponent<CameraShake>().enabled = true;
+      //  GetComponent<CameraShake>().enabled = true;
        
 	}
 	
@@ -109,7 +110,7 @@ public class CameraControl : MonoBehaviour {
 
     public void FixedCameraFollowSmooth(Camera cam, List<GameObject> players)
     {
-        if (players.Count == 0)
+        if (players.Count < 2)
             return;
         
         float distance = 0f;
@@ -145,7 +146,13 @@ public class CameraControl : MonoBehaviour {
             bumped = true;
             mod = (nearBumpStop / zoomDampener) * zoomFactor;
             cameraDestination = midpoint - cam.transform.forward * mod;// (distance/ zoomDampener) * zoomFactor;
-            cam.transform.parent.position = Vector3.Slerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+            Vector3 targetPos = Vector3.Slerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+            if(float.IsNaN(targetPos.x))
+            {
+                return;
+            }
+            else
+                cam.transform.parent.position = targetPos;
 
             return;
         }

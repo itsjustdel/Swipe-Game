@@ -1,11 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 using Photon.Pun;
+using Photon.Realtime;
+using ExitGames.Client.Photon;
+
 public class PlayerInfo : MonoBehaviour {
 
     //holds info about player, player number, health, points etc
     public bool respawn = true;
+    public double lastDeathTime;
     public bool playerDespawned = true;
     public bool playerCanRespawn = true;
     public int playerNumber;//controller
@@ -25,6 +30,8 @@ public class PlayerInfo : MonoBehaviour {
     //public int [] topVertices = new int[] { 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 43, 45, 46, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87 };
     public PlayerClassValues pgi;
     public List<GameObject> cellsUnderControl = new List<GameObject>();
+    private Inputs inputs;
+
     private void Start()
     {
         //force a respawn if this is our network player
@@ -35,6 +42,7 @@ public class PlayerInfo : MonoBehaviour {
             respawn = true;
         }
 
+        inputs = GetComponent<Inputs>();
 
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
     }
@@ -45,7 +53,9 @@ public class PlayerInfo : MonoBehaviour {
     {
         if(playerDespawned)
         {
-           //need respawn code, auto respawn atm
+            //need respawn code, auto respawn atm
+            if (PhotonNetwork.Time - lastDeathTime > pgi.respawnTime)
+                respawn = true;
         }
 
         if(respawn)
@@ -137,6 +147,8 @@ public class PlayerInfo : MonoBehaviour {
 
             //reset flag
             playerDespawned = false;
+
+
             
         }
 
@@ -146,6 +158,24 @@ public class PlayerInfo : MonoBehaviour {
 
         health = 100f;
         targetHealth = 100f;
+    }
+
+    void SendRespawnToNetwork()
+    {
+        //let the network know this plaayer has respawned so they can mirror the action
+
+        byte evCode = 12; // Custom Event 12:spawn
+        int photonViewID = GetComponent<PhotonView>().ViewID;
+
+        object[] content = new object[] { photonViewID };
+
+
+        //send to everyone but this client
+        RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+        //keep resending until server receives
+        SendOptions sendOptions = new SendOptions { Reliability = true };
+        PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
     }
 
     public void SetSpawnAvailable()

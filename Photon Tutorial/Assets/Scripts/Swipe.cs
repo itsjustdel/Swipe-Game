@@ -1600,6 +1600,7 @@ public class Swipe : MonoBehaviour {
 
                         //if hit player is swiping, interrupt swipe and reset him // should this only be when killed?, or allow strike to continue if only been popped
                         Swipe otherSwipeScript = totalRayList[i][j].transform.parent.parent.GetComponent<Swipe>();
+                        otherSwipeScript.GetComponent<PlayerInfo>().lastDeathTime = PhotonNetwork.Time;
                         //player got hit, cancel anything they were doing
                         otherSwipeScript.ResetFlags();
                         //network**

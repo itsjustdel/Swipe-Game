@@ -341,6 +341,18 @@ namespace DellyWellyWelly
                 }
             }
 
+            //respawn
+            if(eventCode == 12)
+            {
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                //get game object of the client that requested the spawn
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                //set respawn flag - this wont be exactly synced across servers unless i put in a delay - will do if i encounter desync
+                viewOwner.GetComponent<PlayerInfo>().respawn = true;
+
+            }
+
             //swipe object instantiation
             if (eventCode == 20)
             {

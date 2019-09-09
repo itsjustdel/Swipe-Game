@@ -17,6 +17,8 @@ public class Inputs : MonoBehaviour {
     public bool blocking0 = false;
     public bool blocking1 = false;
 
+    public bool startButtonPressed;
+
     private void Start()
     {
         
@@ -58,6 +60,12 @@ public class Inputs : MonoBehaviour {
         else
             blocking1 = false;
 
+        if (state.Buttons.Start == XInputDotNetPure.ButtonState.Pressed)
+        {
+            startButtonPressed = true;
+        }
+        else
+            startButtonPressed = false;
     }
 
     
