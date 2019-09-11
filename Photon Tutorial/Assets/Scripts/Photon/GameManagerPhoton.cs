@@ -482,14 +482,13 @@ namespace DellyWellyWelly
                 //receiving constant stream of unreliable client input
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
-                float[] inputs = (float[])customData[1];
+                Vector3 lookDir = (Vector3)customData[1];
                 Vector3 rightStickLookDir = (Vector3)customData[2];
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
                 if (pM != null)// && inputs !=null)// || !PhotonNetwork.IsMasterClient)//happens on connect // master doesnt need predcition?
                 {
-                    pM.x = inputs[0];
-                    pM.y = inputs[1];
+                    pM.lookDir = lookDir;//left
                 }
 
                // Debug.Log("sending unreliable");
@@ -704,7 +703,7 @@ namespace DellyWellyWelly
             //50+ map changes
             if(eventCode == 50)
             {
-                Debug.Log("Receiving event code 50 - cell heights");
+                //Debug.Log("Receiving event code 50 - cell heights");
                 //cell height change
                 //player is changing height, find gameobject matching the photon view sent and start altering the height
                 object[] customData = (object[])photonEvent.CustomData;

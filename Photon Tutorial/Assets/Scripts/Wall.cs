@@ -407,13 +407,13 @@ public class Wall : MonoBehaviour {
             }
             
             if (GetComponent<AdjacentCells>().controlledBy == 0)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Cyan0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 2)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 3)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/DeepBlue0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3c") as Material;
         }
     }
     void MoveWalls()
@@ -466,14 +466,15 @@ public class Wall : MonoBehaviour {
                 walls[i].SetActive(true);
             }
 
+
             if (GetComponent<AdjacentCells>().controlledBy == 0)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Cyan0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 2)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 3)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/DeepBlue0") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3c") as Material;
         }
     }
 

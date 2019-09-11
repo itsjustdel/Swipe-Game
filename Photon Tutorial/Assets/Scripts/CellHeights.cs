@@ -57,9 +57,14 @@ public class CellHeights : MonoBehaviour
             //find highest adjacent cell
             float highest = 0f;
 
+            float thisHeightSpeed = heightSpeed;
             
             if (playerInfo.currentCell.GetComponent<AdjacentCells>().frontlineCell)
             {
+                //frontline cells are slower to pull up
+                //change temp value that we use for this frame
+                thisHeightSpeed = heightSpeedForFrontline;
+
                 for (int k = 0; k < playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells.Count; k++)
                 {
                     if (playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
@@ -77,7 +82,7 @@ public class CellHeights : MonoBehaviour
             if (raisingCell)
             {
                 targetY = playerInfo.currentCell.GetComponent<AdjacentCells>().targetY;
-                fracComplete = (float)((PhotonNetwork.Time - eventTime) / heightSpeed);
+                fracComplete = (float)((PhotonNetwork.Time - eventTime) / thisHeightSpeed);
                 lerpedY = Mathf.Lerp(startingScaleY, targetY, fracComplete);
 
                 //stop if frontline cell and has got higher than another adjacent cell

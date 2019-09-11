@@ -206,12 +206,12 @@ MonoBehaviour:
   fillWithPoints: 0
   fillWithMasterPoints: 0
   extrudeCells: 1
-  walls: 0
+  walls: 1
   weldCells: 0
   weldThreshold: 10
   makeSkyscraper: 0
   threshold: 2
-  spawnPlayers: 0
+  startOverlay: 1
   masterPoints: []
   density: 3
   cells: []
@@ -299,19 +299,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 578400617}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7fb38addc49d86a4b9bd6212665e9dc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cells: []
   resetCells: 0
   doHeights: 1
   doHomeCellHeightsToStart: 0
+  automaticFrontlineHeightRaise: 0
   reduceFrontline: 0
   doCapture: 1
   heightSpeed: 1
   heightSpeedSiege: 0.01
-  heightMultiplier: 1
+  heightMultiplier: 2
   minHeight: 1
   totalCellsTransparent: 0
   originalMeshes: []
@@ -328,7 +330,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   respawnTime: 2
-  maxClimbHeight: 3
+  maxClimbHeight: 2
   playerCooldownAfterOverheadHit: 0.5
   playerCooldownAfterOverheadBlock: 0.5
   playerCooldownAfterOverheadWhiff: 0.5

@@ -53,7 +53,8 @@ public class MeshGenerator : MonoBehaviour {
     public float weldThreshold = 10f;//how wide should minimum  ledge size be?
     public bool makeSkyscraper = true;
     public float threshold = 2f;
-    public bool spawnPlayers = true;
+    
+    public bool startOverlay = true;
 	public List<Vector3> masterPoints = new List<Vector3>();
  //   public List<GameObject> cellsList = new List<GameObject>();
    // public List<Mesh> meshList = new List<Mesh>();
@@ -508,7 +509,7 @@ public class MeshGenerator : MonoBehaviour {
 
             AdjacentCells aj = cells[i].GetComponent<AdjacentCells>();
             aj.adjacentCells = adjacents;
-       //     aj.targetY = GetComponent<OverlayDrawer>().minHeight; // taken out for network test
+       //     aj.targetY = GetComponent<OverlayDrawer>().minHeight; // taken out for network test //set from extrude cell now anyway
 
         }
     }
@@ -1070,7 +1071,7 @@ public class MeshGenerator : MonoBehaviour {
             if (walls)
             {
                 Wall wall = cells[i].GetComponent<Wall>();
-                //wall.FindSharedEdges();
+               // wall.FindSharedEdges();//?
                 wall.BuildWalls(wallsParent);
                 wall.enabled = true;
             }
@@ -1093,11 +1094,10 @@ public class MeshGenerator : MonoBehaviour {
 
         }
 
-        if (spawnPlayers)
-        {
+        if (startOverlay)
             GetComponent<OverlayDrawer>().enabled = true;
-            GetComponent<Spawner>().Start();
-        }
+
+        
 
         bool addCanvas = false;
         if(addCanvas)

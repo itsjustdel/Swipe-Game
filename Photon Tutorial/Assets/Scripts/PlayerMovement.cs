@@ -200,18 +200,21 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             GetInputs();//this should all be done in inputs script and then referenced from here
 
-
+            //work out which player is looking compared to camera - 
+            CalculateLookDir();
+            //bool for stick reset
+            CalculateStickReset();
             //send inputs to other clients for prediction            
             SendInputsToNetwork();//this is happening every fixed update - meaning the messaages per room will be high, perhaps lower the frequency of this
         }
         else
         {
-            //user inputs sent from other clients
-            //x,y inserted from network event 30
+            //lookdir already received from network
+            CalculateStickReset();
+
         }
 
-        //work out which player is looking compared to camera - might need to send lookdir after camera for each player??
-        CalculateLookDir();
+       
 
 
 
@@ -272,9 +275,13 @@ public class PlayerMovement : MonoBehaviourPun {
         Vector3 forward = y * Camera.main.transform.parent.forward;
         //public var so helper class can access
         lookDir = right - forward;
+        
+    }
 
-        float lookDirMagnitude = new Vector2(x, y).magnitude;
-        if (lookDirMagnitude < deadzone)
+    void CalculateStickReset()
+    {
+        
+        if (lookDir.magnitude < deadzone)
         {
             leftStickReset = true;
         }
@@ -538,7 +545,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
         //if (GetComponent<PlayerAttacks>().rightStickReset == true)// && (GetComponent<PlayerAttacks>().stabbing == false || GetComponent<PlayerAttacks>().pullBackStab))
         {
-            if (x == 0 && y == 0)
+            if (lookDir.magnitude < deadzone)//was x ==0  and y == 0 - changed for network sending lookdir
             {
                 //do nothing
             }
@@ -703,7 +710,7 @@ public class PlayerMovement : MonoBehaviourPun {
                               
             int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
 
-            object[] content = new object[] { thisPhotonViewID, new float[] { x, y }, pA.lookDirRightStick };
+            object[] content = new object[] { thisPhotonViewID, lookDir, pA.lookDirRightStick };
             //send to everyone but this client
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 

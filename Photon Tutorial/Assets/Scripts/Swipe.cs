@@ -191,7 +191,9 @@ public class Swipe : MonoBehaviour {
         //debugCube.transform.localScale *= 3;
         pA = transform.GetComponent<PlayerAttacks>();
 
-        guide = Guide.GenerateGuide(this);
+        //instantiate guide objectif we are local player
+        if(GetComponent<PhotonView>().IsMine)
+            guide = Guide.GenerateGuide(this);
 
 
 

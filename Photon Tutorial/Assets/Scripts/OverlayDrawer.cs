@@ -6,7 +6,7 @@ public class OverlayDrawer : MonoBehaviour {
 
     //receives positions from each player and draws correct overlay for each cell
     int playerAmount = 0;
-    List<GameObject> cells;
+    public  List<GameObject> cells;
     PlayerGlobalInfo pgi;
     PlayerClassValues playerClassValues;
     List<List<int>> coloursForEachCell = new List<List<int>>();
@@ -17,6 +17,7 @@ public class OverlayDrawer : MonoBehaviour {
     bool skipFrame = true;
     public bool doHeights;
     public bool doHomeCellHeightsToStart;
+    public bool automaticFrontlineHeightRaise;
     public bool reduceFrontline;
     public bool doCapture;
     // public float targetY;
@@ -68,61 +69,64 @@ public class OverlayDrawer : MonoBehaviour {
         if (doHeights)
         {
 
-            Height();//
+            Height();//works out maximum height cell can be
 
-
-            for (int i = 0; i < cells.Count; i++)
+            //if frontline cell, raise height if standing on it - stop if two plyers re on it (if bool set to do this)
+            if (automaticFrontlineHeightRaise)
             {
-                float tempHeightSpeed = heightSpeed;
-
-                //if frontline cell, raise height if standing on it - stop if two plyers re on it
-                for (int j = 0; j < playerAmount; j++)
+                for (int i = 0; i < cells.Count; i++)
                 {
-                    //find out if this is a current cell
-                    if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i] && cells[i].GetComponent<AdjacentCells>().frontlineCell)
+                    float tempHeightSpeed = heightSpeed;
+
+
+                    for (int j = 0; j < playerAmount; j++)
                     {
-                        //find highest adjacent cell
-                        float highest = 0f;
-                       
-                        for (int k = 0; k < cells[i].GetComponent<AdjacentCells>().adjacentCells.Count; k++)
+                        //find out if this is a current cell
+                        if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i] && cells[i].GetComponent<AdjacentCells>().frontlineCell)
                         {
-                            if(cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
+                            //find highest adjacent cell
+                            float highest = 0f;
+
+                            for (int k = 0; k < cells[i].GetComponent<AdjacentCells>().adjacentCells.Count; k++)
                             {
-                                highest = cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
+                                if (cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
+                                {
+                                    highest = cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
+                                }
                             }
+                            cells[i].GetComponent<AdjacentCells>().targetY = highest; ;//highest opponent adjacent
+                            tempHeightSpeed = heightSpeedSiege;
                         }
-                        cells[i].GetComponent<AdjacentCells>().targetY = highest; ;//highest opponent adjacent
-                        tempHeightSpeed = heightSpeedSiege;
                     }
-                }
 
-                
-                float y = cells[i].transform.localScale.y + tempHeightSpeed;
 
-                if (Mathf.Abs(cells[i].transform.localScale.y - cells[i].GetComponent<AdjacentCells>().targetY) <= tempHeightSpeed)
-                {
-                    //if close to target,
-                    cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY, 1f);
-                }
-                else
-                {
+                    float y = cells[i].transform.localScale.y + tempHeightSpeed;
 
-                    //grow it if smaller than target
-                    if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
+                    if (Mathf.Abs(cells[i].transform.localScale.y - cells[i].GetComponent<AdjacentCells>().targetY) <= tempHeightSpeed)
                     {
-                        cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y + tempHeightSpeed, 1f);
-
-                        if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
-                            cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
+                        //if close to target,
+                        cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY, 1f);
                     }
-                    else if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
+                    else
                     {
-                        cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y - tempHeightSpeed, 1f);
 
+                        //grow it if smaller than target
                         if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
-                            cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
-                    }                    
-                }            
+                        {
+                            cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y + tempHeightSpeed, 1f);
+
+                            if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
+                                cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
+                        }
+                        else if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
+                        {
+                            cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y - tempHeightSpeed, 1f);
+
+                            if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
+                                cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
+                        }
+                    }
+                }
             }
         }
 
@@ -136,7 +140,7 @@ public class OverlayDrawer : MonoBehaviour {
             ReduceFrontline();
         }
 
-    TransparentCells();
+        TransparentCells();
     }
 
     void ReduceFrontline()
