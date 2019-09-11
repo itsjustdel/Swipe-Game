@@ -88,7 +88,7 @@ public class PlayerVibration : MonoBehaviour
     {
         
         GamePadState state = GamePad.GetState(playerIndex);
-        if (GetComponent<PlayerMovement>().adjustingCellHeight)
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
         {
             //don't do if cell has hit limits -  we are checking this in player sounds so let's just grab the bool from there
             if (GetComponent<PlayerSounds>().cellAtLimit)

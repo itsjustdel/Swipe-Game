@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4465782, g: 0.49641252, b: 0.5748167, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -305,14 +305,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resetCells: 0
-  doHeights: 0
+  doHeights: 1
   doHomeCellHeightsToStart: 0
   reduceFrontline: 0
-  doCapture: 0
-  heightSpeed: 0.1
+  doCapture: 1
+  heightSpeed: 1
   heightSpeedSiege: 0.01
   heightMultiplier: 1
-  minHeight: 3
+  minHeight: 1
   totalCellsTransparent: 0
   originalMeshes: []
 --- !u!114 &578400624
@@ -502,7 +502,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 1.1728483e-12, z: 9.15e-43, w: 0}
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -661,7 +661,7 @@ GameObject:
   - component: {fileID: 1350025986}
   - component: {fileID: 1350025985}
   - component: {fileID: 1350025984}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}

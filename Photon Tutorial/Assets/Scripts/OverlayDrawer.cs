@@ -49,6 +49,8 @@ public class OverlayDrawer : MonoBehaviour {
 
     private void FixedUpdate()
     {
+        playerAmount = pgi.playerGlobalList.Count;
+
         FrontLine();
 
         if(doCapture)
@@ -391,7 +393,7 @@ public class OverlayDrawer : MonoBehaviour {
 
     void Height()
     {
-        //works out cell's max height allowed. Height capped by how many adjacent cells the player owns
+        //works out cell's max height allowed. Height capped by how many adjacent cells the player owns and adjusted by the player
 
 
        // List<GameObject> frontlineCells = new List<GameObject>();
@@ -402,13 +404,13 @@ public class OverlayDrawer : MonoBehaviour {
             //check each player's owned adjacent cells
             List<GameObject> thisCells = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl;
               
-            for (int j = 0; j < playerAmount; j++)
+           // for (int j = 0; j < playerAmount; j++)
             {
                 //against all other players
-                if (i == j)
-                    continue;
+            //    if (i == j)
+            //        continue;
 
-                List<GameObject> otherCells = pgi.playerGlobalList[j].GetComponent<PlayerInfo>().cellsUnderControl;
+                //List<GameObject> otherCells = pgi.playerGlobalList[j].GetComponent<PlayerInfo>().cellsUnderControl;
 
                 for (int a = 0; a < thisCells.Count; a++)
                 {
@@ -498,7 +500,7 @@ public class OverlayDrawer : MonoBehaviour {
                 if (coloursForEachCell[i].Count == 1)
                 {
                     if (coloursForEachCell[i][j] == 0)
-                        cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Blue1") as Material;
+                        cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
                     else if (coloursForEachCell[i][j] == 1)
                         cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red") as Material;
                 }
@@ -513,7 +515,7 @@ public class OverlayDrawer : MonoBehaviour {
         for (int i = 0; i < playerAmount; i++)
         {
             if (i == 0)
-                pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Blue") as Material;
+                pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
             else if (i == 1)
                 pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red2") as Material;
         }

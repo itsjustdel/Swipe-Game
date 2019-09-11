@@ -50,9 +50,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public bool bumped = false;
     public bool bumpInProgress = false;
     public bool bumpedOther;
-    public bool adjustingCellHeight = false;
-    public bool cellGoingUp = false;
-    public bool cellGoingDown = false;
+    
     public bool sprinting = false;
 
     public bool targetFound = false;
@@ -118,7 +116,7 @@ public class PlayerMovement : MonoBehaviourPun {
     Inputs inputs;
 
     PhotonView thisPhotonView;
-    public float keySpeed = .05f;
+    
     void Start()
     {
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
@@ -237,7 +235,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //rotations are done in player attacks in Block()
         }
-        else if (adjustingCellHeight)
+        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
         {
             LookToGround();
         }
@@ -260,52 +258,10 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void GetInputs()
     {
-        //get input from correct controller
-        bool usePad = true;
-        if (usePad)
-        {
-            x = inputs.state.ThumbSticks.Left.X;
-            y = -inputs.state.ThumbSticks.Left.Y;//inverted         
-        }
-        else
-        {
-            KeyCode upKey = KeyCode.W;
-            KeyCode downKey = KeyCode.S;
-            KeyCode leftKey = KeyCode.A;
-            KeyCode rightKey = KeyCode.D;
-
-            if (GetComponent<PlayerInfo>().playerNumber == 1)
-            {
-                upKey = KeyCode.UpArrow;
-                downKey = KeyCode.DownArrow;
-                leftKey = KeyCode.LeftArrow;
-                rightKey = KeyCode.RightArrow;
-            }
-            //use keyboard
-            if (Input.GetKey(leftKey))
-                x -= keySpeed;
-            else if (Input.GetKey(rightKey))
-                x += keySpeed;
-            else if (x < 0)
-                x += keySpeed;
-            else if (x >0)
-                x -= keySpeed;
-
-
-            if (Input.GetKey(upKey))
-                y -= keySpeed;
-
-            else if (Input.GetKey(downKey))
-                y += keySpeed;
-            else if (y < 0)
-                y += keySpeed;
-            else if (y > 0)
-                y -= keySpeed;
-            
-
-            x = Mathf.Clamp(x, -1f, 1f);
-            y = Mathf.Clamp(y, -1f, 1f);
-        }
+        
+        x = inputs.x;
+        y = inputs.y;
+        
 
         leftStickMagnitude = new Vector3(x, 0f, y).magnitude;
     }
@@ -657,7 +613,7 @@ public class PlayerMovement : MonoBehaviourPun {
             }
         }
         //stop move if changing cell height
-        if (adjustingCellHeight)
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
             blockNewStep = true;
 
         bool glideWalk = false; //keeping for idea/ice/slide attack..
@@ -1021,14 +977,6 @@ public class PlayerMovement : MonoBehaviourPun {
             }
         }
 
-        //?
-
-        Vector3 shootFrom2 = transform.position;
-        RaycastHit hit;
-        if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
-        {
-            transform.position = hit.point;
-        }
     }
 
     void LerpPlayer()

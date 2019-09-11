@@ -115,7 +115,7 @@ public class PlayerSounds : MonoBehaviour
         else
             cellAtLimit = false;
 
-        if (GetComponent<PlayerMovement>().adjustingCellHeight)
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
         {
             if (audioSource.volume < 1f)
             {                 

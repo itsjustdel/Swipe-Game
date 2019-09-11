@@ -154,7 +154,7 @@ public class PlayerAttacks : MonoBehaviour {
         
 
         //can block if not attacking, or changing cell height
-        if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && !GetComponent<PlayerMovement>().adjustingCellHeight)            
+        if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && (!GetComponent<CellHeights>().loweringCell || !GetComponent<CellHeights>().raisingCell))
             Block();
     }
 

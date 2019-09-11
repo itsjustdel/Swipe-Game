@@ -57,7 +57,7 @@ public class Vibration : MonoBehaviour
         {
             PlayerIndex playerIndex = (PlayerIndex)i;
             GamePadState state = GamePad.GetState(playerIndex);
-            if (pgi.playerGlobalList[i].GetComponent<PlayerMovement>().adjustingCellHeight)
+            if (pgi.playerGlobalList[i].GetComponent<CellHeights>().loweringCell || pgi.playerGlobalList[i].GetComponent<CellHeights>().raisingCell)
             {
                 //shake controller for this player
 

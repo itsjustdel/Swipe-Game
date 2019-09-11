@@ -19,7 +19,7 @@ public class PlayerInfo : MonoBehaviour {
     public GameObject homeCell;
     public bool beenHit = false;
     public bool updateAdjacentCells = false;
-    public bool updateCurrentCell = false;
+    public bool updateCurrentCell = true;
     public float health = 100f;
     public bool healthRegen = false;
     private float targetHealth = 100f;

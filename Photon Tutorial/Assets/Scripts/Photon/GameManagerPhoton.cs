@@ -701,6 +701,33 @@ namespace DellyWellyWelly
 
             }
 
+            //50+ map changes
+            if(eventCode == 50)
+            {
+                Debug.Log("Receiving event code 50 - cell heights");
+                //cell height change
+                //player is changing height, find gameobject matching the photon view sent and start altering the height
+                object[] customData = (object[])photonEvent.CustomData;
+                int photonViewID = (int)customData[0];
+                double startTime = (double)customData[1];
+                bool raising = (bool)customData[2];
+                bool lowering = (bool)customData[3];
+                float startingScaleY = (float)customData[4];
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                //set flags on cell height scripts on owner
+                
+                viewOwner.GetComponent<CellHeights>().raisingCell = raising;                
+                viewOwner.GetComponent<CellHeights>().loweringCell = lowering;
+
+                //add start time
+                viewOwner.GetComponent<CellHeights>().eventTime = startTime;
+                //addd start scale 
+                viewOwner.GetComponent<CellHeights>().startingScaleY = startingScaleY;
+
+                //this will start the networked player adjusting cell height
+
+            }
+
         }
 
 

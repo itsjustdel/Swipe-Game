@@ -89,7 +89,7 @@ public class CameraShake : MonoBehaviour
         cellShake = 0;
         for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
-            if (pgi.playerGlobalList[i].GetComponent<PlayerMovement>().adjustingCellHeight)
+            if (pgi.playerGlobalList[i].GetComponent<CellHeights>().loweringCell || pgi.playerGlobalList[i].GetComponent<CellHeights>().raisingCell)
                 cellShake++;
         }
 

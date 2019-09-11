@@ -76,7 +76,7 @@ namespace DellyWellyWelly
                                                                  //add swipe attack script
             player.AddComponent<Swipe>().enabled = false;//////*********disabling atm;
                                                          //add cell height controller
-            player.AddComponent<CellHeights>().enabled = false;//////*********disabling atm;
+            player.AddComponent<CellHeights>();
                                                                //controller input
             player.AddComponent<Inputs>().enabled = false;//////*********disabling atm;
                                                           //vibration info

@@ -12,6 +12,7 @@ public class ExtrudeCell : MonoBehaviour {
     public Mesh originalMesh;
     private void Awake()
     {
+        depth = transform.parent.GetComponent<OverlayDrawer>().minHeight;
         enabled = false;
 
     }

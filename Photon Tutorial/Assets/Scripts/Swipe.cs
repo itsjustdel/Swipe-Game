@@ -236,13 +236,17 @@ public class Swipe : MonoBehaviour {
 
         GetSwipePoint();
 
-        if (!pA.blocking && !GetComponent<PlayerMovement>().adjustingCellHeight)
+        bool adjustingCellHeight = false;            
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
+            adjustingCellHeight = true;
+
+        if (!pA.blocking && !adjustingCellHeight)
         {
             //look for user input and determine which swing to start
 
             SwipePlanning();
         }
-        else if (pA.blocking || !GetComponent<PlayerMovement>().adjustingCellHeight)
+        else if (pA.blocking || !adjustingCellHeight)
         {
             ResetFlags();
         }

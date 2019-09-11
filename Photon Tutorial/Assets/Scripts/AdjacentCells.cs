@@ -29,24 +29,24 @@ public class AdjacentCells : MonoBehaviour {
         if (frontlineCell)
         {
             if (controlledBy == 0)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Disputed") as Material;//unsure
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;//unsure
             else if (controlledBy == 1)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Disputed") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;
             else
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Disputed") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;
         }
         else
         
         { 
             
             if (controlledBy == 0)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Cyan2") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
             else if (controlledBy == 1)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange2") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1b") as Material;
             else if (controlledBy == 2)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green2") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2b") as Material;
             else if (controlledBy == 3)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/DeepBlue2") as Material;
+                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3b") as Material;
         }
     }
 }
