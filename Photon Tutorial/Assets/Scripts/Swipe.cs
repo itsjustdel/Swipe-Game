@@ -648,7 +648,7 @@ public class Swipe : MonoBehaviour {
         sO.firstPullBackLookDir = firstPullBackLookDir;
 
         sO.playerClassValues = playerClassValues;
-        sO.activeTime = playerClassValues.overheadWhiffCooldown;
+        //sO.activeTime = playerClassValues.overheadWhiffCooldown;
         sO.firstPullBackLookDir = firstPullBackLookDir;
         sO.swipeTimeStart = Photon.Pun.PhotonNetwork.Time;
 
@@ -1633,7 +1633,7 @@ public class Swipe : MonoBehaviour {
 
                         Vector3 impactDir = Vector3.zero;
 
-                        thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
+                        //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
 
                         if (playerInfo.health > 0 )
                         {

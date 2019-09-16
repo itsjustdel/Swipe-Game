@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 
 using System.Collections;
+using System.Collections.Generic;
 
 using Photon.Pun;
 using Photon.Realtime;
@@ -205,9 +206,24 @@ namespace DellyWellyWelly
            
         }
 
+        public override void OnPlayerLeftRoom(Player otherPlayer)
+        {
+            List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
+            //find the photon view that left
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].GetComponent<PhotonView>().OwnerActorNr == otherPlayer.ActorNumber)
+                {
+                    Debug.Log("Player being removed from player list");
+                    players.RemoveAt(i);
+                    break;
+                }
+            }
+        }
 
         public override void OnDisconnected(DisconnectCause cause)
         {
+            
             Debug.LogWarningFormat("PUN Basics Tutorial/Launcher: OnDisconnected() was called by PUN with reason {0}", cause);
         }
 

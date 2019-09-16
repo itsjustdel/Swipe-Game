@@ -28,8 +28,8 @@ public class SineWaveExample : MonoBehaviour
     public float time;
     public float lastTime;
 
-    int buffLength = 0;
-    int buffSize = 0;
+   // int buffLength = 0;
+   // int buffSize = 0;
     void Start()
     {
         audioSource = gameObject.AddComponent<AudioSource>();

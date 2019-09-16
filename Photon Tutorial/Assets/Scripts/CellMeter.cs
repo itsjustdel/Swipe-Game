@@ -14,7 +14,7 @@ public class CellMeter : MonoBehaviour {
     public float yPos = 1f;
     public float meterHeight = 50f;//screen zie percentage needed
     PlayerGlobalInfo playerGlobalInfo;
-    public int playerAmount;
+    public int teamsAmount;
     GameObject cameraObject;
     MeshGenerator meshGenerator;
     public List<GameObject> anchors = new List<GameObject>();
@@ -47,7 +47,7 @@ public class CellMeter : MonoBehaviour {
 
         playerGlobalInfo = GetComponent<PlayerGlobalInfo>();
         meshGenerator= GetComponent<MeshGenerator>();
-        playerAmount = playerGlobalInfo.playerGlobalList.Count;
+        teamsAmount = 4; ;// playerGlobalInfo.playerGlobalList.Count; //just 2, will need updated as players are joining?
         cameraObject = Camera.main.gameObject;
         canvas = GameObject.Find("Canvas(Clone)");
         canvas.GetComponent<Canvas>().enabled = true;
@@ -122,7 +122,7 @@ public class CellMeter : MonoBehaviour {
 
     void EnableNeeded()
     {
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < teamsAmount; i++)
         {
             //they start disabled, so enable how amny we need
             canvas.transform.GetChild(i).gameObject.SetActive(true);
@@ -131,7 +131,7 @@ public class CellMeter : MonoBehaviour {
 
     void AddRects()
     {
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < teamsAmount; i++)
         {            
             anchors.Add(canvas.transform.GetChild(i).gameObject);
         }
@@ -183,7 +183,7 @@ public class CellMeter : MonoBehaviour {
       
         //Determine Winner!
         List<GameObject> sortedPlayers = new List<GameObject>();
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < teamsAmount; i++)
         {
             sortedPlayers.Add(playerGlobalInfo.playerGlobalList[i]);
         }
@@ -197,7 +197,7 @@ public class CellMeter : MonoBehaviour {
 
         //find if any draw
         int draws = 1;
-        for (int i = 1; i < playerAmount; i++)
+        for (int i = 1; i < teamsAmount; i++)
         {
             if (sortedPlayers[i - 1].GetComponent<PlayerInfo>().cellsUnderControl.Count == sortedPlayers[i].GetComponent<PlayerInfo>().cellsUnderControl.Count)
             {
@@ -272,34 +272,30 @@ public class CellMeter : MonoBehaviour {
 
         List<int> cellsUnderControlNoFrontline = new List<int>() { 0, 0, 0, 0 };
 
-        //frac = 10
-        for (int i = 0; i < playerAmount; i++)
+        //for each cell, count which team owns it
+        
+        for (int i = 0; i < meshGenerator.cells.Count; i++)
         {
-            PlayerInfo pI = playerGlobalInfo.playerGlobalList[i].GetComponent<PlayerInfo>();
-
-            for (int j = 0; j < pI.cellsUnderControl.Count; j++)
+            AdjacentCells aJ = meshGenerator.cells[i].GetComponent<AdjacentCells>();
+            //dont add frontline cells in this
+            if (aJ.frontlineCell)
+                continue;
+            //if controlled by a team, add to its tally
+            else if(aJ.controlledBy >=0)
             {
-                //work out ratio 
-                //don't include frontline cells, these aren't consided "controlled", it saves it as owned by a player so we know who to give it to
-                //..when?
-                if (pI.cellsUnderControl[j].GetComponent<AdjacentCells>().frontlineCell)
-                    continue;
 
-                //all cells
-                totalCellsControlled ++;
+                cellsUnderControlNoFrontline[aJ.controlledBy]++;
 
-                //cells for each player
-                cellsUnderControlNoFrontline[i]++;
+                //total number of cells controlled - used to find ratios
+                totalCellsControlled++;
             }
-            
-
         }
 
         //total cells 
        
 
         ratios.Clear();
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < teamsAmount; i++)
         {
            // PlayerInfo pI = playerGlobalInfo.playerGlobalList[i].GetComponent<PlayerInfo>();
 
@@ -311,9 +307,7 @@ public class CellMeter : MonoBehaviour {
         float last = 0f;
         List<float> midPoints = new List<float>();
         for (int i = 0; i < anchors.Count ; i++)
-        {
-            PlayerInfo pI = playerGlobalInfo.playerGlobalList[i].GetComponent<PlayerInfo>();
-                        
+        {               
             float x = ratios[i] * tempWidth * .5f + last;
 
             //add x scale 
@@ -327,10 +321,15 @@ public class CellMeter : MonoBehaviour {
         for (int i = 0; i < anchors.Count; i++)
         {
             RectTransform rect = anchors[i].transform.GetComponent<RectTransform>();
-           // float x = Camera.main.pixelWidth - (Camera.main.pixelWidth/(playerAmount))* (i);
-            //x *= playerAmount;
-          //  rect.sizeDelta = new Vector2(x * (ratios[i]), meterHeight);
-          //  x = x;// * 1f/playerAmount + (x * i);//will need more when 3 players
+            // float x = Camera.main.pixelWidth - (Camera.main.pixelWidth/(teamsAmount))* (i);
+            //x *= teamsAmount;
+            //  rect.sizeDelta = new Vector2(x * (ratios[i]), meterHeight);
+            //  x = x;// * 1f/teamsAmount + (x * i);//will need more when 3 players
+
+            //possible midpoints doesnt get populated correctly on client connect
+            if (float.IsNaN(midPoints[i]))
+                return;
+
             rect.transform.position = new Vector3(midPoints[i], y, 0f);
            // float xWidth = (Camera.main.pixelWidth * ratios[i] );
             rect.sizeDelta = new Vector2(ratios[i] * tempWidth, meterHeight);

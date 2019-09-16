@@ -18,13 +18,15 @@ namespace DellyWellyWelly
     public class GameManagerPhoton : MonoBehaviourPunCallbacks
     {
 
+        public GameObject canvasPrefab;
+
         private bool masterGetsPlayer = true;
         
 
         public Vector3[] startData = new Vector3[0];
         bool mapLoaded = false;
 
-        public void OnEnable()
+        public void OnEnable()//add new?
         {
             PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
         }
@@ -85,11 +87,23 @@ namespace DellyWellyWelly
 
                 ActivatePlayers();
 
+                AddCanvas();
+
             }
 
              
 
             
+        }
+
+        public  void AddCanvas()
+        {
+            GameObject canvas =Instantiate(canvasPrefab);
+            //GameObject canvas = GameObject.Find("Canvas(Clone)");
+            canvas.GetComponent<Canvas>().enabled = false;
+            //start timer too
+            GameObject.FindGameObjectWithTag("Code").GetComponent<CellMeter>().EnableNextFrame();
+            GameObject.FindGameObjectWithTag("Code").GetComponent<CellMeter>().currentRoundTime = 0;
         }
      
 
@@ -146,7 +160,7 @@ namespace DellyWellyWelly
             //grabbing from swipe class attached to plyer - a bit jumbled
             PlayerClassValues playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
             sO.playerClassValues = playerClassValues;
-            sO.activeTime = playerClassValues.overheadWhiffCooldown;
+            //sO.activeTime = playerClassValues.overheadWhiffCooldown;
             sO.firstPullBackLookDir = firstPullBackLookDir;
 
             sO.swipeTimeStart = swipeTimeStart;
@@ -229,6 +243,9 @@ namespace DellyWellyWelly
 
                         //turn all players on!
                         ActivatePlayers();
+
+                        //start UI
+                        AddCanvas();
 
 
 
@@ -591,7 +608,7 @@ namespace DellyWellyWelly
                 
                 PlayerMovement pMother = viewOwnerVictim.GetComponent<PlayerMovement>();
 
-                thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
+                //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
 
                 if (victimInfo.health > 0)
                 {
@@ -724,6 +741,46 @@ namespace DellyWellyWelly
                 viewOwner.GetComponent<CellHeights>().startingScaleY = startingScaleY;
 
                 //this will start the networked player adjusting cell height
+
+            }
+
+            //80+tests
+            if(eventCode == 80)
+            {
+                Debug.Log("Receiving new test values");
+                
+                PlayerClassValues playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+
+                object[] customData = (object[])photonEvent.CustomData;
+                float[] playerClassFloats = (float[])customData[0];
+                playerClassValues.respawnTime = playerClassFloats[0];
+                playerClassValues.maxClimbHeight = playerClassFloats[1];
+                playerClassValues.playerCooldownAfterOverheadHit = playerClassFloats[2];
+                playerClassValues.playerCooldownAfterOverheadBlock = playerClassFloats[3];
+                playerClassValues.playerCooldownAfterOverheadWhiff = playerClassFloats[4];
+                playerClassValues.overheadSpeed = playerClassFloats[5];
+                playerClassValues.armLength= playerClassFloats[6];
+                playerClassValues.swordLength = playerClassFloats[7];
+                playerClassValues.swordWidth = playerClassFloats[8];
+                playerClassValues.blockRaise = playerClassFloats[9];
+                playerClassValues.blockLower = playerClassFloats[10];
+                playerClassValues.blockMinimum = playerClassFloats[11];
+
+                //overlay drawer
+                float[] overlayFloats = (float[])customData[1];
+            
+                OverlayDrawer overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
+
+                overlayDrawer.heightSpeed = overlayFloats[0];
+                overlayDrawer.heightSpeedSiege = overlayFloats[1];
+                overlayDrawer.heightMultiplier = overlayFloats[2];
+                overlayDrawer.minHeight = overlayFloats[3];
+
+                bool[] overlayBools = (bool[])customData[2];
+                overlayDrawer.doHeights = overlayBools[0];
+                overlayDrawer.automaticFrontlineHeightRaise = overlayBools[1];
+                overlayDrawer.reduceFrontline = overlayBools[2];
+                overlayDrawer.doCapture = overlayBools[3];
 
             }
 

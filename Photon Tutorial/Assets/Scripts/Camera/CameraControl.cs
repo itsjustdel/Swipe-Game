@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
 
 public class CameraControl : MonoBehaviour {
     // How many units should we keep from the players
+    public bool onlyFollowPlayer = true;
     public float zoomFactor = 1.5f;
     public float zoomDampener = 1f;
     public float followTimeDelta = 0.8f;
@@ -28,10 +30,12 @@ public class CameraControl : MonoBehaviour {
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
         players = pgi.playerGlobalList;
 
-        startingRotX = transform.localRotation.eulerAngles.x;
+
+        
         showWinner = false;
 
-
+        
+        
       //  GetComponent<CameraShake>().enabled = true;
        
 	}
@@ -39,14 +43,50 @@ public class CameraControl : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
     {
-        if(!showWinner)
-            FixedCameraFollowSmooth(GetComponent<Camera>(),players);
-        else if(showWinner)
+        //find our locally controlled player
+        if(p0 == null)
+        {
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].GetComponent<PhotonView>().IsMine)
+                {
+                    p0 = players[i];
+                    break;
+                }
+            }
+            //if still not found, wait til next frame and try again, we haven't spawned yet
+            if (p0 == null)
+                return;
+            else
+            {
+                //set starting rotation so we know where to swing back to                
+                startingRotX = transform.localRotation.eulerAngles.x;
+                //adjust camera height base on player size
+                if(p0.GetComponent<PlayerMovement>()!=null)
+                    transform.localPosition += p0.GetComponent<PlayerMovement>().head.transform.localPosition.y * Vector3.up;
+            }
+
+
+        }
+        if (!showWinner)
+        {
+            if (onlyFollowPlayer)
+            {
+                FollowPlayerOnly(GetComponent<Camera>(), p0);
+            }
+            else
+            {
+                //finds middle point of all players - good for local co-op etc
+                FixedCameraFollowSmooth(GetComponent<Camera>(), players);
+            }
+        }
+        else if (showWinner)
         {
             followTimeDelta = 0.05f;
             FollowWinner(GetComponent<Camera>());
         }
 
+        //swing camera up
         RotateForTransparentCells();
 	}
 
@@ -54,15 +94,17 @@ public class CameraControl : MonoBehaviour {
     {
         //for every cell rotate up a bit and zoom out a bit
 
+        //swing up if we have transparent cells
         if (overlayDrawer.totalCellsTransparent > 0)
             transform.localRotation = Quaternion.Euler(new Vector3(transform.localRotation.eulerAngles.x + rotateForTransparentCells, transform.localRotation.y, transform.localRotation.z));
+        //swing back down
         else
         {
             float x = transform.localEulerAngles.x - rotateForTransparentCells;
             if (x < startingRotX)
                 x = startingRotX;
 
-            transform.localRotation = Quaternion.Euler(new Vector3(x + rotateForTransparentCells, transform.localRotation.y, transform.localRotation.z));
+            transform.localRotation = Quaternion.Euler(new Vector3(x, transform.localRotation.y, transform.localRotation.z));
         }
 
 
@@ -174,4 +216,40 @@ public class CameraControl : MonoBehaviour {
         if ((cameraDestination - cam.transform.position).magnitude <= 0.05f)
             cam.transform.parent.position = cameraDestination;
     }
+
+    void FollowPlayerOnly(Camera cam, GameObject player)
+    {
+        
+        float distance = player.transform.position.magnitude;        
+        float mod = (distance / zoomDampener) * zoomFactor;
+        Vector3 cameraDestination = player.transform.position - cam.transform.forward * mod;// (distance/ zoomDampener) * zoomFactor;
+        if (distance < nearBumpStop)///zoomDampener) * zoomFactor)
+        {
+            bumped = true;
+            mod = (nearBumpStop / zoomDampener) * zoomFactor;
+            cameraDestination = player.transform.position - cam.transform.forward * mod;// (distance/ zoomDampener) * zoomFactor;
+            cam.transform.parent.position = Vector3.Lerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+
+            return;
+        }
+        else bumped = false;
+        // Move camera a certain distance
+
+
+        // Adjust ortho size if we're using one of those
+        if (cam.orthographic)
+        {
+            // The camera's forward vector is irrelevant, only this size will matter
+            cam.orthographicSize = distance;
+        }
+        // You specified to use MoveTowards instead of Slerp/if no too close
+
+        cam.transform.parent.position = Vector3.Lerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+
+        // Snap when close enough to prevent annoying slerp behavior
+        if ((cameraDestination - cam.transform.position).magnitude <= 0.05f)
+            cam.transform.parent.position = cameraDestination;
+
+    }
 }
+

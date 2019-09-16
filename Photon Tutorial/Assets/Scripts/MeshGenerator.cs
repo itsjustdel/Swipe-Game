@@ -1099,9 +1099,9 @@ public class MeshGenerator : MonoBehaviour {
 
         
 
-        bool addCanvas = false;
-        if(addCanvas)
-         StartCanvas();
+       // bool addCanvas = false;
+      //  if(addCanvas)
+      //   StartCanvas();//doing after network spawna nd connect
 
         // yield break;
     }

@@ -43,7 +43,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     //public GameObject head;
 
     public double timeSwingFinished;
-    public float activeTime = 100;
+   // public float activeTime = 100;
     //attach this script to a swipe patter, it will render it and check for hits
     public List<Vector3> originalVertices;
 
@@ -454,7 +454,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //combine with how far we have got through this loop, makes it smooth
             //float percentageOfStrikeCompleted = p * (float)(i) / pointsFromCurve.Count;//removing, test
 
-            Vector3 endPoint = dirToEnd * (playerClassValues.overheadLength + playerClassValues.armLength + playerClassValues.swordLength);
+            Vector3 endPoint = dirToEnd * (playerClassValues.armLength + playerClassValues.swordLength);//playerClassValues.overheadLength// removed, needed?
 
 
 
@@ -618,7 +618,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             
             parentPlayer.GetComponent<Swipe>().whiffed = true;
 
-            activeTime = playerClassValues.overheadWhiffCooldown;
+            //activeTime = playerClassValues.overheadWhiffCooldown;
             //Invoke("DeactivateSwipe", Time.fixedDeltaTime);            
 
             DeactivateSwipe();
@@ -869,8 +869,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         parentPlayer.GetComponent<Swipe>().buttonSwiping = false;
         parentPlayer.GetComponent<Swipe>().whiffed = true;
 
-        //time for this swipe to stay alive
-        activeTime = playerClassValues.lungeWhiffCooldown;
+        //time for this swipe to stay alive  - removed this, swipes dont hang anymore
+        //activeTime = playerClassValues.lungeWhiffCooldown;
         //activeSwipe = false;
         Invoke("DeactivateSwipe", Time.fixedDeltaTime);//why did i do this?
     }
@@ -1378,7 +1378,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                             parentPlayer.GetComponent<Swipe>().overheadAvailable = false;
                             parentPlayer.GetComponent<Swipe>().hit = true;
 
-                            activeTime =  playerClassValues.lungeHitCooldown;
+                            //activeTime =  playerClassValues.lungeHitCooldown;
                             //Invoke("DeactivateSwipe", Time.fixedDeltaTime);
                             DeactivateSwipe();
                             hitOpponent = true;//set this to stop double hits

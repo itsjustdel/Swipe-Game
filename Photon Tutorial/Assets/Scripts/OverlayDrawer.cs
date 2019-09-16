@@ -255,10 +255,10 @@ public class OverlayDrawer : MonoBehaviour {
 
         //for each player check what cell they are on
         //compare against other player's cell
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
-            if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell == null)
-                continue;
+            //if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell == null)
+              //  continue;
 
             bool onlyPlayerOnCell = true;
            //s bool colourForPlayer = false;
@@ -298,26 +298,29 @@ public class OverlayDrawer : MonoBehaviour {
                 {
                     //can't grab a frontline cell, need to break the line to get control
                     // if(!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().frontlineCell)
-                    //if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell != null)//if not dead
-                    pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().controlledBy = i;
-
-                    //add to list on player if not already
-                    if (!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Contains(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell))
+                    if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell != null)//if not dead
                     {
-                        pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
+                        pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().controlledBy = i;
+
+                        //add to list on player if not already
+                        if (!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Contains(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell))
+                        {
+                            pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
+                        }
+
+                        //remove from other players
+                        for (int a = 0; a < playerAmount; a++)
+                        {
+                            if (a == i)
+                                continue;
+
+                            List<GameObject> cellsOwnedByOther = pgi.playerGlobalList[a].GetComponent<PlayerInfo>().cellsUnderControl;
+
+                            cellsOwnedByOther.Remove(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
+                        }
                     }
 
-                    //remove from other players
-                    for (int a = 0; a < playerAmount; a++)
-                    {
-                        if (a == i)
-                            continue;
-
-                        List<GameObject> cellsOwnedByOther = pgi.playerGlobalList[a].GetComponent<PlayerInfo>().cellsUnderControl;
-
-                        cellsOwnedByOther.Remove(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
-                    }
-
+                    /* w.i.p
                     //check for edge cell
                     bool edgeCell = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().edgeCell;
 
@@ -325,6 +328,7 @@ public class OverlayDrawer : MonoBehaviour {
                     {
                         Spread(pgi.playerGlobalList[i]);
                     }
+                    */
                 }
             }
         }
@@ -403,7 +407,7 @@ public class OverlayDrawer : MonoBehaviour {
        // List<GameObject> frontlineCells = new List<GameObject>();
 
         //check player
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
             //check each player's owned adjacent cells
             List<GameObject> thisCells = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl;

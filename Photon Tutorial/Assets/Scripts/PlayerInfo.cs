@@ -19,7 +19,7 @@ public class PlayerInfo : MonoBehaviour {
     public GameObject homeCell;
     public bool beenHit = false;
     public bool updateAdjacentCells = false;
-    public bool updateCurrentCell = true;
+    public bool updateCurrentCell = false;//enable after spawn position
     public float health = 100f;
     public bool healthRegen = false;
     private float targetHealth = 100f;
@@ -49,10 +49,13 @@ public class PlayerInfo : MonoBehaviour {
 
 
 
-    private void Update()
+    private void FixedUpdate()
     {
         if(playerDespawned)
         {
+            //don't update which cell we are on, we are supposed to be nowhere
+            updateCurrentCell = false;
+            currentCell = null;
             //need respawn code, auto respawn atm
             if (PhotonNetwork.Time - lastDeathTime > pgi.respawnTime)
                 respawn = true;
@@ -64,16 +67,32 @@ public class PlayerInfo : MonoBehaviour {
             RespawnPlayer();
             respawn = false;
 
+            //now we ahve spawned update, we can update current cell
+            updateCurrentCell = true;
+
         }
 
         //Health
-        
+
+        //update current cell
+        if (updateCurrentCell && !playerDespawned)
+            CurrentCell();
+
+        //call adjacent cells?
+        if (updateAdjacentCells && !playerDespawned)
+            AdjacentCells();
+    
         //if this gets any more complicated, put in own script
         if(healthRegen)
             HealthRegen();
 
+        
+    }
+    private void Update()
+    {
         HealthVisualisation();
     }
+
     void HealthRegen()
     {
         if (currentCell == null)
@@ -183,17 +202,7 @@ public class PlayerInfo : MonoBehaviour {
         playerCanRespawn = true;
     }
 
-    private void FixedUpdate()
-    {
-        //update current cell
-        if (updateCurrentCell)        
-            CurrentCell();        
-
-        //call adjacent cells?
-        if (updateAdjacentCells)
-            AdjacentCells();
-    }
-
+    
     void AdjacentCells()
     {
         PlayerMovement pM = GetComponent<PlayerMovement>();

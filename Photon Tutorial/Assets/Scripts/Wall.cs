@@ -288,7 +288,7 @@ public class Wall : MonoBehaviour {
             wall = new GameObject();
             wall.name = "Wall" + i.ToString();
             
-            wall.AddComponent<MeshRenderer>().sharedMaterial = Resources.Load("White") as Material;
+            wall.AddComponent<MeshRenderer>().enabled = false;//easier// sharedMaterial = Resources.Load("Materials/Transparent") as Material;
             wall.AddComponent<MeshFilter>();
             
             wall.layer = LayerMask.NameToLayer("Wall");//could add wall layer i guess
@@ -405,7 +405,8 @@ public class Wall : MonoBehaviour {
             {
                 walls[i].SetActive(true);
             }
-            
+
+            walls[i].GetComponent<MeshRenderer>().enabled = true;
             if (GetComponent<AdjacentCells>().controlledBy == 0)
                 walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
@@ -466,7 +467,7 @@ public class Wall : MonoBehaviour {
                 walls[i].SetActive(true);
             }
 
-
+            walls[i].GetComponent<MeshRenderer>().enabled = true;
             if (GetComponent<AdjacentCells>().controlledBy == 0)
                 walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
@@ -595,11 +596,7 @@ public class Wall : MonoBehaviour {
         return newMesh;
     }
 
-    class CellAndEdge
-    {
-        public GameObject cell;
-        public List<int> edge;
-    }
+   
 
   
 }
