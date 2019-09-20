@@ -53,6 +53,7 @@ public class PlayerClassValues : MonoBehaviour {
     //smallest time block will be locked and activated
     public float blockMinimum = 2f;
     //
-
+    public float blockRotation = 1f;
+    public float blockRotationNetworkLerp = 1f;
 
 }

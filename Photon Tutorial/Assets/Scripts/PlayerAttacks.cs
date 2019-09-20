@@ -61,20 +61,25 @@ public class PlayerAttacks : MonoBehaviour {
     public Vector3 headOriginalPos;
     GameObject stabber;
    // GameObject shield;
+
+   //block/shield
     GameObject shieldPivot;
     GameObject shield;
     public bool blocking;
     public bool blockRaising = false;
-    public bool blockLowering = true;//starts true so shield gets minimised
-  //  public bool blockStartTimeSetRaise = false;
-    //public bool blockStartTimeSetLower = true;//we can have this set at the start, the prefab will always start with shield down
+    public bool blockLowering = false;//starts true so shield gets minimised
+    public bool blockLowered = false;
+ 
+ //   public bool blockStartTimeSetRaise = false;
+  //  public bool blockStartTimeSetLower = false;//we can have this set at the start, the prefab will always start with shield down
     public bool blocking1UpdatedPressed = false;
-    public bool blocking1UpdatedReleased = true;
+    public bool blocking1UpdatedReleased = false;
     public double blockStartTime;
-    //public double blockStartTimeLower;
+    public double blockRotationTime;
+   
     public Quaternion shieldStartingRotation;
     public Quaternion headStartingRotationOnBlock;
-    public Vector3 headTargetDirectionOnBlock;
+    public Quaternion headTargetRotationOnBlock;
     public Vector3 shieldScaleOnButtonPress;
     public Vector3 headStartPos;
     float shieldStartingScaleX;
@@ -158,6 +163,12 @@ public class PlayerAttacks : MonoBehaviour {
             Block();
     }
 
+    private void Update()
+    {
+        //move shield etc if values allow
+        BlockLerp();
+    }
+
     void SendShieldToNetwork()
     {
 
@@ -170,7 +181,7 @@ public class PlayerAttacks : MonoBehaviour {
         //enter the data we need in to an object array to send over the network
         int photonViewID = GetComponent<PhotonView>().ViewID;
         //sending ID, and starting time, rotations ,scale of head and shield
-        object[] content = new object[] { photonViewID, blocking, blockRaising, blockLowering, shieldStartingRotation, shieldScaleOnButtonPress, headStartingRotationOnBlock, headTargetDirectionOnBlock, headStartPos,blockStartTime };
+        object[] content = new object[] { photonViewID, blocking, blockRaising, blockLowering,blockLowered, shieldStartingRotation, shieldScaleOnButtonPress, headStartingRotationOnBlock, headTargetRotationOnBlock, headStartPos,blockStartTime,blockRotationTime };
         //send to everyone but this client
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
@@ -249,12 +260,10 @@ public class PlayerAttacks : MonoBehaviour {
         {
             //update locally
             BlockTargets();
-            //update network
-            SendBlockTargetsToNetwork();
+           
         }
 
-        //move shield etc if values allow
-        BlockLerp();
+        
 
 
     }
@@ -263,28 +272,54 @@ public class PlayerAttacks : MonoBehaviour {
     {
         //set locally or updated from network
 
-        //need to change this to blocking bool. only update if client is ours, else we will update from event code
+        // only update if client is ours, else we will update from event code
         //player needs to input block button and direction to start a block action, can't set new block until old block is finished
-        if (inputs.blocking0  && !blocking)
+        //if (inputs.blocking0  && !blocking)
+        if (inputs.blocking0)
         {
-            //set flag to keep track, this will be set to false after timer runs out
-            blocking = true;
-            blockRaising = true;
+            //reset any flags for lowering
+            //blockStartTimeSetLower = false;
 
-            blockStartTime = PhotonNetwork.Time;
-            //blockStartTimeSetRaise = true;
-            shieldStartingRotation = shieldPivot.transform.localRotation;
-            shieldScaleOnButtonPress = shield.transform.localScale;
+            if (!blockRaising)
+            {
+                //start timer for rotation of shield to forward position
+                blocking = true;                
+                blockRaising = true;
+                blockLowered = false;
+                blockLowering = false;
+                
+
+                blockStartTime = PhotonNetwork.Time;
+                //blockStartTimeSetRaise = true;
+                //not starting shield scale
+                shieldScaleOnButtonPress = shield.transform.localScale;
+                //lift rotation start
+                shieldStartingRotation = shieldPivot.transform.localRotation;
+
+               
+            }
+            
+            //set time for this rotation update
+            blockRotationTime = PhotonNetwork.Time;
+            
+            
 
             //set start and end rotation targets
             headStartingRotationOnBlock = head.transform.rotation;
 
             //if no right stick input, point shield in the direction the player is facing
             //else face towards the stick direction
+            //lerp now so instant snap doesnt happen
+
+            ////**** send final destination to network, don't limit it. Only limit on player client - use same lerp value for client 
+
+
             if (lookDirRightStick.magnitude > deadzone)
-                headTargetDirectionOnBlock = lookDirRightStick;
+                headTargetRotationOnBlock = Quaternion.LookRotation(lookDirRightStick);// Quaternion.Lerp(headStartingRotationOnBlock, Quaternion.LookRotation(lookDirRightStick), playerClassValues.blockRotation);
             else
-                headTargetDirectionOnBlock = head.transform.forward;//or transform fwd?
+                headTargetRotationOnBlock = Quaternion.LookRotation(transform.forward);// Quaternion.Lerp(headStartingRotationOnBlock, Quaternion.LookRotation(transform.forward), playerClassValues.blockRotation);
+
+            
 
             headStartPos = head.transform.localPosition;
 
@@ -299,22 +334,25 @@ public class PlayerAttacks : MonoBehaviour {
 
         }
         //if timer has run its course we can reset the block, we can keep block input down if we wish to hold on for longer
-        else if (PhotonNetwork.Time - blockStartTime > swipe.playerClassValues.blockMinimum && blockRaising == true &&  !inputs.blocking0)//)//(lookDirRightStick.magnitude < deadzone ||
-        {
-            Debug.Log("unblocking");
+        else if (!inputs.blocking0 )//)//(lookDirRightStick.magnitude < deadzone ||
+        {   
             //start unwind animation
             blockRaising = false;
-            blockLowering = true;
+            //reset any raise flags
+            //blockStartTimeSetRaise = false;
+
             //targets, only set if we control this player
             if (GetComponent<PhotonView>().IsMine)
             {
                 //reset raise flag
              //   blockStartTimeSetRaise = false;
 
-                ////  if (!blockStartTimeSetLower)
+                if (!blockLowering && !blockLowered)//resewt when lerp is 1
                 {
+                    Debug.Log("unblocking");
+                    blockLowering = true;
                     blockStartTime = PhotonNetwork.Time;
-                   // blockStartTimeSetLower = true;
+                    //blockStartTimeSetLower = true;
                     shieldStartingRotation = shieldPivot.transform.localRotation;
                     shieldScaleOnButtonPress = shield.transform.localScale;
                     headStartingRotationOnBlock = head.transform.rotation;
@@ -322,115 +360,136 @@ public class PlayerAttacks : MonoBehaviour {
 
                     Debug.Log("[CLIENT] - lowering shield and sending to network");
 
-
-                    //send targets to network
                     SendShieldToNetwork();
-                    //   SendShieldDownToNetwork();
+
                 }
             }
-
-
-            //if button is let go lower shield and ensmallen
-
-
-
-            //unduck
-            ////    head.transform.localPosition += Vector3.up * duckSpeed;
-            //   if (head.transform.localPosition.y > headOriginalPos.y)
-            //       head.transform.localPosition = headOriginalPos;
-
         }
-
     }
 
     void BlockLerp()
     {
+
         //moves depending on values set in BlockTargets
 
         if (blockRaising)
         {
             //player rotation
-            //shield rotation
-            float lerpT = (float)((PhotonNetwork.Time - blockStartTime) / playerClassValues.blockRaise);
+            //shield rotation //lifting shield up
+            float lerpFromStart = (float)((PhotonNetwork.Time - blockStartTime) / playerClassValues.blockRaise);
+
+
+            //scale - use same lerp as lift rotation, the higher the rotation, the bigger the scale
+            shield.transform.localScale = Vector3.Lerp(shieldScaleOnButtonPress, new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), lerpFromStart);
+            //rotae shield to face forward
+
+            Vector3 lookUpAndFwd = Vector3.forward + Vector3.up * (.33f / 2);
+            Quaternion targetRotShield = Quaternion.LookRotation(lookUpAndFwd);
+
+            shieldPivot.transform.localRotation = Quaternion.Lerp(shieldStartingRotation, targetRotShield, lerpFromStart);
+
             //can put easings function here?
-             //lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
+            //lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
             //new
             //target rotation was set when player initiated block
 
             //add upwards look to stick direction
-            Quaternion targetRot = Quaternion.LookRotation(headTargetDirectionOnBlock + (Vector3.up * .33f / 2));
+            
 
             //consider if blocking1 target rot change?
-            head.transform.rotation = Quaternion.Lerp(headStartingRotationOnBlock, targetRot, lerpT);
+            //shield rotation - facing right stick
+            //different if local player
+            if(GetComponent<PhotonView>().IsMine)
+            {
+                //head.transform.rotation = headTargetRotationOnBlock;
+                head.transform.rotation=  Quaternion.Lerp(headStartingRotationOnBlock, Quaternion.LookRotation(lookDirRightStick), playerClassValues.blockRotation);
+            }
+            else
+            {
+                float lerpUpdate = (float)((PhotonNetwork.Time - blockRotationTime) / playerClassValues.blockRotationNetworkLerp);//w.i.p how does it work for client - note 1f minues time diff
+                //Debug.Log("lerp update = " + lerpUpdate);
+                head.transform.rotation = Quaternion.Lerp(head.transform.rotation, headTargetRotationOnBlock, lerpUpdate);
+                
+            }
+            //testing - 
+            
+            //if(!PhotonNetwork.IsMasterClient)
+              //  Debug.Log("lerp update = " + lerpUpdate);
+
+            //head.transform.rotation = Quaternion.Lerp(headStartingRotationOnBlock, headTargetRotationOnBlock, lerpUpdate);
+            
+
+            // headTargetRotationOnBlock = Quaternion.Lerp(head.transform.rotation, Quaternion.LookRotation(lookDirRightStick), playerClassValues.blockRotation);
+
+
 
             //head position
             //move cube forward and down making it look like it is bracing itself or leaning with a knee
-            Vector3 targetForHead = headOriginalPos + head.transform.localScale.x * .66f * head.transform.forward - head.transform.localScale.x * .66f * Vector3.up;
-            head.transform.localPosition = Vector3.Lerp(headStartPos, targetForHead, lerpT);
+            // Vector3 targetForHead = headOriginalPos + head.transform.localScale.x * .66f * head.transform.forward - head.transform.localScale.x * .66f * Vector3.up;
+            // head.transform.localPosition = Vector3.Lerp(headStartPos, targetForHead, lerpT);
 
-            //shield rotation
-            //lerpT = (float)((PhotonNetwork.Time - blockStartTimeRaise) / playerClassValues.blockRaise);
+            //shield rotation - facing right stick
+            // lerpT = (float)((PhotonNetwork.Time - blockRotationTime) / playerClassValues.blockRaise);
             //can put easings function here?
-            //lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
+            //  lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
 
 
-            //add look up to rotation
-            Vector3 lookUpAndFwd = Vector3.forward + Vector3.up * (.33f / 2);
-            targetRot = Quaternion.LookRotation(lookUpAndFwd);
+            //add look up to rotation //lerped?
+            //   Vector3 lookUpAndFwd = Vector3.forward + Vector3.up * (.33f / 2);
+            //   targetRot = Quaternion.LookRotation(lookUpAndFwd);
 
             //consider if blocking1 target rot change
-            shieldPivot.transform.localRotation = Quaternion.Lerp(shieldStartingRotation, targetRot, lerpT);
 
 
-            //scale
 
-            shield.transform.localScale = Vector3.Lerp(Vector3.zero, new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), lerpT);
+
 
         }
-        else if (blockLowering)
+        else if (blockLowering && !blockLowered)
         {
-
+            
             //player rotation
 
-            float lerpT = (float)((PhotonNetwork.Time - blockStartTime) / playerClassValues.blockLower);
-           // Debug.Log(lerpT);
+            float lerpFromStart = (float)((PhotonNetwork.Time - blockStartTime) / playerClassValues.blockLower);
+         //   if(!PhotonNetwork.IsMasterClient)
+         //       Debug.Log(lerpFromStart);
             //can put easings function here?
             //lerpT = Easings.CubicEaseOut(lerpT);//slow start and straight end
             //new
             //target rotation - face forward to match transform forward
             //start where we finished blcoking towards
-            Quaternion startingRot = Quaternion.LookRotation(headTargetDirectionOnBlock + (Vector3.up * .33f / 2));
-            Quaternion targetRot = Quaternion.LookRotation(transform.forward);
+           // Quaternion startingRot = Quaternion.LookRotation(headTargetDirectionOnBlock + (Vector3.up * .33f / 2));
+            //Quaternion targetRot = Quaternion.LookRotation(transform.forward);
             //consider if blocking1 target rot change?
-            head.transform.rotation = Quaternion.Lerp(startingRot, targetRot, lerpT);
+            //head.transform.rotation = Quaternion.Lerp(startingRot, targetRot, lerpT);
 
             Vector3 targetForHead = headOriginalPos;
-            head.transform.localPosition = Vector3.Lerp(headStartPos, targetForHead, lerpT);
+          //  head.transform.localPosition = Vector3.Lerp(headStartPos, targetForHead, lerpT);
 
             //shield rotation
             // lerpT = (float)((PhotonNetwork.Time - blockStartTimeLower) / playerClassValues.blockLower);
             //can put easings function here?
             ///// lerpT = Easings.CubicEaseIn(lerpT);//slow start and straight end
 
-            targetRot = Quaternion.LookRotation(Vector3.down);
-            //consider if blocking1 target rot change
-            shieldPivot.transform.localRotation = Quaternion.Lerp(shieldStartingRotation, targetRot, lerpT);
+            
             //scale
 
-            shield.transform.localScale = Vector3.Lerp(new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), Vector3.zero, lerpT);
+            shield.transform.localScale = Vector3.Lerp(new Vector3(shieldStartingScaleX, shieldStartingScaleY, shieldStartingScaleZ), Vector3.zero, lerpFromStart);
 
-            //once animation has got to 1f lerp (copmplete) reset flag to allow another block
-            if (lerpT >= 1f)
+            Quaternion targetRot = Quaternion.LookRotation(Vector3.down);
+            //consider if blocking1 target rot change
+            shieldPivot.transform.localRotation = Quaternion.Lerp(shieldStartingRotation, targetRot, lerpFromStart);
+
+           if(lerpFromStart >= 1f)
             {
-                blocking = false;
+                //once animation has completed, reset flags
                 blockLowering = false;
+                blockLowered = true;
+                blocking = false;
+                //blockStartTimeSetLower = false;
+               
             }
         }
-    }
-
-    void SendBlockTargetsToNetwork()
-    {
-
     }
 
     public GameObject NearestCellToStickAngle(Vector3 lookDir)

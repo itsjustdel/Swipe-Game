@@ -455,13 +455,15 @@ namespace DellyWellyWelly
                 bool blocking = (bool)customData[1];
                 bool blockRaising = (bool)customData[2];
                 bool blockLowering = (bool)customData[3];
-                Quaternion shieldStartingRotation = (Quaternion)customData[4];
-                Vector3 shieldScaleOnButtonPress = (Vector3)customData[5];
-                Quaternion headStartingRotationOnBlock = (Quaternion)customData[6];
-                Vector3 headTargetDirectionOnBlock = (Vector3)customData[7];
-                Vector3 headStartPos = (Vector3)customData[8];
-                double blockStartTime = (double)customData[9];
-
+                bool blockLowered = (bool)customData[4];
+                Quaternion shieldStartingRotation = (Quaternion)customData[5];
+                Vector3 shieldScaleOnButtonPress = (Vector3)customData[6];
+                Quaternion headStartingRotationOnBlock = (Quaternion)customData[7];
+                Quaternion headTargetRotationOnBlock = (Quaternion)customData[8];
+                Vector3 headStartPos = (Vector3)customData[9];
+                double blockStartTime = (double)customData[10];
+                double blockStartTimeOnUpdate = (double)customData[11];
+                
                 //apply data from network master to this client
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
                 //enter the block button into the inputs class on client player
@@ -471,13 +473,15 @@ namespace DellyWellyWelly
                 pA.blocking = blocking;
                 pA.blockRaising = blockRaising;
                 pA.blockLowering = blockLowering;
+                pA.blockLowered = blockLowered;
                 pA.shieldStartingRotation = shieldStartingRotation;
                 pA.shieldScaleOnButtonPress = shieldScaleOnButtonPress;
                 pA.headStartingRotationOnBlock = headStartingRotationOnBlock;
-                pA.headTargetDirectionOnBlock = headTargetDirectionOnBlock;
+                pA.headTargetRotationOnBlock = headTargetRotationOnBlock;
                 pA.headStartingRotationOnBlock = headStartingRotationOnBlock;
                 pA.headStartPos = headStartPos;
                 pA.blockStartTime = blockStartTime;
+                pA.blockRotationTime = blockStartTimeOnUpdate;
 
                 /*
                 //do we need, ? - just make sure other scripts are referencing pA.blocking and not any inputs

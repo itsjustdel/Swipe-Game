@@ -351,6 +351,8 @@ MonoBehaviour:
   blockRaise: 0.33
   blockLower: 0.33
   blockMinimum: 0.66
+  blockRotation: 0.2
+  blockRotationNetworkLerp: 0.5
 --- !u!114 &578400625
 MonoBehaviour:
   m_ObjectHideFlags: 0
