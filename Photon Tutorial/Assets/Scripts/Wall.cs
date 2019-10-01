@@ -311,7 +311,7 @@ public class Wall : MonoBehaviour {
             Vector3 miterDir1 = mitersSorted[i][0];
 
             Debug.DrawLine(p0, p0 + miterDir0,Color.red);
-            wall.GetComponent<MeshFilter>().mesh = IndividualWall(originalMesh, p0, p1, playerClassValues.maxClimbHeight*overlayDrawer.heightMultiplier, miterDir0,miterDir1);
+            wall.GetComponent<MeshFilter>().mesh = IndividualWall(originalMesh, p0, p1, 1f, miterDir0,miterDir1);//wall height 1
             wall.AddComponent<MeshCollider>().sharedMesh = wall.GetComponent<MeshFilter>().mesh;
         }
     }
@@ -323,11 +323,11 @@ public class Wall : MonoBehaviour {
         {
             //for each edge, check if the cell it shares an edge with is lower than it
             bool setHigh = false;
-            if (GetComponent<AdjacentCells>().frontlineCell)
+            if (GetComponent<AdjacentCells>().controlledBy < 0)
             {
                 setHigh = false;
             }
-            else if (transform.localScale.y - adjacentEdgeCells[i].transform.localScale.y > playerClassValues.maxClimbHeight*overlayDrawer.heightMultiplier )
+            else if (transform.localScale.y - adjacentEdgeCells[i].transform.localScale.y > playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier)
             {
                 //if this isnt owned by the same player (dont build walls with territory)
                 int thisOwnedBy = GetComponent<AdjacentCells>().controlledBy;
@@ -338,7 +338,7 @@ public class Wall : MonoBehaviour {
                     setHigh = true;
 
                 //build wall on to frontline cell
-                if (adjacentEdgeCells[i].GetComponent<AdjacentCells>().frontlineCell)
+                if (adjacentEdgeCells[i].GetComponent<AdjacentCells>().controlledBy > -1)
                     setHigh = true;
             }
 
@@ -408,13 +408,13 @@ public class Wall : MonoBehaviour {
 
             walls[i].GetComponent<MeshRenderer>().enabled = true;
             if (GetComponent<AdjacentCells>().controlledBy == 0)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 2)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 3)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3a") as Material;
         }
     }
     void MoveWalls()

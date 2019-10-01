@@ -19,16 +19,7 @@ public class PlayerAttacks : MonoBehaviour {
     public float y;
     public bool playerMoving = false;
     public Vector3 lookDirRightStick;
-
-  //  public bool lbPushed = false;
-  //  public bool lbHeld = false;
- //   public bool rbPushed = false;
-  //  public bool rbHeld = false;
-
-    //trigger
-   // public float leftTrigger;
-  //  public float rightTrigger;
-
+    public Vector3 previousLookDirectionRightStick;
     //head (shield)
     public float headRotationSpeed = 0.25f;
     public float headRotationSpeedWhenBumping = 0.25f;//keeping same speed atm. confusing - loook at if shield is op?
@@ -54,7 +45,7 @@ public class PlayerAttacks : MonoBehaviour {
     public Spawner spawner;
     public Vector3 stabberStartLocalPos;
     public Vector3 currentTargetCentroid;
-    public Vector3 rotateTarget;
+    
     public bool stabTargetSet = false;
     
     public GameObject head;
@@ -67,7 +58,7 @@ public class PlayerAttacks : MonoBehaviour {
     GameObject shield;
     public bool blocking;
     public bool blockRaising = false;
-    public bool blockLowering = false;//starts true so shield gets minimised
+    public bool blockLowering = true;//starts true so shield gets minimised
     public bool blockLowered = false;
  
  //   public bool blockStartTimeSetRaise = false;
@@ -80,6 +71,8 @@ public class PlayerAttacks : MonoBehaviour {
     public Quaternion shieldStartingRotation;
     public Quaternion headStartingRotationOnBlock;
     public Quaternion headTargetRotationOnBlock;
+    
+
     public Vector3 shieldScaleOnButtonPress;
     public Vector3 headStartPos;
     float shieldStartingScaleX;
@@ -197,6 +190,10 @@ public class PlayerAttacks : MonoBehaviour {
     void GetInputs()
     {
 
+        //remember last frame
+        previousLookDirectionRightStick = lookDirRightStick;
+
+
         x = inputs.state.ThumbSticks.Right.X;
         y = -inputs.state.ThumbSticks.Right.Y;//inverted
 
@@ -226,10 +223,13 @@ public class PlayerAttacks : MonoBehaviour {
 
         playerMoving = GetComponent<PlayerMovement>().moving;
 
+
+
+
         //block
 
         //create a magnitude which doesn't consider camera angle, more precise, tells us exactly what the user put in the stick
-      
+
     }
 
     void CalculateRightStickReset()
@@ -277,9 +277,8 @@ public class PlayerAttacks : MonoBehaviour {
         //if (inputs.blocking0  && !blocking)
         if (inputs.blocking0)
         {
-            //reset any flags for lowering
-            //blockStartTimeSetLower = false;
-
+            
+            bool changedThisFrame = false;
             if (!blockRaising)
             {
                 //start timer for rotation of shield to forward position
@@ -287,13 +286,14 @@ public class PlayerAttacks : MonoBehaviour {
                 blockRaising = true;
                 blockLowered = false;
                 blockLowering = false;
-                
 
-                blockStartTime = PhotonNetwork.Time;
-                //blockStartTimeSetRaise = true;
-                //not starting shield scale
+                //flag for sending to network
+                changedThisFrame = true;
+
+                blockStartTime = PhotonNetwork.Time;                
+                //not starting shield scale- current shield scale
                 shieldScaleOnButtonPress = shield.transform.localScale;
-                //lift rotation start
+                //lift rotation start/current
                 shieldStartingRotation = shieldPivot.transform.localRotation;
 
                
@@ -323,13 +323,18 @@ public class PlayerAttacks : MonoBehaviour {
 
             headStartPos = head.transform.localPosition;
 
-         
 
-            Debug.Log("[CLIENT] - Setting shield targets and sending to network");
-                
+
+
+
 
             //send targets to network
-            SendShieldToNetwork();
+            //only send on change of right stick or button press
+            if (lookDirRightStick != previousLookDirectionRightStick || changedThisFrame)
+            {
+                Debug.Log("[CLIENT] - Setting shield targets and sending to network");
+                SendShieldToNetwork();
+            }
             
 
         }
@@ -401,15 +406,18 @@ public class PlayerAttacks : MonoBehaviour {
             //different if local player
             if(GetComponent<PhotonView>().IsMine)
             {
-                //head.transform.rotation = headTargetRotationOnBlock;
-                head.transform.rotation=  Quaternion.Lerp(headStartingRotationOnBlock, Quaternion.LookRotation(lookDirRightStick), playerClassValues.blockRotation);
+                
+                head.transform.rotation =  Quaternion.Slerp(headStartingRotationOnBlock, headTargetRotationOnBlock, playerClassValues.blockRotation);
             }
             else
             {
-                float lerpUpdate = (float)((PhotonNetwork.Time - blockRotationTime) / playerClassValues.blockRotationNetworkLerp);//w.i.p how does it work for client - note 1f minues time diff
-                //Debug.Log("lerp update = " + lerpUpdate);
-                head.transform.rotation = Quaternion.Lerp(head.transform.rotation, headTargetRotationOnBlock, lerpUpdate);
-                
+                float lerpUpdate = (float)((PhotonNetwork.Time - blockRotationTime) / playerClassValues.blockRotation);
+                //work out where the head should be - we will lerp to this
+                Quaternion headRotateClientTarget = Quaternion.Slerp(headStartingRotationOnBlock, headTargetRotationOnBlock, lerpUpdate);
+                //now slerp to target, do this to stop any teleporting - so the first part of the rotation will probably swing faster to catch up with rotation that was happening when the message was being sent over the net- but its better than a jump/teleport
+                head.transform.rotation = Quaternion.Slerp(head.transform.rotation, headRotateClientTarget, playerClassValues.blockRotationNetworkLerp);
+
+
             }
             //testing - 
             

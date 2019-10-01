@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OverlayDrawer : MonoBehaviour {
+public class OverlayDrawer : MonoBehaviour
+{
 
     //receives positions from each player and draws correct overlay for each cell
-    int playerAmount = 0;
-    public  List<GameObject> cells;
+   // public int playerAmount = 2;
+    List<GameObject> cells;
     PlayerGlobalInfo pgi;
     PlayerClassValues playerClassValues;
     List<List<int>> coloursForEachCell = new List<List<int>>();
@@ -16,48 +17,44 @@ public class OverlayDrawer : MonoBehaviour {
 
     bool skipFrame = true;
     public bool doHeights;
+    public bool doFrontline;
     public bool doHomeCellHeightsToStart;
-    public bool automaticFrontlineHeightRaise;
     public bool reduceFrontline;
-    public bool doCapture;
     // public float targetY;
     public float heightSpeed = .1f;
     public float heightSpeedSiege = .01f;
-    public float heightMultiplier = 1f;//i think if this gets changed, maybe need to alter maxclimb height?
+    public float heightMultiplier = 2f;
     public float minHeight = 3f;
     public int totalCellsTransparent = 0;
-    
+    public List<int> opponents;
     //holds all meshes off voronoi generation before we altered them
     public List<Mesh> originalMeshes = new List<Mesh>();
-    void Start ()
-    { 
-       // playerAmount = GetComponent<Spawner>().playerAmount;
+    void Start()
+    {
+        
         cells = GetComponent<MeshGenerator>().cells;
         pgi = GetComponent<PlayerGlobalInfo>();
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
 
-      //  targetY = minHeight;
-	}
-	
-	// Update is called once per frame
-	void Update ()
+        //  targetY = minHeight;
+    }
+
+    // Update is called once per frame
+    void Update()
     {
 
-        
 
-        
-	}
+
+
+    }
 
     private void FixedUpdate()
     {
-        playerAmount = pgi.playerGlobalList.Count;
 
-        FrontLine();
+        UpdateCurrentCells();
 
-        if(doCapture)
-            Capture();
 
-        
+        Height2();
 
         if (resetCells)
         {
@@ -69,78 +66,107 @@ public class OverlayDrawer : MonoBehaviour {
         if (doHeights)
         {
 
-            Height();//works out maximum height cell can be
 
-            //if frontline cell, raise height if standing on it - stop if two plyers re on it (if bool set to do this)
-            if (automaticFrontlineHeightRaise)
+            for (int i = 0; i < cells.Count; i++)
             {
-                for (int i = 0; i < cells.Count; i++)
+                float tempHeightSpeed = heightSpeed;
+
+                //if frontline cell, raise height if standing on it - stop if two plyers re on it
+                for (int j = 0; j < pgi.playerGlobalList.Count; j++)
                 {
-                    float tempHeightSpeed = heightSpeed;
-
-
-                    for (int j = 0; j < playerAmount; j++)
+                    //find out if this is a current cell
+                    if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i] && cells[i].GetComponent<AdjacentCells>().controlledBy == -1)
                     {
-                        //find out if this is a current cell
-                        if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i] && cells[i].GetComponent<AdjacentCells>().frontlineCell)
-                        {
-                            //find highest adjacent cell
-                            float highest = 0f;
+                        //find highest adjacent cell
+                        float highest = 0f;
 
-                            for (int k = 0; k < cells[i].GetComponent<AdjacentCells>().adjacentCells.Count; k++)
+                        for (int k = 0; k < cells[i].GetComponent<AdjacentCells>().adjacentCells.Count; k++)
+                        {
+                            if (cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
                             {
-                                if (cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
-                                {
-                                    highest = cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
-                                }
+                                highest = cells[i].GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
                             }
-                            cells[i].GetComponent<AdjacentCells>().targetY = highest; ;//highest opponent adjacent
-                            tempHeightSpeed = heightSpeedSiege;
                         }
-                    }
-
-
-                    float y = cells[i].transform.localScale.y + tempHeightSpeed;
-
-                    if (Mathf.Abs(cells[i].transform.localScale.y - cells[i].GetComponent<AdjacentCells>().targetY) <= tempHeightSpeed)
-                    {
-                        //if close to target,
-                        cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY, 1f);
-                    }
-                    else
-                    {
-
-                        //grow it if smaller than target
-                        if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
-                        {
-                            cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y + tempHeightSpeed, 1f);
-
-                            if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
-                                cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
-                        }
-                        else if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
-                        {
-                            cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y - tempHeightSpeed, 1f);
-
-                            if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
-                                cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
-                        }
+                        cells[i].GetComponent<AdjacentCells>().targetY = highest; ;//highest opponent adjacent
+                        tempHeightSpeed = heightSpeedSiege;
                     }
                 }
+
+
+                float y = cells[i].transform.localScale.y + tempHeightSpeed;
+
+                if (Mathf.Abs(cells[i].transform.localScale.y - cells[i].GetComponent<AdjacentCells>().targetY) <= tempHeightSpeed)
+                {
+                    //if close to target,
+                    cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY, 1f);
+                }
+                else
+                {
+
+                    //grow it if smaller than target
+                    if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
+                    {
+                        cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y + tempHeightSpeed, 1f);
+
+                        if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
+                            cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
+                    }
+                    else if (cells[i].transform.localScale.y > cells[i].GetComponent<AdjacentCells>().targetY)
+                    {
+                        cells[i].transform.localScale = new Vector3(1f, cells[i].transform.localScale.y - tempHeightSpeed, 1f);
+
+                        if (cells[i].transform.localScale.y < cells[i].GetComponent<AdjacentCells>().targetY)
+                            cells[i].transform.localScale = new Vector3(1f, cells[i].GetComponent<AdjacentCells>().targetY + tempHeightSpeed, 1f);
+                    }
+
+
+                }
+
             }
         }
 
-        if(doHomeCellHeightsToStart)
-        {
-            HomeCellsHeights();
-        }
 
-        if(reduceFrontline)
+        if (reduceFrontline)
         {
             ReduceFrontline();
         }
 
         TransparentCells();
+    }
+
+    void UpdateCurrentCells()
+    {
+
+        //for each player, raycast for them to find out which cell they are over
+
+        RaycastHit hit;
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
+        {
+            PlayerInfo pI = pgi.playerGlobalList[i].GetComponent<PlayerInfo>();
+            if (pI.playerDespawned)
+                continue;
+
+            GameObject currentCell = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell;
+            Vector3 shootFrom = pgi.playerGlobalList[i].transform.position + Vector3.up * 50;
+            if (Physics.Raycast(shootFrom, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells"))) //was using last target as shootFrom here
+            {
+                if (currentCell != hit.transform.gameObject)
+                {
+
+
+                    GameObject lastCell = currentCell;
+                    //if a change in cell, update
+                    pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell = hit.transform.gameObject;
+
+                    //what happens to cell we just left
+                    AbandonedCell(lastCell);
+                    //and work out new cells for this player
+                    Capture(i);
+
+                    //|Ensnared();
+                }
+            }
+        }
     }
 
     void ReduceFrontline()
@@ -149,42 +175,43 @@ public class OverlayDrawer : MonoBehaviour {
         for (int i = 0; i < cells.Count; i++)
         {
             //look for frontliners
-            if (!cells[i].GetComponent<AdjacentCells>().frontlineCell)
+            if (cells[i].GetComponent<AdjacentCells>().controlledBy > -1)
                 continue;
 
             //look to see if any palyer's current cell
             bool current = false;
-            for (int j = 0; j < playerAmount; j++)
+            for (int j = 0; j < pgi.playerGlobalList.Count; j++)
             {
-                if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i])
+                CellHeights cellHeights = pgi.playerGlobalList[j].GetComponent<CellHeights>();
+                if (cellHeights.loweringCell || cellHeights.raisingCell)
                 {
-                    current = true;
-                    break;
+
+                    if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cells[i])
+                    {
+                        current = true;
+                        break;
+                    }
                 }
             }
+
             if (current)
                 continue;
-            
+
             float targetY = cells[i].transform.localScale.y - heightSpeedSiege;
             if (targetY < 1f)//min height?
                 targetY = 1f;
+
             cells[i].transform.localScale = new Vector3(1f, targetY, 1f);
 
         }
     }
 
-    void HomeCellsHeights()
-    {
-        for (int i = 0; i < playerAmount; i++)
-        {
-            //to do
-        }
-    }
+    
 
     void TransparentCells()
     {
 
-        
+
 
         //first reset all bools for transparency
         for (int i = 0; i < cells.Count; i++)
@@ -198,22 +225,22 @@ public class OverlayDrawer : MonoBehaviour {
 
 
 
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
-            
+
             Vector3 shootFrom = pgi.playerGlobalList[i].transform.position + Vector3.up * 0.5f;//was causing glitch, still?
             Vector3 shotDir = Camera.main.transform.position - shootFrom;
 
-           // Debug.DrawLine(shootFrom, Camera.main.transform.position);
+            // Debug.DrawLine(shootFrom, Camera.main.transform.position);
 
             RaycastHit[] hits = Physics.RaycastAll(shootFrom, shotDir, shotDir.magnitude, LayerMask.GetMask("Cells"));
 
             for (int j = 0; j < hits.Length; j++)
-            {   
-                Material mat= null;
+            {
+                Material mat = null;
 
                 //frontline?
-                if (hits[j].transform.GetComponent<AdjacentCells>().frontlineCell)
+                if (hits[j].transform.GetComponent<AdjacentCells>().controlledBy == -1)
                 {
                     mat = Resources.Load("ClearMaterials/DisputedClear") as Material;
                 }
@@ -239,6 +266,7 @@ public class OverlayDrawer : MonoBehaviour {
             }
         }
     }
+
     private void ResetCells()
     {
         for (int i = 0; i < cells.Count; i++)
@@ -247,90 +275,192 @@ public class OverlayDrawer : MonoBehaviour {
         }
     }
 
-  
-
-    void Capture()
+    void AbandonedCell(GameObject lastCell)
     {
-        //turns cells to player colour
+        if (lastCell == null)
+            return;
 
-        //for each player check what cell they are on
-        //compare against other player's cell
+        //work out if anythin should happen to the cell that was just left by a player
+
+        //if another team is on it, the cell becomes a frontline cell, unless they own the cell they are on
+        //check for other team
         for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
-            //if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell == null)
-              //  continue;
 
-            bool onlyPlayerOnCell = true;
-           //s bool colourForPlayer = false;
-            for (int j = 0; j < playerAmount; j++)
+            PlayerInfo pI = pgi.playerGlobalList[i].GetComponent<PlayerInfo>();
+            //make disputed cell if the team now on it is different to that who owned it before
+            //keeps up the advantage of pushing opponent back
+            if (pI.currentCell == lastCell && pI.currentCell.GetComponent<AdjacentCells>().controlledBy != pI.playerNumber)
             {
-                //skip our own player
-                if (i == j)
-                    continue;
+                DisputedCell(lastCell);
+            }
+        }
 
-              
 
-                    //if both have current cells
-                if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell != null)//if not dead
+
+    }
+
+    void Ensnared()
+    {
+        //check all cells to see if they have been surrounded by the same team
+        List<GameObject> cells = GetComponent<MeshGenerator>().cells;
+        //for each cell
+        for (int i = 0; i < cells.Count; i++)
+        {
+            //for each adjacent cell on cell
+            List<GameObject> adjacents = cells[i].GetComponent<AdjacentCells>().adjacentCells;
+            List<int> ownedBy = new List<int>() { 0, 0, 0, 0 };
+            int disputed = 0;
+
+            for (int j = 0; j < adjacents.Count; j++)
+            {
+                //who controls it?
+                //if anyone controls it
+                int controlledBy = adjacents[j].GetComponent<AdjacentCells>().controlledBy;
+                if (controlledBy > -1)
                 {
-                    
-                    if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == null)//if other player is dead
-                    {
-                        //colourForPlayer = true;
-                    }
-                    else if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell == pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell)
-                    {
-                        //some one else is here
-                        onlyPlayerOnCell = false;
-                      //  pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Disputed") as Material;
+                    //count who controls it
+                    ownedBy[controlledBy]++;
+                }
+                else if (adjacents[j].GetComponent<AdjacentCells>().controlledBy == -1)
+                {
+                    //keep a count of how many were frontline cells too
+                    disputed++;
+                }
+            }
+            //work out if cell is ensnared
+            for (int a = 0; a < ownedBy.Count; a++)
+            {
+                if (ownedBy[a] + disputed == adjacents.Count)
+                {
+                    //take central ensnared cell for player with cells ensnaring 
+                    CaptureCell(a, cells[i]);
+                }
+            }
+        }
+    }
 
-                      //  pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().controlledBy = -2;//-2 disputed, -1 neutral
 
-                    //don't change anything here, the first to control the cell gets to hold unitl defeated or retreated
-                    }                    
-                 
+
+    void Capture(int thisPlayer)
+    {
+
+        //work out who owns the cell just landed on by the passed player
+
+        GameObject currentCell = pgi.playerGlobalList[thisPlayer].GetComponent<PlayerInfo>().currentCell;
+
+        //if player already owns this cell, it shouldn't change when we land on it - we can return from here
+        if (PlayerOwnsCell(currentCell, thisPlayer))
+            return;
+
+        //if another team is already on this cell, we can't take it - must kill or push them off
+        for (int j = 0; j < pgi.playerGlobalList.Count; j++)
+        {
+            if (thisPlayer == j)
+                continue;
+
+            if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == pgi.playerGlobalList[thisPlayer].GetComponent<PlayerInfo>().currentCell)
+            {
+                return;
+            }
+        }
+
+        bool onlyPlayerOnCell = true;
+        bool otherPlayerOnAdjacentCell = false;
+        bool otherPlayerControlsAdjacent = false;
+
+        for (int j = 0; j < pgi.playerGlobalList.Count; j++)
+        {
+            //skip our own player
+            if (thisPlayer == j)
+                continue;
+
+            GameObject otherCurrentCell = pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell;
+
+
+
+            //look for another player on this cell
+            if (currentCell != null)//if not dead or floating in mid air between cells
+            {
+                if (currentCell == otherCurrentCell)
+                {
+                    //some one else is here
+                    onlyPlayerOnCell = false;
                 }
             }
 
-            if (onlyPlayerOnCell)
+            //look for another player on this cell's adjacent cells
+            List<GameObject> adjacents = currentCell.GetComponent<AdjacentCells>().adjacentCells;
+            for (int a = 0; a < adjacents.Count; a++)
             {
-                //  if (colourForPlayer)
+                if (adjacents[a] == otherCurrentCell)
                 {
-                    //can't grab a frontline cell, need to break the line to get control
-                    // if(!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().frontlineCell)
-                    if (pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell != null)//if not dead
-                    {
-                        pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().controlledBy = i;
+                    //another player is on this adjacent cell
+                    otherPlayerOnAdjacentCell = true;
 
-                        //add to list on player if not already
-                        if (!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Contains(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell))
-                        {
-                            pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
-                        }
+                }
 
-                        //remove from other players
-                        for (int a = 0; a < playerAmount; a++)
-                        {
-                            if (a == i)
-                                continue;
-
-                            List<GameObject> cellsOwnedByOther = pgi.playerGlobalList[a].GetComponent<PlayerInfo>().cellsUnderControl;
-
-                            cellsOwnedByOther.Remove(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
-                        }
-                    }
-
-                    /* w.i.p
-                    //check for edge cell
-                    bool edgeCell = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<AdjacentCells>().edgeCell;
-
-                    if (edgeCell)
-                    {
-                        Spread(pgi.playerGlobalList[i]);
-                    }
-                    */
+                //look for the adjacent cell being controlled by an opponent
+                if (adjacents[a].GetComponent<AdjacentCells>().controlledBy == j)
+                {
+                    otherPlayerControlsAdjacent = true;
                 }
             }
+        }
+
+        //if we are the only one on the cell and there is no opponent on an adjacent 
+        if (onlyPlayerOnCell && !otherPlayerOnAdjacentCell && !otherPlayerControlsAdjacent)
+        {
+            CaptureCell(thisPlayer, currentCell);
+        }
+        else if (otherPlayerOnAdjacentCell || otherPlayerControlsAdjacent)
+        {
+            //we can make this a disputed cell
+            DisputedCell(currentCell);
+        }
+    }
+
+    bool PlayerOwnsCell(GameObject currentCell, int thisPlayer)
+    {
+        bool alreadyOwnedByThisPlayer = false;
+        if (currentCell.GetComponent<AdjacentCells>().controlledBy == thisPlayer)
+            alreadyOwnedByThisPlayer = true;
+
+        return alreadyOwnedByThisPlayer;
+    }
+
+    void DisputedCell(GameObject disputedCell)
+    {
+        //remove from all players if they have it and make current cell controlled by -1 (disputed index)
+        for (int a = 0; a < pgi.playerGlobalList.Count; a++)
+        {
+            List<GameObject> cellsOwnedByOther = pgi.playerGlobalList[a].GetComponent<PlayerInfo>().cellsUnderControl;
+
+            cellsOwnedByOther.Remove(disputedCell);
+        }
+
+        disputedCell.GetComponent<AdjacentCells>().controlledBy = -1;
+    }
+
+    void CaptureCell(int i, GameObject cell)
+    {
+        cell.GetComponent<AdjacentCells>().controlledBy = i;
+
+        //add to list on player if not already
+        if (!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Contains(cell))
+        {
+            pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Add(cell);
+        }
+
+        //remove from other players
+        for (int a = 0; a < pgi.playerGlobalList.Count; a++)
+        {
+            if (a == i)
+                continue;
+
+            List<GameObject> cellsOwnedByOther = pgi.playerGlobalList[a].GetComponent<PlayerInfo>().cellsUnderControl;
+
+            cellsOwnedByOther.Remove(cell);
         }
     }
 
@@ -344,7 +474,7 @@ public class OverlayDrawer : MonoBehaviour {
         {
             if (cellsOwned[i].GetComponent<AdjacentCells>().edgeCell)
                 edgeCells.Add(cellsOwned[i]);
-        }        
+        }
 
 
         //still to figure out // W.I.P
@@ -354,107 +484,75 @@ public class OverlayDrawer : MonoBehaviour {
     {
         //find front line cells
 
-        // for each cell, find if it has two different player's cells adjacent to it
+        //it is a frontline cell if there are at least two neighbouring/adjacent cells which belong to at leat two players
+
+        //conditions : Can't be made in to a frontline cell if cell is fully built up. This cell is considered safe
+
+        //special case: if cell belongs to plater 1 and player 2 has the only claim on it, it becomes frontline(if not built up)
 
         for (int i = 0; i < cells.Count; i++)
         {
-            
+
             List<GameObject> frontlineCells = new List<GameObject>();
 
             List<GameObject> thisCellAdjacents = cells[i].GetComponent<AdjacentCells>().adjacentCells;
-
-            List<int> opponents = new List<int>();
-
+            List<int> otherOwners = new List<int>();
+            int thisOwned = 0;
+            int thisControlledBy = cells[i].GetComponent<AdjacentCells>().controlledBy;
             for (int j = 0; j < thisCellAdjacents.Count; j++)
             {
-                int controlledBy = thisCellAdjacents[j].GetComponent<AdjacentCells>().controlledBy;
+                int otherControlledBy = thisCellAdjacents[j].GetComponent<AdjacentCells>().controlledBy;
 
-                //neutral, no frontline , or disputed
-                if (controlledBy == -1 || thisCellAdjacents[j].GetComponent<AdjacentCells>().frontlineCell)
-                    continue;
-
-                else
-                if (!opponents.Contains(controlledBy))
-                    opponents.Add(controlledBy);
-
+                if (thisControlledBy != otherControlledBy && thisCellAdjacents[j].GetComponent<AdjacentCells>().controlledBy != -1)
+                {
+                    otherOwners.Add(otherControlledBy);
+                }
+                else if (thisControlledBy == otherControlledBy && thisCellAdjacents[j].GetComponent<AdjacentCells>().controlledBy != -1)
+                {
+                    thisOwned++;
+                }
             }
-
-            if (opponents.Count > 1)
-            {
-                //cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("White") as Material;
+            /*
+            //if cell has at least one pal but also doesnt have enemy at the gates, it is not a frontline cell
+            if (thisOwned >0 && otherOwners.Count ==0)
+                cells[i].GetComponent<AdjacentCells>().frontlineCell = false;
+            else
                 cells[i].GetComponent<AdjacentCells>().frontlineCell = true;
-             //   cells[i].GetComponent<AdjacentCells>().controlledBy = -2;
-            }
-            else if(opponents.Count == 0)
-            {
-                cells[i].GetComponent<AdjacentCells>().frontlineCell = false;
-                //cells[i].GetComponent<AdjacentCells>().controlledBy = opponents[0];
-            }
-            else if (opponents.Count == 1)
-            {
-                cells[i].GetComponent<AdjacentCells>().frontlineCell = false;
-                //cells[i].GetComponent<AdjacentCells>().controlledBy = opponents[0];
-            }
+                */
 
         }
     }
 
-    void Height()
+
+    void Height2()
     {
-        //works out cell's max height allowed. Height capped by how many adjacent cells the player owns and adjusted by the player
-
-
-       // List<GameObject> frontlineCells = new List<GameObject>();
-
-        //check player
-        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
+        //for each cell, check how many of its own adjacents are controlled by the same team
+        for (int i = 0; i < cells.Count; i++)
         {
-            //check each player's owned adjacent cells
-            List<GameObject> thisCells = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl;
-              
-           // for (int j = 0; j < playerAmount; j++)
+            int thisControlledBy = cells[i].GetComponent<AdjacentCells>().controlledBy;
+
+            if (thisControlledBy < 0)
+                continue;
+
+            float adjacentControlledBySame = 0;
+            List<GameObject> adjacents = cells[i].GetComponent<AdjacentCells>().adjacentCells;
+
+            for (int j = 0; j < adjacents.Count; j++)
             {
-                //against all other players
-            //    if (i == j)
-            //        continue;
-
-                //List<GameObject> otherCells = pgi.playerGlobalList[j].GetComponent<PlayerInfo>().cellsUnderControl;
-
-                for (int a = 0; a < thisCells.Count; a++)
+                if (thisControlledBy == adjacents[j].GetComponent<AdjacentCells>().controlledBy)
                 {
-
-                    List<GameObject> thisAdjacents = thisCells[a].GetComponent<AdjacentCells>().adjacentCells;
-                    List<GameObject> adjacentCellsOwned = new List<GameObject>();
-                  //  List<GameObject> enemyCellsOwned = new List<GameObject>();
-
-                    //check how many cells that we own are adjacent to each other
-                    for (int b = 0; b < thisAdjacents.Count; b++)
-                    {
-
-                        //if frontline, and owned by other player, skip
-                        //if (frontlineCells.Contains(thisAdjacents[b]) && otherCells.Contains(thisAdjacents[b]))
-                        //if(thisAdjacents[b].GetComponent<AdjacentCells>().frontlineCell && otherCells.Contains)
-                          //  continue;
-
-                        if (thisCells.Contains(thisAdjacents[b]))
-                        {
-                            if(!thisAdjacents[b].GetComponent<AdjacentCells>().frontlineCell)
-                                adjacentCellsOwned.Add(thisAdjacents[b]);
-                        }
-                    }
-
-                    float tY = adjacentCellsOwned.Count * heightMultiplier;// - enemyCellsOwned.Count * 3;
-                    if (tY < minHeight )
-                        tY = minHeight;
-
-                    if(thisCells[a].GetComponent<AdjacentCells>().frontlineCell == false)
-                       thisCells[a].GetComponent<AdjacentCells>().targetY = minHeight + tY;
-                    else
-                        thisCells[a].GetComponent<AdjacentCells>().targetY = minHeight*heightMultiplier;
+                    adjacentControlledBySame++;
                 }
             }
-        }
 
+            //set target Y to this
+            //  if (adjacentControlledBySame < minHeight) // when might this happen?
+            //      adjacentControlledBySame = minHeight;
+            //  else
+            adjacentControlledBySame = minHeight + (adjacentControlledBySame * heightMultiplier);
+
+            cells[i].GetComponent<AdjacentCells>().targetY = adjacentControlledBySame;
+        }
     }
 
     void Adjacents()
@@ -475,7 +573,7 @@ public class OverlayDrawer : MonoBehaviour {
             List<int> colours = new List<int>();
 
             //go through each cell and check if it exist in any of the player lists for cell info, target adjacent etc
-            for (int j = 0; j < playerAmount; j++)
+            for (int j = 0; j < pgi.playerGlobalList.Count; j++)
             {
                 List<GameObject> thisAdjacents = pgi.playerGlobalList[j].GetComponent<PlayerMovement>().currentAdjacents;
                 for (int a = 0; a < thisAdjacents.Count; a++)
@@ -508,7 +606,7 @@ public class OverlayDrawer : MonoBehaviour {
                 if (coloursForEachCell[i].Count == 1)
                 {
                     if (coloursForEachCell[i][j] == 0)
-                        cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
+                        cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Blue1") as Material;
                     else if (coloursForEachCell[i][j] == 1)
                         cells[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red") as Material;
                 }
@@ -520,10 +618,10 @@ public class OverlayDrawer : MonoBehaviour {
         }
 
         //now paint over current cells
-        for (int i = 0; i < playerAmount; i++)
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
             if (i == 0)
-                pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
+                pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Blue") as Material;
             else if (i == 1)
                 pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red2") as Material;
         }

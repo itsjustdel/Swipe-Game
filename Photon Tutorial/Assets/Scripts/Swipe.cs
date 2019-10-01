@@ -1695,7 +1695,11 @@ public class Swipe : MonoBehaviour {
 
                             BreakUpPlayer(totalRayList[i][j].transform.gameObject, thisSwipeObjectScript);
                             DeSpawnPlayer(parentOfHitHeadMesh);
-                            
+
+                            //strip cell from player we just killed 
+                            parentOfHitHeadMesh.GetComponent<PlayerInfo>().cellsUnderControl.Remove(GetComponent<PlayerInfo>().currentCell);
+                            //force a recheck on cells by making this null- will upate when this happens
+                            GetComponent<PlayerInfo>().currentCell = null;
 
                             //reset this player
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
@@ -1837,6 +1841,9 @@ public class Swipe : MonoBehaviour {
 
             //set flag so we know it is disabled
             parent.GetComponent<PlayerInfo>().playerDespawned = true;
+
+            //reset player current cell to force a recheck of cells captured
+            parent.GetComponent<PlayerInfo>().currentCell = null;
 
         }
 

@@ -222,41 +222,42 @@ public class PlayerMovement : MonoBehaviourPun {
 
         BasicMove();
 
-        //UpdateCurrentCell();//to go back in
 
+        //heights for head
+        
+        
+        HeadHeight();
+        
 
+            //rotate player
 
-        //rotations for body
-
-
-        //to go back in
-
-        //rotate player
-
-        //rotations for head
+            //rotations for head
         if (GetComponent<PlayerAttacks>().blocking)//test blocking- if blocking, should be stuck in animation -ok it seems)
         {
             //rotations are done in player attacks in Block()
         }
         else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
         {
+            //we are adjusting cell, ignore any right stick input
             LookToGround();
+            
         }
         else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
         {
             //Debug.Log("rotating for swipe");
             RotateForSwipe();
         }
-        else if (!swipe.whiffed && !swipe.overheadSwiping)
+        else if (!swipe.whiffed && !swipe.overheadSwiping) //using whiff? dont think so
         {
-            //Debug.Log("Rotating to face right stick");
-            
+            //Debug.Log("Rotating to face right stick");            
 
             //rotate transform to either look at closest player or face the direciton of movement(left stick)
             RotateToFaceClosestPlayer();
             //rotate head back to neutral
             RotateHeadToFaceRightStick();
         }
+
+      
     }
 
     void GetInputs()
@@ -457,29 +458,43 @@ public class PlayerMovement : MonoBehaviourPun {
        // if (swipe.whiffed)
         {
 
+            //should be lerped - need to add current head rotation variable -- leaving atm as will probably only be a visual aid and not involved in too many hit checks
+
+            //double eventStart = GetComponent<CellHeights>().eventTime;
+            //float fracComplete = (float)((PhotonNetwork.Time - eventStart) * 10f);
+
             targetRot = Quaternion.LookRotation(Vector3.forward - Vector3.up * .5f);
 
+            //Quaternion lerpedRot = Quaternion.Slerp -- current head starting position needed to ad this
+
+            
             head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.whiffDuckSpeed);
 
+        }
+    }
+    void HeadHeight()
+    {
+        double eventStart = GetComponent<CellHeights>().eventTime;
+        float headLowerSpeed = 10f;
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
+        {
+            //should be lerp from cell height event time
+            
+            
+            
+            float fracComplete = (float)((PhotonNetwork.Time - eventStart) * headLowerSpeed);
+            Vector3 target = Vector3.Lerp(pA.headOriginalPos, pA.headOriginalPos - head.transform.localScale.y * Vector3.up, fracComplete);
+
+            head.transform.localPosition = Vector3.Lerp(head.transform.localPosition, target, playerClassValues.blockRotationNetworkLerp);//using block rotation value - maybe should just be general network vale
             //duck
             //head.transform.localPosition -= Vector3.up * whiffDuckSpeed;
-            if (pA.headOriginalPos.y - head.transform.localPosition.y < head.transform.localScale.y)
-                head.transform.localPosition -= Vector3.up * .1f;
-
+          
         }
-       // else
+        else
         {
-        /*
-            //unduck
-            head.transform.localPosition += Vector3.up * pA.whiffDuckSpeed;
-            if (head.transform.localPosition.y > pA.headOriginalPos.y)
-                head.transform.localPosition = pA.headOriginalPos;
-
-
-            targetRot = Quaternion.LookRotation(Vector3.forward);
-
-            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.duckSpeed);
-            */
+            float fracComplete = (float)((PhotonNetwork.Time - eventStart) * headLowerSpeed);
+            Vector3 target = Vector3.Lerp(pA.headOriginalPos - head.transform.localScale.y * Vector3.up, pA.headOriginalPos, fracComplete);
+            head.transform.localPosition = Vector3.Lerp(head.transform.localPosition, target, playerClassValues.blockRotationNetworkLerp);//using block rotation value - maybe should just be general network vale
         }
     }
 
@@ -587,19 +602,6 @@ public class PlayerMovement : MonoBehaviourPun {
             //let the right stick have priority
         }
 
-    }
-
-    void UpdateCurrentCell()
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position + Vector3.up*50f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells")))
-        {
-            //it can hit a cell across the gap, make sure it is nly hitting current cell
-            GetComponent<PlayerInfo>().currentCell = hit.transform.gameObject;
-
-        }
-        else
-            GetComponent<PlayerInfo>().currentCell = null;
     }
 
     void BasicMove()//needs factored
@@ -753,7 +755,7 @@ public class PlayerMovement : MonoBehaviourPun {
                     //  c.transform.parent = transform;
 
                     //stop at edge
-                    if (hit.point.y - transform.position.y <5000)//PUT BACK!!//** playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
+                    if (hit.point.y - transform.position.y <= playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier)//testing, not checked
                     {
                         bumpTarget = hit.point;
                         bumpInProgress = true;
@@ -949,7 +951,7 @@ public class PlayerMovement : MonoBehaviourPun {
                         // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
                         //  c.transform.position = hit.point;
                         //  Debug.Log("sum = " + (hit.point.y - transform.position.y).ToString());
-                        if (hit2.point.y - transform.position.y < playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier + overlayDrawer.minHeight - 0.1f)
+                        if (hit2.point.y - transform.position.y <= playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier)
                         {
                             walkTarget = hit2.point;
                         }

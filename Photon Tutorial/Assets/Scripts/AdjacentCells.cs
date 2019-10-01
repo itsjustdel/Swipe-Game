@@ -9,8 +9,8 @@ public class AdjacentCells : MonoBehaviour {
 
     public bool edgeCell;
     public float targetY = 1f;
-    public int controlledBy = -1;
-    public bool frontlineCell = false;
+    public int controlledBy = -2;
+   // public bool frontlineCell = false;
 
     public bool beingMadeTransparent = false;
     //attach to gameobject to store adjacent cells 
@@ -24,29 +24,18 @@ public class AdjacentCells : MonoBehaviour {
     private void Update()
     {
         if (beingMadeTransparent)
-            return;
+            return;        
+       
+        if (controlledBy == -1)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;
+        else if (controlledBy == 0)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
+        else if (controlledBy == 1)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1b") as Material;
+        else if (controlledBy == 2)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2b") as Material;
+        else if (controlledBy == 3)
+            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3b") as Material;
         
-        if (frontlineCell)
-        {
-            if (controlledBy == 0)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;//unsure
-            else if (controlledBy == 1)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;
-            else
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Disputed") as Material;
-        }
-        else
-        
-        { 
-            
-            if (controlledBy == 0)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0b") as Material;
-            else if (controlledBy == 1)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1b") as Material;
-            else if (controlledBy == 2)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2b") as Material;
-            else if (controlledBy == 3)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3b") as Material;
-        }
     }
 }

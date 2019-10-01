@@ -3,26 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 public class ExtrudeCell : MonoBehaviour {
 
-    public float depth = 1f;
+    
     public float scale = .9f;
     public bool uniqueVertices = false;
 
     public Vector3 centroid;
 
     public Mesh originalMesh;
+    float minHeight;
     private void Awake()
     {
-        depth = transform.parent.GetComponent<OverlayDrawer>().minHeight;
+        
         enabled = false;
 
     }
     // Use this for initialization
     public void Start()
     {
+        minHeight = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>().minHeight;
 
-       
+        float depth = 1f;//it is then scaled ny minheight
 
-        
         //work out centroid, needed for a few things, we can use this script to hold info about the cell
         centroid = Spawner.GetCentroid(gameObject, transform);
 
@@ -33,7 +34,7 @@ public class ExtrudeCell : MonoBehaviour {
         
       //  originalMesh.triangles = GetComponent<Mesh>().triangles;
 
-        Height();
+       // Height();
         centroid += Vector3.up * depth;
         
         GetComponent<MeshFilter>().mesh =  Extrude(GetComponent<MeshFilter>().mesh,depth,scale,uniqueVertices);
@@ -88,6 +89,7 @@ public class ExtrudeCell : MonoBehaviour {
             verts[i] = p;
         }
 
+        transform.localScale += Vector3.up * (minHeight - 1);//already at one// ??working ok?
         mesh.vertices = verts;
     }
 

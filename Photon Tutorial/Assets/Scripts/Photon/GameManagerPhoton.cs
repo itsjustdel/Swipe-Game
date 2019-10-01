@@ -18,6 +18,7 @@ namespace DellyWellyWelly
     public class GameManagerPhoton : MonoBehaviourPunCallbacks
     {
 
+        public bool startCanvas = false;
         public GameObject canvasPrefab;
 
         private bool masterGetsPlayer = true;
@@ -87,7 +88,8 @@ namespace DellyWellyWelly
 
                 ActivatePlayers();
 
-                AddCanvas();
+                if(startCanvas)
+                    AddCanvas();
 
             }
 
@@ -244,8 +246,9 @@ namespace DellyWellyWelly
                         //turn all players on!
                         ActivatePlayers();
 
-                        //start UI
-                        AddCanvas();
+                        if(startCanvas)
+                            //start UI
+                            AddCanvas();
 
 
 
@@ -782,9 +785,9 @@ namespace DellyWellyWelly
 
                 bool[] overlayBools = (bool[])customData[2];
                 overlayDrawer.doHeights = overlayBools[0];
-                overlayDrawer.automaticFrontlineHeightRaise = overlayBools[1];
-                overlayDrawer.reduceFrontline = overlayBools[2];
-                overlayDrawer.doCapture = overlayBools[3];
+               // overlayDrawer.automaticFrontlineHeightRaise = overlayBools[1];
+                overlayDrawer.reduceFrontline = overlayBools[1];
+               // overlayDrawer.doCapture = overlayBools[3];
 
             }
 

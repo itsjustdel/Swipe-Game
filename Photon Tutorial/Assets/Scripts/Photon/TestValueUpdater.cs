@@ -66,9 +66,9 @@ public class TestValueUpdater : MonoBehaviour
             new bool[]
             {
                 overlayDrawer.doHeights,
-                overlayDrawer.automaticFrontlineHeightRaise,
+                //overlayDrawer.automaticFrontlineHeightRaise,
                 overlayDrawer.reduceFrontline,
-                overlayDrawer.doCapture
+                //overlayDrawer.doCapture
             }
 
         };

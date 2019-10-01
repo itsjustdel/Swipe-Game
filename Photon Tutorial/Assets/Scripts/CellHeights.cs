@@ -59,7 +59,7 @@ public class CellHeights : MonoBehaviour
 
             float thisHeightSpeed = heightSpeed;
             
-            if (playerInfo.currentCell.GetComponent<AdjacentCells>().frontlineCell)
+            if (playerInfo.currentCell.GetComponent<AdjacentCells>().controlledBy == -1)
             {
                 //frontline cells are slower to pull up
                 //change temp value that we use for this frame
@@ -86,7 +86,7 @@ public class CellHeights : MonoBehaviour
                 lerpedY = Mathf.Lerp(startingScaleY, targetY, fracComplete);
 
                 //stop if frontline cell and has got higher than another adjacent cell
-                if (playerInfo.currentCell.GetComponent<AdjacentCells>().frontlineCell)
+                if (playerInfo.currentCell.GetComponent<AdjacentCells>().controlledBy == -1)
                 {
                     if (lerpedY > highest)
                         lerpedY = highest;

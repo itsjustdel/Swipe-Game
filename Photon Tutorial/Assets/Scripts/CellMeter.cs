@@ -278,7 +278,7 @@ public class CellMeter : MonoBehaviour {
         {
             AdjacentCells aJ = meshGenerator.cells[i].GetComponent<AdjacentCells>();
             //dont add frontline cells in this
-            if (aJ.frontlineCell)
+            if (aJ.controlledBy == -1)
                 continue;
             //if controlled by a team, add to its tally
             else if(aJ.controlledBy >=0)

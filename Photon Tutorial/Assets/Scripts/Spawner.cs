@@ -154,7 +154,7 @@ public class Spawner : MonoBehaviour {
         spawnedCells.Add(cells[r]);
 
         //add centroid to extrude height for spanw point
-        float yPos = cellToSpawnTo.GetComponent<ExtrudeCell>().depth;
+        float yPos = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>().minHeight;// cellToSpawnTo.GetComponent<ExtrudeCell>().depth;
         Vector3 centroid = GetCentroid(cellToSpawnTo, transform);
         Vector3 spawnPos = new Vector3(centroid.x, yPos, centroid.z) + cellToSpawnTo.transform.position;
 

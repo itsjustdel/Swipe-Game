@@ -190,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materials: []
   cubePrefab: {fileID: 0}
-  volume: {x: 200, y: 0, z: 200}
+  volume: {x: 120, y: 0, z: 120}
   rootTriMultiplier: 1
   cellNumber: 20
   lloydIterations: 3
@@ -306,18 +306,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fb38addc49d86a4b9bd6212665e9dc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cells: []
   resetCells: 0
-  doHeights: 1
+  doHeights: 0
+  doFrontline: 0
   doHomeCellHeightsToStart: 0
-  automaticFrontlineHeightRaise: 0
   reduceFrontline: 0
-  doCapture: 1
   heightSpeed: 1
   heightSpeedSiege: 0.01
   heightMultiplier: 2
   minHeight: 1
   totalCellsTransparent: 0
+  opponents: 
   originalMeshes: []
 --- !u!114 &578400624
 MonoBehaviour:
@@ -332,7 +331,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   respawnTime: 2
-  maxClimbHeight: 2
+  maxClimbHeight: 1
   playerCooldownAfterOverheadHit: 0.5
   playerCooldownAfterOverheadBlock: 0.5
   playerCooldownAfterOverheadWhiff: 0.5
@@ -463,6 +462,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99813760c7acead4dbb1cf6c58a32fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startCanvas: 0
   canvasPrefab: {fileID: 6398095390482331474, guid: 62f04ca76f7fccf48b30d1e113a83457,
     type: 3}
   startData: []

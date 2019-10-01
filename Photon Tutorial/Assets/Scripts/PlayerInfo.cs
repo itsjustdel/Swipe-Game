@@ -17,6 +17,7 @@ public class PlayerInfo : MonoBehaviour {
     public int teamNumber = -1;
     public GameObject currentCell;
     public GameObject homeCell;
+    public GameObject lastCell;
     public bool beenHit = false;
     public bool updateAdjacentCells = false;
     public bool updateCurrentCell = false;//enable after spawn position
@@ -28,7 +29,8 @@ public class PlayerInfo : MonoBehaviour {
     
     //top for primitive cylinder Unity
     //public int [] topVertices = new int[] { 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 43, 45, 46, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87 };
-    public PlayerClassValues pgi;
+    public PlayerClassValues playerClassValues;
+    public PlayerGlobalInfo pgi;
     public List<GameObject> cellsUnderControl = new List<GameObject>();
     private Inputs inputs;
 
@@ -44,7 +46,8 @@ public class PlayerInfo : MonoBehaviour {
 
         inputs = GetComponent<Inputs>();
 
-        pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+        pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
+        playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
     }
 
 
@@ -53,11 +56,10 @@ public class PlayerInfo : MonoBehaviour {
     {
         if(playerDespawned)
         {
-            //don't update which cell we are on, we are supposed to be nowhere
-            updateCurrentCell = false;
+           
             currentCell = null;
             //need respawn code, auto respawn atm
-            if (PhotonNetwork.Time - lastDeathTime > pgi.respawnTime)
+            if (PhotonNetwork.Time - lastDeathTime > playerClassValues.respawnTime)
                 respawn = true;
         }
 
@@ -67,9 +69,6 @@ public class PlayerInfo : MonoBehaviour {
             RespawnPlayer();
             respawn = false;
 
-            //now we ahve spawned update, we can update current cell
-            updateCurrentCell = true;
-
         }
 
         //Health
@@ -78,9 +77,6 @@ public class PlayerInfo : MonoBehaviour {
         if (updateCurrentCell && !playerDespawned)
             CurrentCell();
 
-        //call adjacent cells?
-        if (updateAdjacentCells && !playerDespawned)
-            AdjacentCells();
     
         //if this gets any more complicated, put in own script
         if(healthRegen)
@@ -166,8 +162,6 @@ public class PlayerInfo : MonoBehaviour {
 
             //reset flag
             playerDespawned = false;
-
-
             
         }
 
@@ -217,13 +211,262 @@ public class PlayerInfo : MonoBehaviour {
     {
 
         RaycastHit hit;
+
         if (Physics.Raycast(transform.position + Vector3.up * 50f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells"))) //was using last target as shootFrom here
         {
+            //check for a change in cell
+            if (currentCell != hit.transform.gameObject)
+            {
 
-            //hit.transform.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Grass") as Material;
-            currentCell = hit.transform.gameObject;
+                lastCell = currentCell;
 
+                UpdateAbondonedCell();
+
+                currentCell = hit.transform.gameObject;
+
+                UpdateCells();
+            }
+        }
+
+      
+    }
+
+    void UpdateCells()
+    {
+
+        //add to player's list and remove from opponents (list which holds which cells they own) // if conditions allow
+        AdjustLists();
+        //check to see if any adjacent cell is surrounded by enemy cells
+        //Snared();
+        //work out the frontline cells for this new cell
+        Frontline();
+    }
+
+    public void UpdateAbondonedCell()
+    {
+        if (lastCell == null)
+            return;
+
+        //check if another player/team owns this now
+        //check for other player
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
+        {
+            PlayerInfo pI = pgi.playerGlobalList[i].GetComponent<PlayerInfo>();
+
+            //don't check own player
+            if (playerNumber == pI.playerNumber)
+                continue;
+
+            //if last cell is another player's currenct cell (and they are alone) - give them the cell
+            if (lastCell == pI.currentCell)
+            {
+                //Debug.Log("found");
+                //give lsat cell to this play
+                lastCell.GetComponent<AdjacentCells>().controlledBy = pI.playerNumber;
+            }
         }
     }
 
+    public void AdjustLists()
+    {
+        //remove this cell if in any other player's list
+        if (currentCell.GetComponent<AdjacentCells>().controlledBy != playerNumber)
+        {
+            //Debug.Log("not player number");
+
+
+            //grab cell if other player is not on it already
+            //if another player is already on this cell, it can't be grabbed --**using this segment of code (with slight changes) a few times now - method/function it?
+            bool otherTeamOnCell = false;
+            bool otherTeamOnAdjacentCell = false;
+            bool wallOnAdjacentCell = false;
+            for (int j = 0; j < pgi.playerGlobalList.Count; j++)
+            {
+                PlayerInfo pI = pgi.playerGlobalList[j].GetComponent<PlayerInfo>();
+
+                //don't check our own player
+                if (pI.playerNumber == playerNumber)
+                    continue;
+
+                //if other player's currenct cell matches this current cell
+                if (pI.currentCell == currentCell)
+                {
+                    //stop searching - somebody else is on the cell we were thinking about making a frontline cell
+                    otherTeamOnCell = true;
+                    //Debug.Log("other player on cell");
+                    continue;
+                }
+
+                //or if other player/team is on an adjacent cell
+                //chck for walls too
+
+                AdjacentCells aJ = currentCell.GetComponent<AdjacentCells>();
+                for (int a = 0; a < aJ.adjacentCells.Count; a++)
+                {
+                    if (pI.currentCell == aJ.adjacentCells[a])
+                        otherTeamOnAdjacentCell = true;
+
+                    //we don't need to do this check if the adjacent cell is owned by us, we can claim it
+                    if (aJ.adjacentCells[a].GetComponent<AdjacentCells>().controlledBy == playerNumber)
+                    {
+                        //don't need to check
+                    }
+                    else
+                    {
+                        if (aJ.adjacentCells[a].transform.localScale.y - currentCell.transform.localScale.y >= playerClassValues.maxClimbHeight)
+                            wallOnAdjacentCell = true;
+                    }
+                }
+            }
+            Debug.Log(otherTeamOnCell);
+            Debug.Log(otherTeamOnAdjacentCell);
+            Debug.Log(wallOnAdjacentCell);
+
+            if (!otherTeamOnCell && !otherTeamOnAdjacentCell && !wallOnAdjacentCell)
+            {
+                //find list and remove cell from other player (if in list) and if cell has been controlled at all yet (-1)
+                AdjacentCells aJ = currentCell.GetComponent<AdjacentCells>();
+                int controlledBy = aJ.controlledBy;
+                if (controlledBy > -1)
+                {
+                    List<GameObject> otherCells = pgi.playerGlobalList[controlledBy].GetComponent<PlayerInfo>().cellsUnderControl;
+                    //if (otherCells.Contains(currentCell))
+                    otherCells.Remove(currentCell);
+                }
+
+                aJ.controlledBy = playerNumber;
+                //no longer frontline
+                //aJ.frontlineCell = false;
+
+                //update this player's list
+                if (!cellsUnderControl.Contains(currentCell))
+                    cellsUnderControl.Add(currentCell);
+            }
+            else
+            {
+                //we are sharing a cell with another player, fight to the end!
+            }
+        }
+    }
+
+    public void Frontline()
+    {
+        //Debug.Log("doing frontline");
+        //use current cell and determine which cells around it should be considered "frontline"
+
+        //firstly let's check the cell we just landed on
+        //as we landed on it, CurrentCell() already asigned it to this player
+        //1. it should be a frontline cell if another team's player is standing on an adjacent cell
+
+        // currentCell.GetComponent<AdjacentCells>().frontlineCell = false;
+
+        bool opponentOnAdjacent = OpponentOnAdjacent();
+        //secondly, check to see if opponent is on current cell - opponent can hold cell if they were there first
+        bool opponentOnCurrent = OpponentOnCurrent();
+
+
+        if (opponentOnAdjacent && !opponentOnCurrent)
+        {
+            //  currentCell.GetComponent<AdjacentCells>().frontlineCell = true;
+        }
+
+
+
+        //now we have decdied about our current cell, let's look at adjacent cells and see if we need to 
+        //make them frontline cells
+
+        //an adjacent cell should be a frontline cell when//
+        //1. if it has an adjacent cell controlled (but not a frontline) by another player
+        //2. has not been built too high
+
+
+        List<GameObject> currentAdjacents = currentCell.GetComponent<AdjacentCells>().adjacentCells;
+        for (int i = 0; i < currentAdjacents.Count; i++)
+        {
+            AdjacentCells aJ = currentAdjacents[i].GetComponent<AdjacentCells>();
+
+            //if adjacent is controlled by another but NOT too high to get to (walls up)
+            bool opponentOnThisAdjacent = false;
+
+            for (int j = 0; j < pgi.playerGlobalList.Count; j++)
+            {
+                if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == currentAdjacents[i])
+                    opponentOnThisAdjacent = true;
+            }
+
+            bool tooHigh = false;
+            //check ajacent height against current cell height
+            Debug.Log(currentAdjacents[i].transform.localScale.y - currentCell.transform.localScale.y);
+            if (currentAdjacents[i].transform.localScale.y - currentCell.transform.localScale.y >= playerClassValues.maxClimbHeight)
+            {
+
+                tooHigh = true;
+            }
+
+            //Debug.Log("aj.controlled by =" + (aJ.controlledBy != playerNumber));
+            //  Debug.Log("opponnet on adj = " + opponentOnAdjacent);            
+            //  Debug.Log("Too High = " + tooHigh);
+            //  Debug.Log("oppnonent on current = " + opponentOnCurrent);
+            if (aJ.controlledBy != playerNumber && !opponentOnThisAdjacent && !tooHigh && !opponentOnCurrent)
+            {
+                //   currentAdjacents[i].GetComponent<AdjacentCells>().frontlineCell = true;
+            }
+            //if adjacent is too high to be turned in to be turned in to a frontline cell, the current cell becomes a frontline instead unless is it that own the high cell
+            else if (tooHigh && aJ.controlledBy != playerNumber)
+            {
+                //  currentCell.GetComponent<AdjacentCells>().frontlineCell = true;
+            }
+        }
+    }
+
+    bool OpponentOnAdjacent()
+    {
+
+        bool opponentOnAdjacent = false;
+        //These are the cells we need to check
+        List<GameObject> currentAdjacents = currentCell.GetComponent<AdjacentCells>().adjacentCells;
+        //against these players's current cells
+        List<GameObject> opponentsCurrentCells = new List<GameObject>();
+
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)
+        {
+            //don't check this player
+            if (i == playerNumber)
+                continue;
+            //populate list with all current cells - note, we will not know who owns what from this list, but we do not need this
+            opponentsCurrentCells.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
+        }
+
+        //now check if any of our current adjacents are occupied
+        for (int i = 0; i < currentAdjacents.Count; i++)
+        {
+            //if in opponents current cell list
+            if (opponentsCurrentCells.Contains(currentAdjacents[i]))
+                opponentOnAdjacent = true;
+
+        }
+        return opponentOnAdjacent;
+    }
+
+    bool OpponentOnCurrent()
+    {
+        bool opponentOnCurrent = false;
+
+        //other players's current cells
+        List<GameObject> opponentsCurrentCells = new List<GameObject>();
+
+        for (int i = 0; i < pgi.playerGlobalList.Count; i++)//**work this loop out in opponentOnAdjacent too (small opto)
+        {
+            //don't check this player
+            if (i == playerNumber)
+                continue;
+            //populate list with all current cells - note, we will not know who owns what from this list, but we do not need this
+            opponentsCurrentCells.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
+        }
+
+        if (opponentsCurrentCells.Contains(currentCell))
+            opponentOnCurrent = true;
+
+        return opponentOnCurrent;
+    }
 }
