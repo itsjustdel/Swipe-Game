@@ -192,8 +192,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
        */
         if (overheadSwipe)
         {
-           // if (!swipeFinishedBuilding)
-                RenderOverHead();
+           
+                RenderOverHead(); //moved to update - HMMMM NOT OWRKING THERE, TOO FAST
 
             if (!hitOpponent)
             {
@@ -253,6 +253,15 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //   testSplit = false;
         }
 	}
+
+    private void Update()
+    {
+        if (overheadSwipe)
+        {
+
+           // RenderOverHead();
+        }
+    }
 
     public void RenderOverHead()
     {
@@ -591,45 +600,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         pointsFromCurveReturning = pointsFromCurve;
 
-        //used for animating swipe finishing/receding
-        if (arrayRenderCount >=  pointsFromCurve.Count * parentPlayer.GetComponent<Swipe>().dragSize)
-            startRenderCount++;
-        //check for whiff, if strike has made it all the way to the end and not hit anything
-        //if (Time.time - swipeTimeStart - Time.fixedDeltaTime > playerClassValues.overheadSpeed)// + overheadWaitBeforeReset)//overheadWaitBeforeReset
-
-        if (arrayRenderCount < pointsFromCurve.Count)
-            arrayRenderCount += playerClassValues.overheadSpeed;
-        else
-            arrayRenderCount = pointsFromCurve.Count;
-
-        if (startRenderCount >= pointsFromCurve.Count-1)
-        {
-            // overheadWhiff = true;
-            //   ResetFlags();
-            //   Debug.Log("Resetting within render function");
-
-            //we have finished rendering, start cooldown timer
-          //  swipeFinishedBuilding = true;
-            timeSwingFinished = PhotonNetwork.Time;
-            //let player object know when we finished this swing too
-            parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;
-            parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
-            parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
-            
-            parentPlayer.GetComponent<Swipe>().whiffed = true;
-
-            //activeTime = playerClassValues.overheadWhiffCooldown;
-            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);            
-
-            DeactivateSwipe();
-            Destroy(this.gameObject);
-
-            parentPlayer.GetComponent<Swipe>().ResetFlags();
-
-            //  Debug.Log("swipe time taken = " + (Time.time - swipeTimeStart));
-
-            
-        }
+        
         //array is how far we have travelled
         //arrayrendercount is total
         Color red = (Resources.Load("Materials/Red0") as Material).color;

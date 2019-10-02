@@ -162,39 +162,10 @@ public class PlayerMovement : MonoBehaviourPun {
     // Update is called once per frame
     void FixedUpdate()
     {
-        //thisPhotonView = GetComponent<PhotonView>();
+       
+       
 
-        //adjust speed slowly if between states (bumper etc)
-        Inertias();
-
-        /*
-        //only control our own player - the network will move the rest
-        if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
-        {
-            //enabled = false;
-            //event will update target positions, start time etc. so all we need to do is move it
-            if (walking && !bumped)
-                LerpPlayer();
-
-            else if (bumped)
-            {
-                BumpTarget();
-                LerpBump();
-            }
-            
-
-            if (!bumped)
-                RotateToFaceClosestPlayer();
-
-
-            MovePlayer();
-
-            RotateToFaceClosestPlayer();
-
-
-            return;
-        }
-        */
+     
 
         if (GetComponent<PhotonView>().IsMine)
         {
@@ -214,11 +185,12 @@ public class PlayerMovement : MonoBehaviourPun {
 
         }
 
-       
 
 
 
-        
+        //adjust speed slowly if between states (bumper etc)
+        Inertias();
+
 
         BasicMove();
 
@@ -258,6 +230,28 @@ public class PlayerMovement : MonoBehaviourPun {
         }
 
       
+    }
+
+    private void Update()
+    {
+        //movement, targets worked out in fixed update
+        if (bumped)
+        {
+            
+             LerpBump(); 
+
+        }
+
+        if (!walking && !bumped && GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
+        {
+        
+
+
+        }
+        else if (walking)
+        {
+             LerpPlayer();
+        }
     }
 
     void GetInputs()
@@ -336,6 +330,7 @@ public class PlayerMovement : MonoBehaviourPun {
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, GetComponent<PlayerMovement>().rotationSpeed);
         }
     }
+
     void RotateForSwipe()
     {
 
@@ -371,6 +366,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
 
     }
+
     void RotateHeadToFaceRightStick()
     {
 
@@ -449,7 +445,6 @@ public class PlayerMovement : MonoBehaviourPun {
         }
     }
 
-
     void LookToGround()
     {
        // Debug.Break();
@@ -472,6 +467,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
         }
     }
+
     void HeadHeight()
     {
         double eventStart = GetComponent<CellHeights>().eventTime;
@@ -604,7 +600,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     }
 
-    void BasicMove()//needs factored
+    void BasicMove()
     {
         
         Vector3 thisLook = lookDir;
@@ -626,6 +622,7 @@ public class PlayerMovement : MonoBehaviourPun {
             blockNewStep = true;
 
         bool glideWalk = false; //keeping for idea/ice/slide attack..
+
         if (glideWalk)
         {
             Glide();
@@ -638,13 +635,9 @@ public class PlayerMovement : MonoBehaviourPun {
           if(!bumpInProgress)
                 BumpTarget();
 
-            LerpBump();
+           // LerpBump(); //moved to update
             
         }
-
-        
-        //bool debug = false;
-        //walking
         
         if (!walking && !bumped && GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
         {
@@ -654,7 +647,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else if (walking)
         {
-            LerpPlayer();
+           // LerpPlayer();//moved to update
         }
            
         
@@ -1068,8 +1061,6 @@ public class PlayerMovement : MonoBehaviourPun {
                 }
             }
         }
-
-    
 
     void Glide()
     {

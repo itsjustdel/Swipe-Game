@@ -9,6 +9,7 @@ public class CameraControl : MonoBehaviour {
     public float zoomFactor = 1.5f;
     public float zoomDampener = 1f;
     public float followTimeDelta = 0.8f;
+    public float followTimeDeltaHeight = 0.01f;
     public float nearBumpStop = 10f;
     public GameObject p0;
     public GameObject p1;
@@ -243,8 +244,11 @@ public class CameraControl : MonoBehaviour {
             cam.orthographicSize = distance;
         }
         // You specified to use MoveTowards instead of Slerp/if no too close
+        float targetX = Mathf.Lerp(cam.transform.parent.position.x, cameraDestination.x, followTimeDelta); Vector3.Lerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+        float targetY = Mathf.Lerp(cam.transform.parent.position.y, cameraDestination.y, followTimeDeltaHeight);//height has different lerp value to stop sickengin bouncing        
+        float targetZ = Mathf.Lerp(cam.transform.parent.position.z, cameraDestination.z, followTimeDelta);
 
-        cam.transform.parent.position = Vector3.Lerp(cam.transform.parent.position, cameraDestination, followTimeDelta);
+        cam.transform.parent.position = new Vector3(targetX, targetY, targetZ);
 
         // Snap when close enough to prevent annoying slerp behavior
         if ((cameraDestination - cam.transform.position).magnitude <= 0.05f)

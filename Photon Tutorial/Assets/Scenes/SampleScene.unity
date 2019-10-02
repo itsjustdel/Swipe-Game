@@ -676,7 +676,8 @@ MonoBehaviour:
   onlyFollowPlayer: 1
   zoomFactor: 0
   zoomDampener: 1
-  followTimeDelta: 0.8
+  followTimeDelta: 0.01
+  followTimeDeltaHeight: 0.005
   nearBumpStop: 10
   p0: {fileID: 0}
   p1: {fileID: 0}
