@@ -242,7 +242,7 @@ public class Swipe : MonoBehaviour {
         if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
             adjustingCellHeight = true;
 
-        if (!pA.blocking && !adjustingCellHeight)
+        if (!pA.blocking && !adjustingCellHeight )
         {
             //look for user input and determine which swing to start
 
@@ -384,12 +384,12 @@ public class Swipe : MonoBehaviour {
             {
                 if (PhotonNetwork.Time- finishTimeSriking > playerClassValues.playerCooldownAfterOverheadWhiff)
                 {
-                    Debug.Log("making overhead available after cooldown wait");
-                    waitingOnResetOverhead = false;
-                    buttonSwipeAvailable = true;
-                    overheadAvailable = true;
+                   // Debug.Log("making overhead available after cooldown wait");
+                   // waitingOnResetOverhead = false;
+                   // buttonSwipeAvailable = true;
+                   // overheadAvailable = true;
 
-                    ResetFlags();//everything reset? or just this swipe option..
+                   // ResetFlags();//everything reset? or just this swipe option..
                 }
             }
             else if (blocked)
@@ -417,85 +417,13 @@ public class Swipe : MonoBehaviour {
 
                     ResetFlags();//everything reset? or just this swipe option..
                 }
-            }    //no penalty for hitting - reset instantly
-
-        }
-        //button swipe
-        if (waitingOnResetButtonSwipe)
-        {
-            if (whiffed)
-            {
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterLungeWhiff)
-                {
-                    Debug.Log("making lunge available after cooldown wait - whiff");
-
-                    buttonSwipeAvailable = true;
-                    overheadAvailable = true;
-                    waitingOnResetButtonSwipe = false;
-                    ResetFlags();//everything reset? or just this swipe option..
-                }
-            }
-            else if (blocked)
-            {
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterLungeBlock)
-                {
-                    Debug.Log("making lunge available after cooldown wait - block");
-
-                    buttonSwipeAvailable = true;
-                    overheadAvailable = true;
-                    waitingOnResetButtonSwipe = false;
-                    ResetFlags();//everything reset? or just this swipe option..
-                }
-            }
-            else if (hit)
-            {
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterLungeHit)
-                {
-                    Debug.Log("making lunge available after cooldown wait - block");
-
-                    buttonSwipeAvailable = true;
-                    overheadAvailable = true;
-                    waitingOnResetButtonSwipe = false;
-                    ResetFlags();//everything reset? or just this swipe option..
-                }
-            }
+            }    //no penalty for hitting - reset instantly        
         }
 
 
-
-        /*lunge stuff
-        //check to see if payer has centred stick, required to reset lunge availability
-        // if (overheadAvailable && sideSwipeAvailable)
-        {
-            if (waitingOnResetLunge && !lunging && !lungeAvailable)// && (overheadSwiping || sideSwiping))
-            {
-                if (Time.time - finishTimeSriking > playerClassValues.playerCooldownAfterSideSwipe)
-                {
-                    //if (rightStickStill && pA.lookDirRightStick.magnitude < 0maxThumbMagnitude)
-                    if (pA.lookDirRightStick.magnitude < 0.25f)
-                    {
-                        waitingOnResetLunge = false;
-                       // Debug.Log("reset lunge");
-
-                        lungeAvailable = true;
-
-                        //  overheadAvailable = true;
-                        //  sideSwipeAvailable = true;
-
-                        lungePoints.Clear();
-
-                    }
-                }
-            }
-        }
-        */
         lungeAvailable = false;
         sideSwipeAvailable = false;
         buttonSwipeAvailable = false;
-
-        ///////
-        /////populate list for lunge points constantly
-       // LungePoints();
 
 
         //check to see where stick is and se if we can start to save path data for any swipes
@@ -554,72 +482,6 @@ public class Swipe : MonoBehaviour {
             }
         }
 
-        /*
-        //this allows the player to alter side swipe position slightly if pulling back too
-        if (pulledBackForSideSwipe)
-        {
-            //check to see if user has  launched strike
-            float distanceFromInitialPullBack = Vector3.Distance(firstPullBackLookDir, swipePoint);
-            
-            if (distanceFromInitialPullBack > wiggleRoom && pA.lookDirRightStick.magnitude > maxThumbMagnitude)
-            {
-                //also make sure user is pushing forward if for side swipe
-                /*
-                if (rSForward)
-                {
-                    //player reset before swiping
-                    centralPoints.Clear();
-                    sideSwipePoints.Clear();
-
-                    pulledBackForSideSwipe = false;
-                    //sideSwipe = true;
-                    //start following stick movement
-                    planningPhaseSideSwipe = true;
-
-                }
-                else if (rSBackward) //if we wantt o put side wipe backwards in, remove this, also will need to stop overhead overwriting this
-                {
-                    //reset the pullback start dir
-                    firstPullBackLookDir = swipePoint;
-                }
-                ///*
-                if (rightStickStill)// && pA.lookDirRightStick.magnitude < maxThumbMagnitude)
-                {
-                    //  Debug.Log("reset from cancel - side swipe");
-                    //   ResetFlags();
-                    //player reset before swiping
-                    centralPoints.Clear();
-                    sideSwipePoints.Clear();
-
-                    pulledBackForSideSwipe = false;
-                    //sideSwipe = true;
-                    //start following stick movement
-                    planningPhaseSideSwipe = true;
-                }
-
-
-            }
-            //detect if user cancels strike
-
-            if (rightStickStill)// && pA.lookDirRightStick.magnitude < maxThumbMagnitude)
-            {
-              //  Debug.Log("reset from cancel - side swipe");
-             //   ResetFlags();
-            }
-
-        }
-        
-       
-
-        if (planningPhaseSideSwipe)
-        {
-            //add position to list
-            StickPathSideSwipe();
-            //check if we have finished a swipe
-            ChecksSideSwipe();
-        }
-    */
-
         //gather path and check for end of swipe
         if (planningPhaseOverheadSwipe)
         {
@@ -633,6 +495,7 @@ public class Swipe : MonoBehaviour {
     void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe)
     {
         Debug.Log("creating new swipe object");
+        //Debug.Log("frac complete after swipe obj = " + GetComponent<PlayerMovement>().fracComplete);
 
         GameObject newSwipe = new GameObject();
         newSwipe.name = "swipe Current " + type;
@@ -654,10 +517,7 @@ public class Swipe : MonoBehaviour {
 
         if (overhead)
         {
-
-            sO.overheadSwipe = true;
-            //note time of the the user finishing their swipe plan            
-            //pass planned points
+            sO.overheadSwipe = true;            
             sO.centralPoints = new List<Vector3>(centralPoints);
         }
         if (sideSwipe)
@@ -931,6 +791,7 @@ public class Swipe : MonoBehaviour {
             centralPoints.Add(swipePoint);//makes sure it alwys goes to end
             
             Debug.Log("Over head - finished planning");
+         //   Debug.Log("frac complete = " + GetComponent<PlayerMovement>().fracComplete);
             planningPhaseOverheadSwipe = false;
             //start swipe being rendered and being checked for any hits
             overheadSwiping = true;
@@ -938,6 +799,9 @@ public class Swipe : MonoBehaviour {
             //set walk speed from here
             PlayerMovement pM = GetComponent<PlayerMovement>();
             pM.walkSpeedThisFrame = pM.walkSpeedWhileAttacking;
+            pM.walkStart = PhotonNetwork.Time;
+            pM.walkStartPos = transform.position;
+            
                 
             CreateNewSwipeObject("Overhead", true, false, false);
             currentSwipeObject.GetComponent<SwipeObject>().activeSwipe = true;
@@ -1019,6 +883,7 @@ public class Swipe : MonoBehaviour {
         }
 
         //some stuff in here from tracking real time strike - if i take it out, curve goes sharp at end, leaving for the moment
+
 
 
         //centralPoints.Add(swipePoint);//makes sure it alwys goes to end
@@ -1406,12 +1271,14 @@ public class Swipe : MonoBehaviour {
 
                 if (totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("Swipe"))
                 {
-                    //only check for other overhead swipes - the side swipe straight tests cover everything else
+                    
 
                     //if it is this player's swipe, just knock through it
                     SwipeObject otherSwipeObjectScript = totalRayList[i][j].transform.GetComponent<SwipeObject>();
+
                     if (otherSwipeObjectScript.parentPlayer == thisSwipeObjectScript.parentPlayer)
                     {
+                        /*
                         Debug.Log("Knock through own swipe");
                         otherSwipeObjectScript.GetComponent<SwipeObject>().impactDirection = impactDirections[i];
                         otherSwipeObjectScript.GetComponent<SwipeObject>().impactPoint = totalRayList[i][j].point;
@@ -1419,6 +1286,9 @@ public class Swipe : MonoBehaviour {
                         otherSwipeObjectScript.DestroySwipe();
 
                         //no reset - other swipe will be on cooldown if it is the same player and not the active swipe
+                        */
+
+                        //not doing anything - currently in a state where only the very end and the very start of a swipe will touch - im allowing this overlap to chain together swipes
 
                     }
                     //else if another player's overhead , smash it,smash our own and reset players, only if we swung first
@@ -1553,7 +1423,7 @@ public class Swipe : MonoBehaviour {
                     continue;
 
 
-                //side swipes checks for all swipe on swipe hits, so jump to players
+                
                 else if (totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("PlayerBody"))
                 {
 

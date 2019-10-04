@@ -37,6 +37,9 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public Mesh dataMesh;// simple mesh used for raycasting
     public Vector3 firstPullBackLookDir;
 
+    Vector3 walkTargetOnThisSwipe;
+    public bool wasWalkingAtStartOfSwipe;
+
     public bool swiping;
     public bool waitingOnResetPlanning;
 
@@ -74,7 +77,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     //how far we have went around swipe - master client can change this value to catch up on time
     public float arrayRenderCount = 0;
-    int startRenderCount = 0;
+    float startRenderCount = 0;
 
     public float per;//how far the swipe has made it through its animation
 
@@ -87,6 +90,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     void Start ()
     {
+        //grab walk target from parent
+        walkTargetOnThisSwipe = parentPlayer.GetComponent<PlayerMovement>().walkTarget;
+        wasWalkingAtStartOfSwipe = parentPlayer.GetComponent<PlayerMovement>().walking;
+
         //lets network client catch up to when the local client started swipe
         CalculateStartArrayRenderCount();
 
@@ -132,6 +139,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     {
         //use swipe time start to figure out how many fixed updates have passed
         double timeNow = PhotonNetwork.Time;
+        
 
         //how much time has passed? //** network time can switch from positive to negative, how to check? so, time start can be positive, and time now can be negative//how often can this happen?
         if(timeNow < 0 && swipeTimeStart > 0)
@@ -145,6 +153,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         double stepsPassed = timePassed / Time.fixedDeltaTime;
         //add
         arrayRenderCount = (float)stepsPassed;
+
+        
     }
 
     void SendToNetwork()
@@ -205,20 +215,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                     parentPlayer.GetComponent<Swipe>().CurveHitCheck2(verticesToCheck, activeSwipe, gameObject, true, false);
             }
         }
-
-        if(buttonSwipe)
-        {
-
-           // if (!swipeFinishedBuilding)
-                RenderButtonSwipe();
-
-            if (!hitOpponent)
-            {
-                Mesh mesh = GetComponent<MeshFilter>().mesh;
-                List<Vector3> verticesToCheck = new List<Vector3>(mesh.vertices);
-                StraightSwipeHitCheck2(verticesToCheck, activeSwipe, this.gameObject, false, true);
-            }
-        }
+        
 
         if (destroySwipe)
         {
@@ -265,6 +262,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     public void RenderOverHead()
     {
+      //  Debug.Log("overhead rendering");
 
         List<Vector3> pointsFromCurve = new List<Vector3>();
 
@@ -340,14 +338,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         curvePoints.Add(passedCurvePoints[passedCurvePoints.Count - 1]);
         curvePoints.Add(passedCurvePoints[passedCurvePoints.Count - 1]);
 
-        for (int a = 0; a < curvePoints.Count; a++)
-        {
-            //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            //    c.transform.position = curvePoints[a] + head.transform.position;
-            //  c.name = "Curve point";
-            // Destroy(c, 3);
-
-        }
+       
 
 
         if (GetComponent<BezierSpline>() == null)
@@ -420,6 +411,15 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                 }
             }
         }
+        for (int a = 0; a < pointsFromCurve.Count; a++)
+        {
+          //  GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+         //  c.transform.position = pointsFromCurve[a] + transform.position;
+         //   c.name = "Curve point a";
+         //  Destroy(c, 3);
+
+        }
+
 
         //make sure it goes to end of curve - not sure of necessary
         pointsFromCurve.Add(pointsFromCurve[pointsFromCurve.Count - 1]);
@@ -435,37 +435,54 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         List<Vector3> swipePoints = new List<Vector3>();
 
         //vertices
-        //Debug.Log("points total = " + pointsFromCurve.Count + ",p = " + p);
+        // Debug.Log("points total = " + pointsFromCurve.Count);// + ",p = " + p);
 
+        //Debug.Log("here");
+        //force passed first point, one point alone only makes a slither
+        if (arrayRenderCount < 2)
+            arrayRenderCount = 2;
 
-        for (int a = startRenderCount; a < arrayRenderCount ;a++)
+        for (float a = startRenderCount ; a < arrayRenderCount ;a++)// -1 because a will be round up to finsih last one ( i think) - otherwise, we get a flat swipe end causing mesh physics problems
         {
-            int i = a;
+            int i =  Mathf.RoundToInt(a);
             if (i > pointsFromCurve.Count - 1)
                 i = pointsFromCurve.Count - 1;
 
-            // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            // c.transform.position = pointsFromCurve[i] + head.transform.position;
-            // c.name = "Curve point";
-            // Destroy(c, 3);
+          //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //  c.transform.position = pointsFromCurve[i] + transform.position;
+        //  c.name = "Curve point";
+         // Destroy(c, 3);
 
 
            // Debug.Log(i.ToString() + " count =" + pointsFromCurve.Count);
 
-            //get perpendiular vector using .cross
-            Vector3 spunDir = Vector3.Cross(-pointsFromCurve[i], directions[i]).normalized * playerClassValues.swordWidth * 0.5f;
+            
 
             Vector3 dirToEnd = (pointsFromCurve[i]).normalized;
             Vector3 closePoint = dirToEnd * (playerClassValues.armLength);
 
-            //make longer as strike goes on - using some cobbled together math stuff to make strike get longer as it goes on - 
-            // p is worked out from percentage of strike completed, 
-            //combine with how far we have got through this loop, makes it smooth
-            //float percentageOfStrikeCompleted = p * (float)(i) / pointsFromCurve.Count;//removing, test
+            //add step    
+            //stretches swipe to go with player movement
+            float percentage = ((float)a) / pointsFromCurve.Count;// arrayRenderCount ;//pointsfromcurve.count?
+            //pass this to movement script to force slow down when attacking that is linked with how far the swipe has built
+            parentPlayer.GetComponent<PlayerMovement>().attackLerp = percentage;
 
+            Vector3 zeroTPos = transform.position;
+            zeroTPos.y = 0f;
+            Vector3 targetDir = walkTargetOnThisSwipe - zeroTPos;
+            //only if walking
+            if (!wasWalkingAtStartOfSwipe) // i==0)
+                targetDir = Vector3.zero;
+
+            
+
+            closePoint += percentage *  targetDir + dirToEnd;
             Vector3 endPoint = dirToEnd * (playerClassValues.armLength + playerClassValues.swordLength);//playerClassValues.overheadLength// removed, needed?
+            endPoint+= percentage * targetDir + dirToEnd;
 
 
+            //get perpendiular vector using .cross
+            Vector3 spunDir = Vector3.Cross(-pointsFromCurve[i], directions[i]).normalized * playerClassValues.swordWidth * 0.5f;
 
             //first side
             swipePoints.Add(closePoint + spunDir);
@@ -600,11 +617,57 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         pointsFromCurveReturning = pointsFromCurve;
 
-        
+        //used for animating swipe finishing/receding
+        if (arrayRenderCount >= pointsFromCurve.Count * parentPlayer.GetComponent<Swipe>().dragSize)
+            startRenderCount+= playerClassValues.overheadSpeed;
+        //check for whiff, if strike has made it all the way to the end and not hit anything
+        //if (Time.time - swipeTimeStart - Time.fixedDeltaTime > playerClassValues.overheadSpeed)// + overheadWaitBeforeReset)//overheadWaitBeforeReset
+
+        if (arrayRenderCount < pointsFromCurve.Count)
+            arrayRenderCount += playerClassValues.overheadSpeed;
+        else
+            arrayRenderCount = pointsFromCurve.Count;
+
+        if (startRenderCount >= pointsFromCurve.Count - 1)
+        {
+            // overheadWhiff = true;
+            //   ResetFlags();
+            //   Debug.Log("Resetting within render function");
+
+            //we have finished rendering, start cooldown timer
+            //  swipeFinishedBuilding = true;
+            timeSwingFinished = PhotonNetwork.Time;
+            //let player object know when we finished this swing too
+            parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;
+            parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
+            parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
+
+            parentPlayer.GetComponent<Swipe>().whiffed = true;
+
+            //activeTime = playerClassValues.overheadWhiffCooldown;
+            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);            
+
+            DeactivateSwipe();
+            Destroy(this.gameObject);
+
+
+           
+            //  Debug.Log("swipe time taken = " + (Time.time - swipeTimeStart));
+        }
+
+        if(arrayRenderCount == pointsFromCurve.Count-1)
+        {
+            //reset flags when first part of swipe has finished, we can move and start new swipes if swipe is receding (in its second phase)            
+
+            parentPlayer.GetComponent<Swipe>().ResetFlags();
+        }
+
+
         //array is how far we have travelled
         //arrayrendercount is total
         Color red = (Resources.Load("Materials/Red0") as Material).color;
        // Debug.Log("array count = " + arrayRenderCount);
+       // Debug.Log("points from curve count = " + pointsFromCurve.Count);
        // Debug.Log("points from curve count = " + pointsFromCurve.Count);
         // per = (float)arrayRenderCount / pointsFromCurve.Count;//gives a chanve for a mega hit even on short swipes
         //per = (float)arrayRenderCount/33f;//whats this number?
@@ -628,205 +691,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         activeSwipe = false;
     }
 
-    void RenderButtonSwipe()
-    {
-        Debug.Log("Render Button Swipe");
-        //points
-
-        // swipePoint = new Vector3(swipePoint.x, 0f, swipePoint.z);
-        //debugCube.transform.position = head.transform.position + swipePoint;
-
-        //outside start
-
-        //float distanceOfSwipe = lungePointsFinal[lungePointsFinal.Count-1].magnitude * playerClassValues.lungeLength;
-        Vector3 outsideStart = lungePointsFinal[0].normalized * (playerClassValues.swordLength + playerClassValues.armLength + playerClassValues.lungeLength);
-        //add a stretch
-        //Vector3 outsideEnd = lungePointsFinal[lungePointsFinal.Count - 1];
-        Vector3 outsideEnd = lungePointsFinal[1].normalized * (playerClassValues.lungeLength + playerClassValues.armLength + playerClassValues.swordLength);
-        Vector3 insideStart = lungePointsFinal[lungePointsFinal.Count-1].normalized * (playerClassValues.armLength);
-        Vector3 insideEnd = lungePointsFinal[2].normalized * (playerClassValues.armLength);// + playerClassValues.armLength);
-
-
-      //  Debug.DrawLine(outsideStart + transform.position, insideStart + transform.position);    
-       // Debug.DrawLine(insideStart + transform.position, insideEnd + transform.position);
-      //  Debug.DrawLine(insideEnd + transform.position, outsideEnd + transform.position);
-      //  Debug.DrawLine(outsideEnd + transform.position, outsideStart + transform.position);
-
-        /*
-        Debug.Break();
-
-        
-        GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c.transform.position = insideStart + transform.position;
-
-        c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c.transform.position = insideEnd + transform.position;
-
-        c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c.transform.position = outsideStart+ transform.position;
-
-        c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        c.transform.position = outsideEnd + transform.position;
-        */
-
-        List<Vector3> vertices = new List<Vector3>() { outsideStart, outsideEnd, insideEnd, insideStart };
-
-        Mesh mesh = new Mesh();
-
-        float per = (float)((Time.time - swipeTimeStart) / playerClassValues.lungeSpeed);
-        per = Easings.CubicEaseIn(per);
-
-         //Debug.Log(per);
-
-        
-        //lerp to make animation
-        vertices[1] = Vector3.Lerp(vertices[0], vertices[1], per);
-        vertices[2] = Vector3.Lerp(vertices[3], vertices[2], per);
-
-
-        //make so vertices surround central point, we will hit check on centre of blade (above)
-        //move upwards
-        Vector3 p0 = vertices[0];
-        Vector3 p1 = vertices[1];
-        Vector3 dir = (p1 - p0).normalized;
-        Vector3 fwdDir = (vertices[1] - vertices[2]).normalized;
-        Vector3 sideDir = -Vector3.Cross(dir, fwdDir).normalized;
-
-
-        for (int i = 0; i < 4; i++)
-        {
-            Vector3 p = vertices[i] + sideDir * playerClassValues.swordWidth * 0.5f;////**** do we need to do the fancy rotate thing we did for extrusion of curve?
-            vertices[i] = p;
-        }
-        //extrude downwards
-        for (int i = 0; i < 4; i++)
-        {
-            Vector3 p = vertices[i] - sideDir * playerClassValues.swordWidth;////**** do we need to do the fancy rotate thing we did for extrusion of curve?
-            vertices.Add(p);
-        }
-
-        List<int> triangles = new List<int>();
-
-        triangles.Add(0);
-        triangles.Add(1);
-        triangles.Add(2);
-
-        triangles.Add(2);
-        triangles.Add(3);
-        triangles.Add(0);
-
-        //bottom
-        triangles.Add(4);
-        triangles.Add(6);
-        triangles.Add(5);
-
-        triangles.Add(4);
-        triangles.Add(7);
-        triangles.Add(6);
-
-        //sides
-        triangles.Add(0);
-        triangles.Add(4);
-        triangles.Add(1);
-
-        triangles.Add(1);
-        triangles.Add(4);
-        triangles.Add(5);
-
-        triangles.Add(1);
-        triangles.Add(5);
-        triangles.Add(2);
-
-        triangles.Add(2);
-        triangles.Add(5);
-        triangles.Add(6);
-
-        triangles.Add(2);
-        triangles.Add(6);
-        triangles.Add(3);
-
-        triangles.Add(6);
-        triangles.Add(7);
-        triangles.Add(3);
-
-        triangles.Add(3);
-        triangles.Add(7);
-        triangles.Add(0);
-
-        triangles.Add(7);
-        triangles.Add(4);
-        triangles.Add(0);
-
-
-        //reverse triangles if cominf from right side
-        //work out angle from which we started //** coiuld save this and rest instead of working out every frame
-        float firstPullBackAngle = MovementHelper.SignedAngle(firstPullBackLookDir, transform.forward, Vector3.up);
-        if (firstPullBackAngle < 0)
-        {
-
-            for (int i = 0; i < triangles.Count; i += 3)
-            {
-                //   int temp = triangles[i + 2];
-                //   triangles[i + 2] = triangles[i + 1];
-                //   triangles[i + 1] = temp;
-            }
-        }
-
-        mesh.vertices = vertices.ToArray();
-        mesh.subMeshCount = 1;
-        mesh.triangles = triangles.ToArray();
-
-        //save original mesh before we make unique
-        // lungeOriginalVertices = vertices;//using?        
-        //currentSwipeObject.GetComponent<SwipeObject>().originalVertices = vertices;
-
-        //now make unique vertices so we get nice edges
-        mesh = MeshTools.UniqueVertices(mesh);
-        //mesh.RecalculateBounds();
-        //mesh.RecalculateNormals();
-
-        //add to swipe object
-        GetComponent<MeshFilter>().mesh = mesh;
-        //if per is zero, mesh is absolutely flatm this will throw an error when trying to create the mesh collider
-        if (per > 0)///happens?
-        {
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                // Debug.Log("vertices of swipe = " + vertices[i]);
-            }
-
-            if (vertices[0] == vertices[4])
-                Debug.Log("SHOULD IGNORE");
-
-            if (vertices[0] != vertices[4])
-                GetComponent<MeshCollider>().sharedMesh = mesh;
-        }
-
-        if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 0)
-            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Cyan1") as Material;
-        else if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 1)
-            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange2") as Material;
-        else if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 2)
-            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green2") as Material;
-        else if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 3)
-            GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/DeepBlue2") as Material;
-
-        //check for hits and report back - doing on object now
-        //StraightSwipeHitCheck2(vertices, true, currentSwipeObject,false,true);
-
-
-        if (per >= 1f)
-        {
-            // overheadWhiff = true;
-            //   ResetFlags();
-            //   Debug.Log("Resetting within render function");
-
-            //we have finished rendering, start cooldown timer
-            StartTimerForLunge();
-            
-
-        }
-    }
+   
 
     void StartTimerForLunge()
     {
@@ -844,532 +709,6 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //activeTime = playerClassValues.lungeWhiffCooldown;
         //activeSwipe = false;
         Invoke("DeactivateSwipe", Time.fixedDeltaTime);//why did i do this?
-    }
-
-    public void StraightSwipeHitCheck2(List<Vector3> vertices, bool activeSwipe, GameObject thisSwipeObject, bool forSideSwipe, bool forLunge)///need to do back edge and inside
-    {
-        //Debug.Log("hit check (straight swipe)");
-        // Debug.Log("her");
-        //runs rays between all vertices, only doing one direction, is it necessary to do it with reverse direction too?
-        Vector3 impactPoint = Vector3.zero;
-        //check for whiff, if strike has made it all the way to the end and not hit anything
-        float speed = playerClassValues.sideSwipeSpeed;
-        if (forLunge)
-            speed = playerClassValues.lungeSpeed;
-
-
-
-        //check for hit -- asigingn to swipe object now
-        //  bool hitOpponent = false;
-        // bool hitShield = false;
-        //    bool hitSelf = false;
-        //this could all be done down the middle of the strike by lerping between points(or just use side swipe points)
-        List<RaycastHit[]> hitsTotalList = new List<RaycastHit[]>();
-        RaycastHit[] hits = new RaycastHit[0];
-       // List<Vector3> impactDirections = new List<Vector3>();
-        //if swipe is active, activestrike = true, then look for player, shields and other swipes
-        //else if it is on cooldown phase(static), don't look for other swipes, it can not destroy them
-        LayerMask mask = LayerMask.GetMask("PlayerBody", "Shield", "Swipe");
-        // if (activeSwipe == false)
-        //    mask = LayerMask.GetMask("PlayerBody", "Shield","Swipe"); //checking for curves always mea
-
-        //add ipact direction to list too - used in explosion effect
-        //use the forward direction of the last panel on the sipe object, the normal of the last triangle
-        Vector3 l0 = vertices[3];
-        Vector3 l1 = vertices[1];//front edge
-
-        Vector3 impactDir = Vector3.Cross(l0, l1).normalized;
-
-        Vector3 centre = Vector3.Lerp(l0, l1, 0.5f);
-        Debug.DrawLine(centre + transform.position, centre + transform.position + impactDir * 10);
-
-        //check top edge
-        List<int[]> sortedEdges = new List<int[]>() { new int[2] { 0, 1 }, new int[2] { 1, 2 }, new int[2] { 3, 4 }, new int[2] { 4, 0 } };
-        for (int i = 0; i < 4; i++)
-        {
-
-
-            
-            Vector3 p0 = vertices[sortedEdges[ i][0]];
-            Vector3 p1 = vertices[sortedEdges[i][1]];
-
-           
-
-            //            Debug.DrawLine(p0 + transform.position, p1 + transform.position, Color.red);
-            Vector3 dir = (p1 - p0).normalized;
-            float distance = Vector3.Distance(p0, p1);
-            hits = Physics.RaycastAll(p0 + thisSwipeObject.transform.position, dir, distance, mask);
-            hitsTotalList.Add(hits);
-
-          
-
-         //   impactDirections.Add(impactDir);
-        }
-
-
-
-        //check bottom
-        sortedEdges = new List<int[]>() { new int[2] { 7, 8 }, new int[2] {8, 9 }, new int[2] { 10, 11 }, new int[2] { 10,6 } }; // :/
-        for (int i = 0; i < 4; i++)
-        {
-
-            Vector3 p0 = vertices[sortedEdges[i][0] ];
-            Vector3 p1 = vertices[sortedEdges[i][1] ];
-            Vector3 dir = (p1 - p0).normalized;
-            Debug.DrawLine(p0 + transform.position, p1 + transform.position, Color.red);
-            float distance = Vector3.Distance(p0, p1);
-            /*
-            GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            c.transform.position = p0 + transform.position;
-            c.name = "0";
-
-            c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            c.transform.position = p1 + transform.position;
-            c.name = "1";
-
-        */
-            hits = Physics.RaycastAll(p0 + thisSwipeObject.transform.position, dir, distance, mask);
-            hitsTotalList.Add(hits);
-           
-
-         
-        }
-        //edges which make thickness ( needed?) //** first thing to chekfor optimsation
-        for (int i = 0; i < 4; i++)
-        {
-            // Debug.DrawLine(vertices[i] + transform.position, vertices[i + 4] + transform.position);
-            Vector3 p0 = vertices[i];
-            Vector3 p1 = vertices[i + 4];
-            Vector3 dir = (p1 - p0).normalized;
-            float distance = Vector3.Distance(p0, p1);
-
-            hits = Physics.RaycastAll(p0 + thisSwipeObject.transform.position, dir, distance, mask);
-            hitsTotalList.Add(hits);
-
-        }
-
-
-
-        for (int i = 0; i < hitsTotalList.Count; i++)
-        {
-            RaycastHit[] thisHits = hitsTotalList[i];
-
-            for (int j = 0; j < thisHits.Length; j++)
-            {
-                //ignore self
-                if (thisHits[j].transform.gameObject == thisSwipeObject)
-                    continue;
-
-                //check for shield first, then fir a swipe object, then finally for a player body - 
-
-                if (thisHits[j].transform.gameObject.layer == LayerMask.NameToLayer("Shield"))
-                {
-                    // hitShield = true;
-                   // thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
-
-                    SwipeObject thisSwipeObjectScript = thisSwipeObject.GetComponent<SwipeObject>();//
-                    thisSwipeObjectScript.impactDirection = impactDir;// (thisHits[j].point - transform.position).normalized;
-                    thisSwipeObjectScript.impactPoint = thisHits[j].point;
-                    thisSwipeObjectScript.hitShield = true;
-                    //sideSwipeBlock = true;
-
-                    thisSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                    if (activeSwipe)
-                    {
-                        
-                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;
-                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().blocked = true;
-                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().overheadAvailable = false;
-                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetButtonSwipe = true;
-
-                        //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                    }
-
-                    //shield beats all other checks
-                    return;
-                }
-            }
-        }
-
-        for (int i = 0; i < hitsTotalList.Count; i++)
-        {
-            RaycastHit[] thisHits = hitsTotalList[i];
-
-            for (int j = 0; j < thisHits.Length; j++)
-            {
-                //ignore self
-                if (thisHits[j].transform.gameObject == thisSwipeObject)
-                    continue;
-
-                else if (thisHits[j].transform.gameObject.layer == LayerMask.NameToLayer("Swipe"))
-                {
-                    //we hit a swipe, check what type it was
-
-                    //just destroy this swipe and continue looking for shields or bodies, 
-                    //thisHits[j].transform.gameObject.GetComponent<SwipeObject>().impactPoint = thisHits[j].point;
-                    // thisHits[j].transform.gameObject.GetComponent<SwipeObject>().impactDirection = impactDirections[i];
-                    // Debug.Break();
-                    //Debug.DrawLine(thisHits[j].point, thisHits[j].point + impactDirections[i], Color.red);
-                    // Debug.Log("destroying this swipe");
-
-                    SwipeObject thisSwipeObjectScript = thisSwipeObject.GetComponent<SwipeObject>();//
-                    //tell swipe where we hit it - will be sued for explodo force
-                    thisSwipeObject.GetComponent<SwipeObject>().impactDirection = impactDir;// impactDirections[i];
-                    thisSwipeObject.GetComponent<SwipeObject>().impactPoint = thisHits[j].point;
-
-                    SwipeObject otherSwipeObjectScript = thisHits[j].transform.gameObject.GetComponent<SwipeObject>();
-                    //tell other too (impact)
-                    otherSwipeObjectScript.GetComponent<SwipeObject>().impactDirection = impactDir;// impactDirections[i];
-
-
-                    otherSwipeObjectScript.GetComponent<SwipeObject>().impactPoint = thisHits[j].point;
-
-                    //check this player never owned the other swipe
-                    if (otherSwipeObjectScript.parentPlayer != thisSwipeObjectScript.parentPlayer)
-                    {
-                        Debug.Log("different parent player");
-                        //if same type of swipe, cancel both swipes and reset players, if they are both active
-                        //if both swipes active - not using, how wdoes player know if strike has went to cooldown or not?
-
-                        #region sideSwipes
-                        //if both of the same type
-                        if (thisSwipeObjectScript.sideSwipe && otherSwipeObjectScript.sideSwipe)
-                        {
-                            Debug.Log("same swipe type, destroying both");
-                            //destroy both swipes and reset both players
-                            // thisSwipeObjectScript.originalVertices = sideSwipeOriginalVertices;
-
-                            thisSwipeObjectScript.DestroySwipe();
-
-                            // otherSwipeObjectScript.originalVertices = otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().sideSwipeOriginalVertices;
-
-                            otherSwipeObjectScript.DestroySwipe();
-
-                            //impact directions? --add none, so they boyj just fall
-
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-
-                            //we need to reset the other player if it was an active swipe
-                            if (otherSwipeObjectScript.activeSwipe)
-                            {
-                                Debug.Log("--other player active, reseting other player");
-                                otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            }
-
-                            //don't check any further, the swipe was cancelled by the other player
-                            return;
-                        }
-                        //if side swipe (this vs other lunge)
-                        else if (thisSwipeObjectScript.sideSwipe && otherSwipeObjectScript.lunge)
-                        {
-                            //lunge beats side swipe
-                            Debug.Log("Other lunge beat this side swipe - destroying this only and reseting");
-
-                            // thisSwipeObjectScript.originalVertices = sideSwipeOriginalVertices;
-                            thisSwipeObjectScript.firstPullBackLookDir = firstPullBackLookDir;
-                            thisSwipeObjectScript.hitByLunge = true;
-                            thisSwipeObjectScript.impactDirection = Vector3.down;
-
-                            thisSwipeObjectScript.DestroySwipe();
-
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                        }
-                        //if side swipe (this vs other overhead)
-                        else if (thisSwipeObjectScript.sideSwipe && otherSwipeObjectScript.overheadSwipe)
-                        {
-                            //this beats overhead, destroy other and reset other player
-                            Debug.Log("this side swipe beats other overhead, reseting other overhead");
-                            //    otherSwipeObjectScript.originalVertices = otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().sideSwipeOriginalVertices;
-                            otherSwipeObjectScript.hitBySideSwipe = true;
-                            //let the other script know if direction should be flipped too
-                            if (thisSwipeObjectScript.flip)
-                                otherSwipeObjectScript.sideSwipeFlipped = true;
-
-                            otherSwipeObjectScript.DestroySwipe();
-                            //we need to reset the other player if it was an active swipe
-                            if (otherSwipeObjectScript.activeSwipe)
-                            {
-                                Debug.Log("--other player active, reseting other player");
-                                otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            }
-
-                            //we beat the other swipe, don't reset, we can keep looking for other hits
-                        }
-                        else if (thisSwipeObjectScript.buttonSwipe && otherSwipeObjectScript.overheadSwipe)
-                        {
-                            //this beats overhead, destroy other and reset other player
-                            Debug.Log("this button swipe is beaten by other overhead, reseting this");
-                            //    otherSwipeObjectScript.originalVertices = otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().sideSwipeOriginalVertices;
-                            thisSwipeObjectScript.hitByOverhead = true;
-
-                            thisSwipeObjectScript.GetComponent<SwipeObject>().impactDirection = impactDir ;// impactDirections[i];
-                            thisSwipeObjectScript.GetComponent<SwipeObject>().impactPoint = thisHits[j].point;
-
-                            //let the other script know if direction should be flipped too
-
-                            //if (thisSwipeObjectScript.flip)
-                            //otherSwipeObjectScript.sideSwipeFlipped = true;
-
-                            thisSwipeObjectScript.DestroySwipe();
-                            //we need to reset the other player if it was an active swipe
-                            if (thisSwipeObjectScript.activeSwipe)
-                            {
-                                Debug.Log("--other player active, reseting other player");
-                                thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            }
-
-                            //we beat the other swipe, don't reset, we can keep looking for other hits
-                        }
-                        else if (thisSwipeObjectScript.buttonSwipe && otherSwipeObjectScript.buttonSwipe)
-                        {
-                            Debug.Log("same swipe (button swipe) type, destroying both");
-                            //destroy both swipes and reset both players
-                            // thisSwipeObjectScript.originalVertices = sideSwipeOriginalVertices;
-
-                            thisSwipeObjectScript.DestroySwipe();
-
-                            // otherSwipeObjectScript.originalVertices = otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().sideSwipeOriginalVertices;
-
-                            otherSwipeObjectScript.DestroySwipe();
-
-                            //impact directions? --add none, so they boyj just fall
-
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-
-                            //we need to reset the other player if it was an active swipe
-                            if (otherSwipeObjectScript.activeSwipe)
-                            {
-                                Debug.Log("--other player active, reseting other player");
-                                otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            }
-
-                            //don't check any further, the swipe was cancelled by the other player
-                        }
-
-                        #endregion
-                        #region lunges
-
-                        //if both lunges
-                        if (thisSwipeObjectScript.lunge && otherSwipeObjectScript.lunge)
-                        {
-                            Debug.Log("both lunges, destroying both");
-                            //destroy both swipes and reset both players
-                            //thisSwipeObjectScript.originalVertices = lungeOriginalVertices;
-                            //manipulate directions cause this function covers lunge and side swipe
-
-                            thisSwipeObjectScript.DestroySwipe();
-
-                            otherSwipeObjectScript.originalVertices = otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().lungeOriginalVertices;
-
-                            //impact directions?  -- no direction on same swipe type hit- just let them fall                          
-
-                            otherSwipeObjectScript.DestroySwipe();
-
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-
-                            //we need to reset the other player if it was an active swipe
-                            if (otherSwipeObjectScript.activeSwipe)
-                            {
-                                Debug.Log("--other player active, reseting other player");
-                                otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            }
-
-                            //don't check any further, the swipe was cancelled by the other player
-                            return;
-                        }
-                    }
-                    #endregion
-                    else if (thisHits[j].transform.gameObject.GetComponent<SwipeObject>().parentPlayer == thisSwipeObjectScript.parentPlayer)
-                    {
-                        Debug.Log("same player");
-
-                        //tell swipe where we hit it - will be sued for explodo force
-                        thisSwipeObject.GetComponent<SwipeObject>().impactDirection = impactDir;// impactDirections[i];
-
-                        //tell other too (impact)
-                        otherSwipeObjectScript.GetComponent<SwipeObject>().impactDirection = impactDir;// impactDirections[i];
-
-                        if (forLunge)
-                            otherSwipeObjectScript.GetComponent<SwipeObject>().hitByLunge = true;
-
-                        if (forSideSwipe)
-                        {
-                            otherSwipeObjectScript.GetComponent<SwipeObject>().hitBySideSwipe = true;
-
-                            //let the other script know if direction should be flipped too
-                            if (thisSwipeObjectScript.flip)
-                                otherSwipeObjectScript.sideSwipeFlipped = true;
-                        }
-
-
-                        //if same player that made this swipe, blast threough it                       
-                        if (thisSwipeObjectScript.activeSwipe)
-                        {
-                            Debug.Log("DSedning to destroy other swipe");
-                            otherSwipeObjectScript.DestroySwipe();
-                        }
-                        if (otherSwipeObjectScript.activeSwipe && !thisSwipeObjectScript.activeSwipe)
-                        {
-                            Debug.Log("Sending to destroy this swipe - other active, this not active");
-                            thisSwipeObjectScript.DestroySwipe();
-                        }
-
-                        //if this is a lunge and is being hit by an active overhead
-                        //or if this is a side swipe and is being hit by an active overhead
-                        if (forLunge && otherSwipeObjectScript.overheadSwipe && otherSwipeObjectScript.activeSwipe ||
-                                forSideSwipe && otherSwipeObjectScript.overheadSwipe && otherSwipeObjectScript.activeSwipe
-                                || thisSwipeObjectScript.buttonSwipe && otherSwipeObjectScript.buttonSwipe)
-                            {
-                                //tell script it is being hit by an overhead
-
-                                //thisSwipeObjectScript.hitByOverhead = true; //gettin used for anything? yeah, forces for voxel
-
-                                //find fwd facing curve direction
-                                /*
-                                List<Vector3> overheadVertices = new List<Vector3>(otherSwipeObjectScript.GetComponent<MeshFilter>().mesh.vertices);
-                                Vector3 l0 = overheadVertices[overheadVertices.Count - 3];
-                                Vector3 l1 = overheadVertices[overheadVertices.Count - 2];
-                                //right angle to last vertices gives us fwd direction
-                                Vector3 impactDir = Vector3.Cross(l0, l1).normalized;
-                                thisSwipeObjectScript.impactDirection = impactDir;
-
-                            */
-
-                                // otherSwipeObjectScript.DestroySwipe();
-
-                            }
-
-                            //always keep looking if the swipe is our own, nothing should stop these swipes
-                        }
-                    }
-                }
-            }
-            //players
-            for (int i = 0; i < hitsTotalList.Count; i++)
-            {
-                RaycastHit[] thisHits = hitsTotalList[i];
-
-                for (int j = 0; j < thisHits.Length; j++)
-                {
-                    //ignore self
-                    if (thisHits[j].transform.gameObject == thisSwipeObject)
-                        continue;
-
-                    else if (thisHits[j].transform.gameObject.layer == LayerMask.NameToLayer("PlayerBody"))
-                    {
-                         Debug.Log("Hit Player Layer");
-                    
-                        SwipeObject thisSwipeObjectScript = thisSwipeObject.GetComponent<SwipeObject>();//
-                                                                                                        // self hit
-                        GameObject head = parentPlayer.transform.GetChild(1).GetChild(0).gameObject;
-                        if (thisHits[j].transform.gameObject == head)//...
-                        {
-
-                           // Debug.Break();
-                           // Debug.Log("Hit Self");
-                            // hitSelf = true;
-
-                            thisSwipeObjectScript.impactDirection = (thisHits[j].point - head.transform.position).normalized;
-                            thisSwipeObjectScript.impactPoint = thisHits[j].point;
-                            thisSwipeObjectScript.hitSelf = true;
-                            thisSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                        if (activeSwipe)
-                        {
-                            //   thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-                            StartTimerForLunge();
-                        }
-
-                            
-
-
-                        //cancel checks if we hit ourselves, this takes priority over hit
-
-                     //   Debug.Break();
-                            return;
-                        }
-                        else//hit opponent or team mate 
-                        {
-
-                        //    hitOpponent = true;
-                        //  sideSwipeHit = true;
-                        // thisSwipeObjectScript.hitOpponent = true;
-                        // thisSwipeObjectScript.timeSwingFinished = Time.time;
-                        //  thisSwipeObjectScript.activeTime = playerClassValues.sideSwipeHitCooldown;
-                        //thisSwipeObjectScript.hitBySideSwipe = true;
-
-
-                        //reset opponent
-                        //find parent of head mesh and reset it
-                        PlayerInfo playerInfo = thisHits[j].transform.parent.parent.GetComponent<PlayerInfo>();
-
-                        playerInfo.health -= playerClassValues.lungeHitHealthReduce;/////*******put back!
-                        
-                        
-                        //interrupt if swinging? 
-
-
-                        GameObject parentOfHitHeadMesh = thisHits[j].transform.parent.parent.gameObject;
-                        parentOfHitHeadMesh.GetComponent<Swipe>().ResetFlags();
-
-                        thisSwipeObjectScript.impactDirection = (thisHits[j].point - head.transform.position).normalized;
-                        thisSwipeObjectScript.impactPoint = thisHits[j].point;
-                        thisSwipeObjectScript.hitOpponent = true;
-                        //  thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Red0") as Material;//unsure
-                        thisSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                        //bump player
-                        PlayerMovement pMother = parentOfHitHeadMesh.GetComponent<PlayerMovement>();
-                        pMother.bumped = true;
-                        //hit point is on the near side, so get dir to hit transform and extend it through. point will now be on the rear side of hit transform
-                        float hitBumpAmount = 1f;//*global var
-                        pMother.bumpTarget = (parentOfHitHeadMesh.transform.position - thisHits[j].point)*hitBumpAmount + parentOfHitHeadMesh.transform.position;
-
-                        //Debug.Break();
-
-                        if (playerInfo.health <= 0f)
-                        {
-
-                            Swipe.BreakUpPlayer(thisHits[j].transform.gameObject, thisSwipeObjectScript);
-                            Swipe.DeSpawnPlayer(parentOfHitHeadMesh);
-                           
-                            //
-                        }
-                        else
-                        {
-                            
-                            //stop swipe
-                            //swipeFinishedBuilding = true;
-                            timeSwingFinished = Time.time;
-                            //let player object know when we finished this swing too
-                            parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;
-                            parentPlayer.GetComponent<Swipe>().waitingOnResetButtonSwipe = true;
-                            //disable overhead while tiemr resets, dont want player just to switch strikes
-                            parentPlayer.GetComponent<Swipe>().overheadAvailable = false;
-                            parentPlayer.GetComponent<Swipe>().hit = true;
-
-                            //activeTime =  playerClassValues.lungeHitCooldown;
-                            //Invoke("DeactivateSwipe", Time.fixedDeltaTime);
-                            DeactivateSwipe();
-                            hitOpponent = true;//set this to stop double hits
-                            Debug.Log("health > 0 lunge");
-                            
-                        }
-                         
-                            
-                            
-
-                    }
-
-
-                        // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        // c.transform.position = thisHits[j].point;
-
-
-                }
-            }
-        }
     }
 
     void TestSplit()

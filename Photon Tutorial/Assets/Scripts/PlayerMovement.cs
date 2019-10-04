@@ -21,12 +21,13 @@ public class PlayerMovement : MonoBehaviourPun {
   //  public float jumpBounceAmount = 15f;
     public float bumpSpeed = 20f;
     public float bumpBounceAmount = 10f;
-    public float walkSpeed = 7f;
+    public float walkSpeed = 5f;
     public float walkStepDistance = 5f;
     public float walkBounceAmount = 5f;
-    public float walkSpeedThisFrame = 10f;
-    public float walkSpeedWhileAttacking = 1f;
-    public float walkSpeedWhilePullBack = 3.5f;
+    public float walkSpeedThisFrame = 0f;
+    public float walkSpeedWhileAttacking = 5f;
+    public float walkSpeedWhilePullBack = 5f;
+    public float pullBackStepDistance = 5f;
     public float walkSpeedWhileBlocking = 3.5f;    
     public float walkSpeedWhileBlockingOverhead = 2f;
     public float sprintSpeed = 10f;
@@ -102,6 +103,7 @@ public class PlayerMovement : MonoBehaviourPun {
   //  public bool buttonY;
 
     public float fracComplete = 0f;
+    public float attackLerp = 0f;
 
     public PlayerGlobalInfo pgi;
     public PlayerClassValues playerClassValues;
@@ -617,8 +619,8 @@ public class PlayerMovement : MonoBehaviourPun {
                 blockNewStep = false;
             }
         }
-        //stop move if changing cell height
-        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
+        //stop move if changing cell height or attacking
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.overheadSwiping)
             blockNewStep = true;
 
         bool glideWalk = false; //keeping for idea/ice/slide attack..
@@ -808,26 +810,26 @@ public class PlayerMovement : MonoBehaviourPun {
 
         //bumpspeed this step
 
-        fracComplete = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance / bumpSpeed));
+        float fracCompleteBump = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance / bumpSpeed));
         //Debug.Log(fracComplete);
         /*
         Debug.Log("risRelCenterBump = " + riseRelCenterBump);
         Debug.Log("setRelCenterBump = " + setRelCenterBump);
         Debug.Log("fracComplete = " + fracComplete);
         */
-        transform.position = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracComplete);
+        transform.position = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracCompleteBump);
         transform.position += bumpCenter;
         //transform.position = Vector3.Slerp(bumpStartPos, bumpTarget, fracComplete);
 
 
-        if (fracComplete >= 1f)
+        if (fracCompleteBump >= 1f)
         {
             //force the player to flick the tick again
             //if (leftStickReset)
             {
                 bumped = false;
                 bumpInProgress = false;
-                fracComplete = 0f;
+                fracCompleteBump = 0f;
 
             }
         }
@@ -906,7 +908,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 //also if holding swing
                 //else 
                 if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
-                    walkStepDistanceThisFrame = shieldStepDistance * leftStickMagnitude;  //need var?  using shield 
+                    walkStepDistanceThisFrame = pullBackStepDistance * leftStickMagnitude;  //need var?  using shield 
 
                 /*
                 else if (swipe.overheadSwiping)
@@ -998,7 +1000,7 @@ public class PlayerMovement : MonoBehaviourPun {
             Vector3 setRelCenterWalk = walkTarget - walkCenter;
 
             bool bigDrop = false;
-            if (walkStartPos.y - walkTarget.y > playerClassValues.maxClimbHeight)
+            if (walkStartPos.y - walkTarget.y > playerClassValues.maxClimbHeight*20)//**wasnt *20 //check
             {
 
                 bigDrop = true;
@@ -1012,55 +1014,84 @@ public class PlayerMovement : MonoBehaviourPun {
                 tempWalkSpeed *= 2;
             }
 
-            // float fracComplete = (Time.time - walkStart) / (1f / 4); //game play option *** same time for each cell jump
+        // float fracComplete = (Time.time - walkStart) / (1f / 4); //game play option *** same time for each cell jump
 
-            fracComplete = (float) ((PhotonNetwork.Time - walkStart) / (walkDistance / tempWalkSpeed));
+        //use a seperate lerp when attacking - this is worked out from how far along the swipe has made it  -we work this out on swipeobject and pass it to attackLerp
+        //swipe object can take a few frames to update as it is calculated on a fixed update and we lerping here on render Update, so we need to do another check to see if swipe object has started yet
+        bool useAttackLerp = false;
+        if (swipe.overheadSwiping && swipe.currentSwipeObject.GetComponent<SwipeObject>().arrayRenderCount != 0)
+            useAttackLerp = true;
 
-            float fracCompleteForLerp = fracComplete;
+        if(!useAttackLerp)
+        {
+            //otherwise use normal walk speed lerp
+            fracComplete = (float)((PhotonNetwork.Time - walkStart) / (walkDistance / tempWalkSpeed));
+            //Debug.Log("frac complete (normal walk) = " + fracComplete);
+        }
+        
 
-            //disgusting hack for big jumps            
-            if (bigDrop)
+        float fracCompleteForLerp = fracComplete;
+        
+       
+
+        if (useAttackLerp)
+        {
+            //work out how much of the jump we still ahve to do            
+            //starting amount (frac complete + the percentage of what we have left to jump)
+            float whatsLeft = 1f - fracComplete;
+            fracCompleteForLerp = fracComplete + (whatsLeft * attackLerp); 
+            Debug.Log("frac complete swiping B = " + fracComplete);
+            Debug.Log("for lerp = " + fracCompleteForLerp);
+
+           // Debug.Break();
+        }
+
+        //disgusting hack for big jumps            
+        if (bigDrop)
+        {
+            fracCompleteForLerp *= 0.5f;
+
+        }
+
+        transform.position = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, fracCompleteForLerp);
+        transform.position += walkCenter;
+
+
+        //finish drop
+        if (bigDrop)
+        {
+
+            if (fracComplete > 0.5f)
             {
-                fracCompleteForLerp *= 0.5f;
+                //last point of arc for this jump
+                Vector3 dropStartPos = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, 0.5f) + walkCenter;
 
-            }
-
-            transform.position = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, fracCompleteForLerp);
-            transform.position += walkCenter;
-
-
-            //finish drop
-            if (bigDrop)
-            {
-
-                if (fracComplete > 0.5f)
+                Vector3 shootFrom = transform.position;
+                RaycastHit hit;
+                if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells")))
                 {
-                    //last point of arc for this jump
-                    Vector3 dropStartPos = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, 0.5f) + walkCenter;
-
-                    Vector3 shootFrom = transform.position;
-                    RaycastHit hit;
-                    if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells")))
-                    {
-                        transform.position = Vector3.Lerp(dropStartPos, hit.point, (fracComplete - .5f) * 2);
-                    }
-                }
-            }
-
-
-            if (fracComplete >= 1f)
-            {
-                //force the player to flick the tick again
-                //if (leftStickReset)
-                {
-                    walking = false;
-
-                    //tell sound script to make a noise now we have finished our step
-
-                    GetComponent<PlayerSounds>().startWalk = true;
+                    transform.position = Vector3.Lerp(dropStartPos, hit.point, (fracComplete - .5f) * 2);
                 }
             }
         }
+
+
+        if (fracComplete >= 1f)
+        {
+            //force the player to flick the tick again
+            //if (leftStickReset)
+            {
+                walking = false;
+
+                //tell sound script to make a noise now we have finished our step
+
+                GetComponent<PlayerSounds>().startWalk = true;
+
+                //reset fraccomplete too
+                fracComplete = 0f;
+            }
+        }
+    }
 
     void Glide()
     {
