@@ -494,7 +494,7 @@ public class Swipe : MonoBehaviour {
 
     void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe)
     {
-        Debug.Log("creating new swipe object");
+       // Debug.Log("creating new swipe object");
         //Debug.Log("frac complete after swipe obj = " + GetComponent<PlayerMovement>().fracComplete);
 
         GameObject newSwipe = new GameObject();
@@ -790,7 +790,7 @@ public class Swipe : MonoBehaviour {
         {
             centralPoints.Add(swipePoint);//makes sure it alwys goes to end
             
-            Debug.Log("Over head - finished planning");
+          //  Debug.Log("Over head - finished planning");
          //   Debug.Log("frac complete = " + GetComponent<PlayerMovement>().fracComplete);
             planningPhaseOverheadSwipe = false;
             //start swipe being rendered and being checked for any hits

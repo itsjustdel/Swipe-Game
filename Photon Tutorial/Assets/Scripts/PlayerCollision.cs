@@ -17,7 +17,7 @@ public class PlayerCollision : MonoBehaviour
 
             PlayerMovement pMthis = transform.parent.parent.GetComponent<PlayerMovement>();
             PlayerMovement pMother = collision.transform.parent.parent.GetComponent<PlayerMovement>();
-
+            
             pMother.bumped = true;
             pMthis.bumped = true;
             

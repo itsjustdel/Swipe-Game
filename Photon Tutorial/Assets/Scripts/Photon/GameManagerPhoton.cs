@@ -135,7 +135,7 @@ namespace DellyWellyWelly
 
         void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,double swipeTimeStart,int photonViewID)
         {
-            Debug.Log("creating new swipe object");
+          //  Debug.Log("creating new swipe object");
 
             GameObject newSwipe = new GameObject();
             newSwipe.name = "swipe Current " + type;
@@ -376,12 +376,12 @@ namespace DellyWellyWelly
             //swipe object instantiation
             if (eventCode == 20)
             {
-                Debug.Log("Event 20 - instantiate swipe");
+               // Debug.Log("Event 20 - instantiate swipe");
 
                 //get swipe start time
                 object[] customData = (object[])photonEvent.CustomData;
                 double swipeTimeStart = (double)customData[0];
-                Debug.Log("swipe time start = " + swipeTimeStart);
+                //Debug.Log("swipe time start = " + swipeTimeStart);
                 Vector3 firstPullBackLookDir = (Vector3)customData[1];
                 Vector3[] centralPointsArray = (Vector3[])customData[2];
                
@@ -547,12 +547,19 @@ namespace DellyWellyWelly
                 
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
 
-                SwipeObject thisSwipeObjectScript = viewOwner.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>();
-                thisSwipeObjectScript.impactDirection = (Vector3)customData[1];
-                thisSwipeObjectScript.impactPoint = (Vector3)customData[2];
-                thisSwipeObjectScript.hitSelf = true;
-                thisSwipeObjectScript.DestroySwipe();
-                thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                if (viewOwner.GetComponent<Swipe>().currentSwipeObject == null)
+                {
+                    //double event send can cause this?
+                }
+                else
+                {
+                    SwipeObject thisSwipeObjectScript = viewOwner.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>();
+                    thisSwipeObjectScript.impactDirection = (Vector3)customData[1];
+                    thisSwipeObjectScript.impactPoint = (Vector3)customData[2];
+                    thisSwipeObjectScript.hitSelf = true;
+                    thisSwipeObjectScript.DestroySwipe();
+                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                }
 
             }
             //swipe on other player
@@ -606,88 +613,91 @@ namespace DellyWellyWelly
                 }
                 GameObject viewOwnerAttacker = PhotonView.Find(photonViewIDAttacker).gameObject;
 
-                SwipeObject thisSwipeObjectScript = viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>();
-
-                thisSwipeObjectScript.hitOpponent = true;
-                thisSwipeObjectScript.timeSwingFinished = PhotonNetwork.Time;
-
-                //for bumping player
-                
-                PlayerMovement pMother = viewOwnerVictim.GetComponent<PlayerMovement>();
-
-                //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
-
-                if (victimInfo.health > 0)
+                if (viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject != null)
                 {
+                    SwipeObject thisSwipeObjectScript = viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>();
+
+                    thisSwipeObjectScript.hitOpponent = true;
+                    thisSwipeObjectScript.timeSwingFinished = PhotonNetwork.Time;
+
+                    //for bumping player
+
+                    PlayerMovement pMother = viewOwnerVictim.GetComponent<PlayerMovement>();
+
+                    //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
+
+                    if (victimInfo.health > 0)
+                    {
 
 
-                    //let player object know when we finished this swing too
-                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
-                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
-                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
-                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;
+                        //let player object know when we finished this swing too
+                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
+                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
+                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
+                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;
 
 
-                    thisSwipeObjectScript.DeactivateSwipe();
+                        thisSwipeObjectScript.DeactivateSwipe();
 
 
-                    //destroy this swipe, the victim is still alive
-                    thisSwipeObjectScript.impactDirection = impactDir;
+                        //destroy this swipe, the victim is still alive
+                        thisSwipeObjectScript.impactDirection = impactDir;
 
-                    thisSwipeObjectScript.impactPoint = impactPoint;
+                        thisSwipeObjectScript.impactPoint = impactPoint;
 
-                    viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
+                        viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
 
-                    pMother.bumped = true;
-                    //hit point is on the near side, so get dir to hit transform and extend it through. point will now be on the rear side of hit transform
-                   // float hitBumpAmount = 1f;//*global var
-                    pMother.bumpShootfrom = bumpShootFrom;
+                        pMother.bumped = true;
+                        //hit point is on the near side, so get dir to hit transform and extend it through. point will now be on the rear side of hit transform
+                        // float hitBumpAmount = 1f;//*global var
+                        pMother.bumpShootfrom = bumpShootFrom;
 
-                    /*
-                    //tell hit player to vibrate
-                    PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
-                    pV.shakeTimerHit += pV.nonLethatHitLength;
-                    //tell player who successfully hit too - just use non lethal for hit confirm
-                    pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
-                    pV.shakeTimerHit += pV.nonLethatHitLength;
-                    */
+                        /*
+                        //tell hit player to vibrate
+                        PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
+                        pV.shakeTimerHit += pV.nonLethatHitLength;
+                        //tell player who successfully hit too - just use non lethal for hit confirm
+                        pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
+                        pV.shakeTimerHit += pV.nonLethatHitLength;
+                        */
 
-                }
-                else if (victimInfo.health <= 0f)
-                {
+                    }
+                    else if (victimInfo.health <= 0f)
+                    {
 
-                    //flag for this player
-                    Debug.Log("overhead hit opponent");
-
-
-                    //reset other player (victim)
-                    viewOwnerVictim.GetComponent<Swipe>().ResetFlags();
-
-                    //impact dir
-                    
-                    thisSwipeObjectScript.impactDirection = impactDir;
-
-                    thisSwipeObjectScript.impactPoint = impactPoint;
-                    //we need to break up the head mesh - they died
-                    GameObject victimHeadMesh = viewOwnerVictim.GetComponent<PlayerMovement>().head.transform.GetChild(0).gameObject;
-                    Swipe.BreakUpPlayer(victimHeadMesh, thisSwipeObjectScript);
-                    Swipe.DeSpawnPlayer(viewOwnerVictim);
-
-                    //reset this player too (attacker)
-                    thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
-
-                    /*
-                    //tell hit player to vibrate
-                    PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
-                    pV.shakeTimerHit += pV.lethatHitLength;
-
-                    //tell player who successfully hit too - just use non lethal for hit confirm
-                    pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
-                    pV.shakeTimerHit += pV.nonLethatHitLength;
-                    */
+                        //flag for this player
+                        Debug.Log("overhead hit opponent");
 
 
+                        //reset other player (victim)
+                        viewOwnerVictim.GetComponent<Swipe>().ResetFlags();
 
+                        //impact dir
+
+                        thisSwipeObjectScript.impactDirection = impactDir;
+
+                        thisSwipeObjectScript.impactPoint = impactPoint;
+                        //we need to break up the head mesh - they died
+                        GameObject victimHeadMesh = viewOwnerVictim.GetComponent<PlayerMovement>().head.transform.GetChild(0).gameObject;
+                        Swipe.BreakUpPlayer(victimHeadMesh, thisSwipeObjectScript);
+                        Swipe.DeSpawnPlayer(viewOwnerVictim);
+
+                        //reset this player too (attacker)
+                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+
+                        /*
+                        //tell hit player to vibrate
+                        PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
+                        pV.shakeTimerHit += pV.lethatHitLength;
+
+                        //tell player who successfully hit too - just use non lethal for hit confirm
+                        pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
+                        pV.shakeTimerHit += pV.nonLethatHitLength;
+                        */
+
+
+
+                    }
                 }
             }
 

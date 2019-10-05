@@ -32,6 +32,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public bool sideSwipeFlipped = false;
     public bool hitOpponent = false;
     public bool hitShield = false;
+    public bool flagsResetOnParent = false;
 
 
     public Mesh dataMesh;// simple mesh used for raycasting
@@ -654,12 +655,22 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
            
             //  Debug.Log("swipe time taken = " + (Time.time - swipeTimeStart));
         }
-
-        if(arrayRenderCount == pointsFromCurve.Count-1)
+        if (!parentPlayer.GetComponent<PhotonView>().IsMine)
         {
-            //reset flags when first part of swipe has finished, we can move and start new swipes if swipe is receding (in its second phase)            
+          //  Debug.Log("Array render count = " + arrayRenderCount);
+          //  Debug.Log("points from curve count = " + pointsFromCurve.Count);
+        }
+        //stop multiple resets
+        if (!flagsResetOnParent)
+        {
+            if (arrayRenderCount >= pointsFromCurve.Count - 1)
+            {
+                //reset flags when first part of swipe has finished, we can move and start new swipes if swipe is receding (in its second phase)            
+               // Debug.Log("Swipe finished, resetting flags");
+                parentPlayer.GetComponent<Swipe>().ResetFlags();
 
-            parentPlayer.GetComponent<Swipe>().ResetFlags();
+                flagsResetOnParent = true;
+            }
         }
 
 

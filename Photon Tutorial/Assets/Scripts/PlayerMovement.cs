@@ -237,7 +237,7 @@ public class PlayerMovement : MonoBehaviourPun {
     private void Update()
     {
         //movement, targets worked out in fixed update
-        if (bumped)
+        if (bumpInProgress)
         {
             
              LerpBump(); 
@@ -632,12 +632,17 @@ public class PlayerMovement : MonoBehaviourPun {
 
         if (bumped)
         {
+            //Debug.Break();
             //set bump target if we are in control of this player
-          //  if(thisPhotonView.IsMine)
-          if(!bumpInProgress)
-                BumpTarget();
+            //  if(thisPhotonView.IsMine)
+           // if(GetComponent<PhotonView>().IsMine)
+                if (!bumpInProgress)
+                {
+                    Debug.Log("Bump in progress");
+                    BumpTarget();
+                }
 
-           // LerpBump(); //moved to update
+            //LerpBump(); //moved to update
             
         }
         
@@ -1019,9 +1024,12 @@ public class PlayerMovement : MonoBehaviourPun {
         //use a seperate lerp when attacking - this is worked out from how far along the swipe has made it  -we work this out on swipeobject and pass it to attackLerp
         //swipe object can take a few frames to update as it is calculated on a fixed update and we lerping here on render Update, so we need to do another check to see if swipe object has started yet
         bool useAttackLerp = false;
-        if (swipe.overheadSwiping && swipe.currentSwipeObject.GetComponent<SwipeObject>().arrayRenderCount != 0)
-            useAttackLerp = true;
-
+        //only need to do this if attacking 
+        
+        if(swipe.currentSwipeObject != null)
+            if (swipe.overheadSwiping && swipe.currentSwipeObject.GetComponent<SwipeObject>().arrayRenderCount != 0)
+                useAttackLerp = true;
+        
         if(!useAttackLerp)
         {
             //otherwise use normal walk speed lerp
