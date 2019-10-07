@@ -461,7 +461,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
             Vector3 dirToEnd = (pointsFromCurve[i]).normalized;
             Vector3 closePoint = dirToEnd * (playerClassValues.armLength);
-
+            
             //add step    
             //stretches swipe to go with player movement
             float percentage = ((float)a) / pointsFromCurve.Count;// arrayRenderCount ;//pointsfromcurve.count?
@@ -477,9 +477,11 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
             
 
-            closePoint += percentage *  targetDir + dirToEnd;
+            closePoint += percentage *  (targetDir + dirToEnd);
+
+            Debug.DrawLine(transform.position + closePoint, transform.position, Color.red);
             Vector3 endPoint = dirToEnd * (playerClassValues.armLength + playerClassValues.swordLength);//playerClassValues.overheadLength// removed, needed?
-            endPoint+= percentage * targetDir + dirToEnd;
+            endPoint+= percentage * (targetDir + dirToEnd);
 
 
             //get perpendiular vector using .cross
@@ -643,7 +645,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
             parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
 
-            parentPlayer.GetComponent<Swipe>().whiffed = true;
+           // parentPlayer.GetComponent<Swipe>().whiffed = true; //not suing whiff
 
             //activeTime = playerClassValues.overheadWhiffCooldown;
             //Invoke("DeactivateSwipe", Time.fixedDeltaTime);            

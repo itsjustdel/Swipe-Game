@@ -210,7 +210,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //rotations are done in player attacks in Block()
         }
-        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
+        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose)
         {
             //we are adjusting cell, ignore any right stick input
             LookToGround();

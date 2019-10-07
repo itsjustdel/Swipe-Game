@@ -16,21 +16,22 @@ public class PlayerClassValues : MonoBehaviour {
     public float playerCooldownAfterLungeHit = 0.5f;
     public float playerCooldownAfterLungeBlock = 0.5f;
     public float playerCooldownAfterLungeWhiff = 0.5f;
+    public float playerCooldownAfterAttackedTooClose = 0.5f;
 
     //spublic float playerCooldownAfterSideSwipe = 0.5f;
     //public float playerCooldownAfterLunge = 0.5f;
 
-   // public float overheadHitCooldown = 0.5f;//swipes dont hang
-   // public float overheadBlockCooldown = 0.5f;
+    // public float overheadHitCooldown = 0.5f;//swipes dont hang
+    // public float overheadBlockCooldown = 0.5f;
     //public float overheadWhiffCooldown = 0.5f;
 
-  //  public float sideSwipeHitCooldown = 0.5f;
-  //  public float sideSwipeBlockCooldown = 0.5f;
-  //  public float sideSwipeWhiffCooldown = 0.5f;
+    //  public float sideSwipeHitCooldown = 0.5f;
+    //  public float sideSwipeBlockCooldown = 0.5f;
+    //  public float sideSwipeWhiffCooldown = 0.5f;
 
- //   public float lungeHitCooldown = 0.5f;
-  //  public float lungeBlockCooldown = 0.5f;
-  //  public float lungeWhiffCooldown = 0.5f;
+    //   public float lungeHitCooldown = 0.5f;
+    //  public float lungeBlockCooldown = 0.5f;
+    //  public float lungeWhiffCooldown = 0.5f;
 
     public float overheadSpeed = 1f; //how fast it steps through the arc
     public float sideSwipeSpeed = 1f;//so, if using this and wanting to match overhead speed, do, arc detail * overhead speed?

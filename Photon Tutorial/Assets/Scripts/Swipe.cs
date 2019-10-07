@@ -25,6 +25,7 @@ public class Swipe : MonoBehaviour {
     public float debugSwipeLength = 20f;
     public float angleAllowedForLetGoMax = 135f;
     public float angleAllowedForLetGoMin = 90f;
+    public float angleForNoAttack = 30f;
     //  public float maxTimeAllowedInDeadzoneThroughStrike = 0.4f;
     //  public float maxSwipeTime = 5f;
     public float overheadWaitBeforeReset = .0f;//min at fixed update? // time to wait before allowing next strike, do we need different for every type of strike, do we need at all? *off atm
@@ -80,9 +81,10 @@ public class Swipe : MonoBehaviour {
     public bool waitingOnResetSideSwipe;
    // public bool waitingOnResetLunge;
     public bool waitingOnResetButtonSwipe;
-    public bool whiffed;
+   public bool whiffed;//not using?>
     public bool blocked;
     public bool hit;
+    public bool attackedTooClose;
 
     //counters
     // public float finishTimePlanning;
@@ -92,6 +94,7 @@ public class Swipe : MonoBehaviour {
     public double swipeTimeStart;
     public float firstPullBackAngle;
     public float angleTravelled = 0;
+    double attackedTooCloseTimeStart;
 
     // public float timeToFinishSwipe = 0.01f;
     //public float SwingToFinishStartTime;
@@ -150,6 +153,7 @@ public class Swipe : MonoBehaviour {
     //public List<GameObject> currentSwipes = new List<GameObject>();
 
     public PlayerClassValues playerClassValues;
+    PlayerGlobalInfo playerGlobalInfo;
 
 
     // public bool fullCircle = false;
@@ -173,7 +177,7 @@ public class Swipe : MonoBehaviour {
     {
 
 
-
+        playerGlobalInfo = GameObject.FindWithTag("Code").GetComponent<PlayerGlobalInfo>();
         //tell sound script where we are at
         //GetComponent<SwipeSound>().swipe = this;
         //GetComponent<SwipeSound>().enabled = true;
@@ -238,11 +242,18 @@ public class Swipe : MonoBehaviour {
 
         GetSwipePoint();
 
+        if(attackedTooClose)
+        {
+            //bool set to true if angle of pullback too close to another player
+            AttackedTooCloseCooldown();
+        }
+
         bool adjustingCellHeight = false;            
         if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell)
             adjustingCellHeight = true;
 
-        if (!pA.blocking && !adjustingCellHeight )
+        //cant swipe if blocking or adjusting or in cooldown after trying to start a swipe to close to another player
+        if (!pA.blocking && !adjustingCellHeight && !attackedTooClose)
         {
             //look for user input and determine which swing to start
 
@@ -250,7 +261,12 @@ public class Swipe : MonoBehaviour {
         }
         else if (pA.blocking || !adjustingCellHeight)
         {
-            ResetFlags();
+            if(!attackedTooClose)
+            {
+                Debug.Log("Resetting from blocking or not adjusting cell height");
+                ResetFlags();
+            }
+                
         }
 
 
@@ -260,7 +276,58 @@ public class Swipe : MonoBehaviour {
 
     }
 
+    void AttackedTooCloseCooldown()
+    {
+        
+        if(PhotonNetwork.Time - attackedTooCloseTimeStart > playerClassValues.playerCooldownAfterAttackedTooClose)
+        {
+            Debug.Log("Attack too close- over time");
+            //reset if player releases stick 
+            if (pA.lookDirRightStick.magnitude < pA.deadzone)
+            {
+                Debug.Log("resetting from AttackedTooCloseCooldown - deadzone");
+                ResetFlags();
+                
+                return;
+            }
+            else
+            {
+                //check to see if player has corrected input enough so they are not considered to be making an angle with the stick that is too close
+                bool angleOk = false;
+                for (int i = 0; i < playerGlobalInfo.playerGlobalList.Count; i++) 
+                {
+                    //skip out own player
+                    if (playerGlobalInfo.playerGlobalList[i] == gameObject)
+                        continue;
 
+                    //check for distance, skipping player's that are still too close - no reset will happen
+                    float d = Vector3.Distance(transform.position, playerGlobalInfo.playerGlobalList[i].transform.position);
+                    float distanceAllowed = playerGlobalInfo.playerGlobalList[i].GetComponent<Swipe>().head.transform.localScale.x + playerClassValues.armLength + playerClassValues.swordLength;
+                    if (d <= distanceAllowed)
+                        continue;
+
+                    Vector3 otherPlayerPos = playerGlobalInfo.playerGlobalList[i].transform.position;
+                    Vector3 dirToOther = (otherPlayerPos - transform.position).normalized;
+                    float angle = Vector3.Angle(dirToOther, pA.lookDirRightStick);
+
+                    //only reset if player has moved it to a larger angle
+                    if (angle > angleForNoAttack)
+                    {
+
+                        angleOk = true;
+                        Debug.Log("resetting from AttackedTooCloseCooldown - angle");
+                        ResetFlags();
+                        
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            
+        }
+    }
 
     void DetectForwardMovementRightStick()
     {
@@ -380,7 +447,7 @@ public class Swipe : MonoBehaviour {
         //overhead
         if (waitingOnResetOverhead)
         {
-            if (whiffed)
+            if (whiffed)//not using
             {
                 if (PhotonNetwork.Time- finishTimeSriking > playerClassValues.playerCooldownAfterOverheadWhiff)
                 {
@@ -389,7 +456,7 @@ public class Swipe : MonoBehaviour {
                    // buttonSwipeAvailable = true;
                    // overheadAvailable = true;
 
-                   // ResetFlags();//everything reset? or just this swipe option..
+                   // ResetFlags();//everything reset? or just this swipe option.. //if this is uncommented, swipes will reset when they finish regarldess of what player is doing at tthe time the swipe finishes
                 }
             }
             else if (blocked)
@@ -436,27 +503,6 @@ public class Swipe : MonoBehaviour {
                 CheckForOverheadPullBack();
             }
         }
-
-      //  ButtonSwipe();
-
-
-        /*
-        else if (pA.rbHeld)
-        {
-            if (lungeAvailable)
-            {
-                //look for forward attack
-                CheckForLungeStart();
-            }
-
-            if (sideSwipeAvailable)//will never get here atm
-            {
-                //look for sideAttack            
-                CheckForSideSwipePullBack();
-            }
-        }
-        */
-
         //if stick is in a swipe start position, check to see if player has moved the stick enough to start loking for a path (allows some wobbly finger movements(small))
         if (pulledBackForOverhead)
         {
@@ -550,96 +596,50 @@ public class Swipe : MonoBehaviour {
         /// currentSwipes.Add(newSwipe);
     }
 
-    void LungePoints()
-    {
-        /*
-        //this functin constantly popultaes lunge points with stick movements. 
-        //it will reset and clear its list if any other attack happesn or user stops moving stick
-        if (!rightStickStill)// && currentDot < 0f)//does allow for backwards travelling in front half
-            lungePoints.Add(swipePoint);
-        else
-            lungePoints.Clear();
-            */
-    }
 
-    void CheckForLungeStart()
-    {
-        //  Debug.Log("checking for lunge start");
-        //  //lunge enabled when user starts from neutral and pushes forward within angle allowance
-        //if (!lunging)
-        {
-            if (pA.lookDirRightStick.magnitude >= maxThumbMagnitude && startAngle > -lungeActivationAngle && startAngle < lungeActivationAngle)
-            {
-
-                Debug.Log("found lunge start");
-
-                firstPullBackLookDir = swipePoint;
-                pullBackTimeStart = Time.time;
-                //finishTimePlanning = Time.time;
-                swipeTimeStart = Time.time;//review
-
-                //lungeWaitingForReset = true;
-
-                overheadAvailable = false;
-                lungeAvailable = false;
-                sideSwipeAvailable = false;
-
-                planningPhaseOverheadSwipe = false;
-                planningPhaseSideSwipe = false;
-
-                lunging = true;
-
-                //make a swipe object
-                CreateNewSwipeObject("Lunge", false, false, false);
-
-
-
-                //zero last lunge y 
-                Vector3 zeroYLast = new Vector3(lungePoints[lungePoints.Count - 1].x, 0f, lungePoints[lungePoints.Count - 1].z);
-                //save this list, lungepoints will be reset
-                lungePoints[lungePoints.Count - 1] = zeroYLast;
-                lungePointsFinal = new List<Vector3>(lungePoints);
-
-                currentSwipeObject.GetComponent<SwipeObject>().lungePointsFinal = lungePointsFinal;
-
-                for (int i = 0; i < lungePointsFinal.Count; i++)
-                {
-                    //  GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    //  c.transform.position = lungePointsFinal[i] + head.transform.position;
-                    // Destroy(c, 3);
-                }
-            }
-        }
-    }
-
-    void CheckForLungeEnd()
-    {
-        /* 
-        Debug.Log("checking for lunge end");
-        if (rightStickStill)
-        {
-            //considering fixed update step to allow one more frame to finish rendereing
-            if (Time.time - swipeTimeStart - Time.fixedDeltaTime > playerClassValues.lungeSpeed + overheadWaitBeforeReset)//overheadWaitBeforeReset
-            {
-                Debug.Log("found lunge end - timer");
-                lunging = false;
-                lungeWhiff = true;
-                ResetFlags();
-
-                // Debug.Log("ended lunge on timer");
-            }
-        }
-        */
-    }
+    
 
     void CheckForOverheadPullBack()
     {
+       // Debug.Log("checking for oeverhead pull back");
         //Debug.Log(pA.RSMagnitude);
         //look for overhead start
         //if ((startAngle < -overheadActivationAngle || startAngle >= overheadActivationAngle) && 
-         if(pA.RSMagnitude >= maxThumbMagnitude)//.95 means you need to slam the stcik off the rim
-
+        if(pA.RSMagnitude >= maxThumbMagnitude)//.95 means you need to slam the stcik off the rim
         {
+            //check if thumbstick has been position at too near an angle to a player within range
+            //this stop a swipe starting with an opponent's player body - Was confusing when this was happening
+            //only do this check if other player is withing range (arm plus sword length)
+            for (int i = 0; i < playerGlobalInfo.playerGlobalList.Count;  i++)
+            {
+                //skip out own player
+                if (playerGlobalInfo.playerGlobalList[i] == gameObject)
+                    continue;
+                
+                //skip if other player is further than arm length plus sword length (outside range)
+                float d = Vector3.Distance(transform.position, playerGlobalInfo.playerGlobalList[i].transform.position) ;
+                Debug.Log("Distance = " + d);
+                Debug.Log("arm etc = " +  (playerClassValues.armLength + playerClassValues.swordLength));
+                //add player attacked's scale to arm and sword length so we can definitily can't hit them on first part of swipe
+                float distanceAllowed = playerGlobalInfo.playerGlobalList[i].GetComponent<Swipe>().head.transform.localScale.x + playerClassValues.armLength + playerClassValues.swordLength;
+                if (d > distanceAllowed)
+                    continue;
+
+                Vector3 otherPlayerPos = playerGlobalInfo.playerGlobalList[i].transform.position;
+                Vector3 dirToOther = (otherPlayerPos - transform.position).normalized;
+                float angle = Vector3.Angle(dirToOther, pA.lookDirRightStick);
+
+                if(angle < angleForNoAttack)
+                {
+                    //don't allow attack, we started it too close to a player
+                    attackedTooClose = true;
+                    overheadAvailable = false;
+                    attackedTooCloseTimeStart = PhotonNetwork.Time;
+                }                
+            }
+
+            
+
           //  Debug.Log("1");
             //set flag
             pulledBackForOverhead = true;
@@ -710,6 +710,7 @@ public class Swipe : MonoBehaviour {
 
             if (pA.RSMagnitude < pA.deadzone)
             {
+                Debug.Log("Reseting from OverhreadChecks - swipe pont same as last and deadzone");
                 ResetFlags();
               //  Debug.Log("Reset From Cancel, magnitude = " + pA.lookDirRightStick.magnitude);
             }
@@ -788,7 +789,7 @@ public class Swipe : MonoBehaviour {
 
         if (sendToRender)
         {
-            centralPoints.Add(swipePoint);//makes sure it alwys goes to end
+            centralPoints.Add(swipePoint.normalized);//makes sure it alwys goes to end
             
           //  Debug.Log("Over head - finished planning");
          //   Debug.Log("frac complete = " + GetComponent<PlayerMovement>().fracComplete);
@@ -872,14 +873,14 @@ public class Swipe : MonoBehaviour {
             //larger numbers mean more smoothing for the curve (basically it gives less points to the curve
             if (d >= curveSmoothing) //** still working out what's best for this
             {
-                centralPoints.Add(swipePoint); //** revise?
+                centralPoints.Add(swipePoint.normalized); //** revise?
             }
         }
         else
         {
             //working ok?
-            centralPoints.Add(firstPullBackLookDir);
-            centralPoints.Add(firstPullBackLookDir);
+            centralPoints.Add(firstPullBackLookDir.normalized);
+            centralPoints.Add(firstPullBackLookDir.normalized);
         }
 
         //some stuff in here from tracking real time strike - if i take it out, curve goes sharp at end, leaving for the moment
@@ -1362,27 +1363,28 @@ public class Swipe : MonoBehaviour {
                         }
                         else
                         {
-                            Debug.Log("similiar starts- destroy both");//this will likely never hppen because of double accuracy - force for gameplay?
+                            Debug.Log("similiar starts- destroy both");//this will likely never hppen because of double accuracy - force for gameplay? - happens with testing mastr and client with same pad
 
-                            otherSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                            //Debug.Break();
+                           // otherSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;//on destroy swipe
                             otherSwipeObjectScript.DestroySwipe();
                             otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
-                            thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                           // thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
                             thisSwipeObjectScript.DestroySwipe();
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
                             byte evCode = 40; // Custom Event 40: send hit to clients
-                            int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
-                            object[] content = new object[] { photonViewID, Vector3.down };
-                            //send to everyone but this client
-                            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
                             SendOptions sendOptions = new SendOptions { Reliability = true };
+                            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
                             //this
+                            int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;                            
+                            object[] content = new object[] { photonViewID, Vector3.down };
                             PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
-                            //other
-                            content = new object[] { photonViewID, Vector3.down };
+
+                            //other                            
                             photonViewID = otherSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
+                            content = new object[] { photonViewID, Vector3.down };
                             PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
                             
                         }
@@ -1474,24 +1476,9 @@ public class Swipe : MonoBehaviour {
                        //network needs to know?
                         Debug.Log("hit power = " + p);
 
-                        //if hit player is swiping, interrupt swipe and reset him // should this only be when killed?, or allow strike to continue if only been popped
                         Swipe otherSwipeScript = totalRayList[i][j].transform.parent.parent.GetComponent<Swipe>();
-                        otherSwipeScript.GetComponent<PlayerInfo>().lastDeathTime = PhotonNetwork.Time;
-                        //player got hit, cancel anything they were doing
-                        otherSwipeScript.ResetFlags();
-                        //network**
 
                         
-                        if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
-                        {
-                            //let player know it was cancelled with visual aid
-                            otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
-                            otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring
-                            otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                            //network ** 
-                        }
-
 
                        
                         thisSwipeObjectScript.hitOpponent = true;
@@ -1507,10 +1494,16 @@ public class Swipe : MonoBehaviour {
 
                         if (playerInfo.health > 0 )
                         {
-                            
+                            bool interruptSwipeOnNonLethal = false;
+                            if (interruptSwipeOnNonLethal)
+                            {
+                                InterruptSwipe(otherSwipeScript);
+                            }
+
+
                             //stop swipe
                             //thisSwipeObjectScript.swipeFinishedBuilding = true;
-                          
+
                             //let player object know when we finished this swing too
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
@@ -1545,6 +1538,12 @@ public class Swipe : MonoBehaviour {
                         }
                         else if (playerInfo.health <= 0f)
                         {
+                            //stop other player's swipe if he is swiping
+                            bool interruptSwipeOnLethal = true;
+                            if (interruptSwipeOnLethal)
+                            {
+                                InterruptSwipe(otherSwipeScript);
+                            }
 
                             //flag for this player
                             Debug.Log("overhead hit opponent");
@@ -1628,6 +1627,28 @@ public class Swipe : MonoBehaviour {
             }
         }
 
+    }
+
+    void InterruptSwipe(Swipe otherSwipeScript)
+    {
+        //if hit player is swiping, interrupt swipe and reset him // should this only be when killed? - YES, or allow strike to continue if only been popped
+
+        otherSwipeScript.GetComponent<PlayerInfo>().lastDeathTime = PhotonNetwork.Time;
+        //player got hit, cancel anything they were doing
+        otherSwipeScript.ResetFlags();
+
+
+
+
+        if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
+        {
+            //let player know it was cancelled with visual aid
+           // otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material; //on destroy swipe
+            otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring
+            otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
+
+            //network ** 
+        }
     }
 
     public static void BreakUpPlayer(GameObject headMesh, SwipeObject swipeObject)//just using swipeobject for its data truct (should have seperate struct within swipeobject yes
@@ -1724,15 +1745,15 @@ public class Swipe : MonoBehaviour {
     private void StartCoolDownReset()
     {
         //add current last point to central points for the swipe
-       // centralPoints.Add(swipePoint);
-       // centralPoints.Add(swipePoint);
-       
-       
-       // finishTimePlanning = Time.time;
-
-       // previousSideSwipeMagnitude = 0f;
+        // centralPoints.Add(swipePoint);
+        // centralPoints.Add(swipePoint);
 
 
+        // finishTimePlanning = Time.time;
+
+        // previousSideSwipeMagnitude = 0f;
+
+        Debug.Log("Start cool down reset");
         ResetFlags();
         /*
         //tell current swipe stuiff it needs to know
@@ -1749,7 +1770,7 @@ public class Swipe : MonoBehaviour {
     //public so other playesrs can reset swipes
     public void ResetFlags()
     {
-      //  Debug.Log("resetting");
+        Debug.Log("resetting");
         //tell current swipe stuiff it needs to know
    
 
@@ -1791,6 +1812,7 @@ public class Swipe : MonoBehaviour {
         blocked = false;
         whiffed = false;
         hit = false;
+        attackedTooClose = false;
         //fullCircle = false;
 
 

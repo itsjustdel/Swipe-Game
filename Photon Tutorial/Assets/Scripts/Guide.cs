@@ -91,7 +91,7 @@ public class Guide : MonoBehaviour {
             main.startSize = d*guideSize;
         }
 
-        transform.position = swipe.head.transform.position + swipe.swipePoint.normalized*swipe.playerClassValues.armLength;
+        transform.position = swipe.head.transform.position + swipe.swipePoint.normalized*(swipe.playerClassValues.armLength + swipe.playerClassValues.swordLength);
         
 
         //ChangeColourOnAngle(); //old

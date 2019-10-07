@@ -536,6 +536,7 @@ namespace DellyWellyWelly
                 SwipeObject sO = swipe.currentSwipeObject.GetComponent<SwipeObject>();
 
                 sO.impactDirection = (Vector3)customData[1];//need impact point? check when reworking
+                //sO.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;//on destroy swipe function
                 sO.DestroySwipe();
             }
             //swipe on self player
@@ -599,18 +600,7 @@ namespace DellyWellyWelly
                 //reduce health on victim
                 PlayerInfo victimInfo = viewOwnerVictim.GetComponent<PlayerInfo>();
                 victimInfo.health -= healthReduction;
-                //if player was attempting any attacks, cancel
-                Swipe otherSwipeScript = viewOwnerVictim.GetComponent<Swipe>();
-                otherSwipeScript.ResetFlags();
-                //check for swipe from victim, destroy this if any
-                if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
-                {
-                    //let player know it was cancelled with visual aid
-                    otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
-                    otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring?
-                    otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-
-                }
+               
                 GameObject viewOwnerAttacker = PhotonView.Find(photonViewIDAttacker).gameObject;
 
                 if (viewOwnerAttacker.GetComponent<Swipe>().currentSwipeObject != null)
@@ -628,7 +618,22 @@ namespace DellyWellyWelly
 
                     if (victimInfo.health > 0)
                     {
+                        //if player was attempting any attacks, cancel
+                        bool cancelSwipeIfNonLethal = false;
+                        if (cancelSwipeIfNonLethal)
+                        {
+                            Swipe otherSwipeScript = viewOwnerVictim.GetComponent<Swipe>();
+                            otherSwipeScript.ResetFlags();
+                            //check for swipe from victim, destroy this if any
+                            if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
+                            {
+                                //let player know it was cancelled with visual aid
+                                otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                                otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring?
+                                otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
 
+                            }
+                        }
 
                         //let player object know when we finished this swing too
                         thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
@@ -664,6 +669,22 @@ namespace DellyWellyWelly
                     }
                     else if (victimInfo.health <= 0f)
                     {
+                        //if player was attempting any attacks, cancel
+                        bool cancelSwipeIfLethal = true;
+                        if (cancelSwipeIfLethal)
+                        {
+                            Swipe otherSwipeScript = viewOwnerVictim.GetComponent<Swipe>();
+                            otherSwipeScript.ResetFlags();
+                            //check for swipe from victim, destroy this if any
+                            if (otherSwipeScript.currentSwipeObject != null)//will be null when not swiping
+                            {
+                                //let player know it was cancelled with visual aid
+                                otherSwipeScript.currentSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                                otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().impactDirection = -otherSwipeScript.transform.position;//not //wokring?
+                                otherSwipeScript.currentSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
+
+                            }
+                        }
 
                         //flag for this player
                         Debug.Log("overhead hit opponent");
