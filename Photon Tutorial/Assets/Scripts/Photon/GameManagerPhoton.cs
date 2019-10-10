@@ -498,6 +498,25 @@ namespace DellyWellyWelly
 
 
             }
+            //edge bump
+            //if player gets bumped but can't go anywhere
+            if(eventCode == 24)
+            {
+                Debug.Log("[CLIENT] - Getting edge bump");
+                object[] customData = (object[])photonEvent.CustomData;
+
+                int photonViewID = (int)customData[0];
+                double bumpfinishTime = (double)customData[1];
+                GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
+                PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
+                //set all flags to force a bump cool down
+                pM.bumped = false;
+                pM.bumpInProgress = false;
+                pM.walking = false;
+                pM.waitingForBumpReset = true;
+                //let it know when to start counting for bump cooldown
+                pM.bumpFinishTime = bumpfinishTime;
+            }
 
             //30+ predictive
             if (eventCode == 30)
@@ -803,6 +822,7 @@ namespace DellyWellyWelly
                 playerClassValues.blockRaise = playerClassFloats[9];
                 playerClassValues.blockLower = playerClassFloats[10];
                 playerClassValues.blockMinimum = playerClassFloats[11];
+                playerClassValues.playerCooldownAfterBump = playerClassFloats[12];
 
                 //overlay drawer
                 float[] overlayFloats = (float[])customData[1];

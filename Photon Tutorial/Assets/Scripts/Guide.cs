@@ -96,7 +96,7 @@ public class Guide : MonoBehaviour {
 
         //ChangeColourOnAngle(); //old
 
-        if (inputs.blocking0 || swipe.GetComponent<CellHeights>().loweringCell || swipe.GetComponent<CellHeights>().raisingCell)
+        if (inputs.blocking0 || swipe.GetComponent<CellHeights>().loweringCell || swipe.GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose)
         {
             GetComponent<MeshRenderer>().enabled = false;
             GetComponent<TrailRenderer>().enabled = false;

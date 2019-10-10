@@ -53,7 +53,8 @@ public class TestValueUpdater : MonoBehaviour
             playerClassValues.swordWidth,
             playerClassValues.blockRaise,
             playerClassValues.blockLower,
-            playerClassValues.blockMinimum
+            playerClassValues.blockMinimum,
+            playerClassValues.playerCooldownAfterBump
             },
             //overlay drawer
             new float[]

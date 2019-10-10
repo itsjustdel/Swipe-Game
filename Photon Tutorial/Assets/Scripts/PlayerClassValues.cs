@@ -17,6 +17,7 @@ public class PlayerClassValues : MonoBehaviour {
     public float playerCooldownAfterLungeBlock = 0.5f;
     public float playerCooldownAfterLungeWhiff = 0.5f;
     public float playerCooldownAfterAttackedTooClose = 0.5f;
+    public float playerCooldownAfterBump = 0.5f;
 
     //spublic float playerCooldownAfterSideSwipe = 0.5f;
     //public float playerCooldownAfterLunge = 0.5f;
@@ -56,5 +57,6 @@ public class PlayerClassValues : MonoBehaviour {
     //
     public float blockRotation = 1f;
     public float blockRotationNetworkLerp = 1f;
+    public float clientMovementLerp = 0.9f;
 
 }

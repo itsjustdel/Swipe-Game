@@ -85,10 +85,15 @@ public class PlayerMovement : MonoBehaviourPun {
     public Vector3 walkTarget;
     public double walkStart;
 
+
+    //bump
     public Vector3 bumpShootfrom;
     public Vector3 bumpTarget;
     public double bumpStart;
     public Vector3 bumpStartPos;
+    public bool waitingForBumpReset = false;
+    public double bumpFinishTime;
+    public int lastPLayerIdCollision = -1;//-1 is no team, teams start at 0
 
     //rotation stuff
     private Vector3 rotateTarget;
@@ -191,10 +196,21 @@ public class PlayerMovement : MonoBehaviourPun {
 
 
         //adjust speed slowly if between states (bumper etc)
-        Inertias();
+        Inertias();//look over this again
 
-
-        BasicMove();
+        if(waitingForBumpReset)
+        {
+            Debug.Log("waiting for bump reset");
+            //we are in bump recovery mode, player cant move for a set amount of time, check if we have completed this wait
+            if(PhotonNetwork.Time -  bumpFinishTime > playerClassValues.playerCooldownAfterBump)
+            {
+                Debug.Log("bump reset");
+                waitingForBumpReset = false;
+            }
+        }
+        //work out walk if not bumped
+        else if (!waitingForBumpReset)
+            BasicMove();
 
 
         //heights for head
@@ -210,7 +226,7 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //rotations are done in player attacks in Block()
         }
-        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose)
+        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose || waitingForBumpReset)
         {
             //we are adjusting cell, ignore any right stick input
             LookToGround();
@@ -635,7 +651,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //Debug.Break();
             //set bump target if we are in control of this player
             //  if(thisPhotonView.IsMine)
-           // if(GetComponent<PhotonView>().IsMine)
+            //if(PhotonNetwork.IsMasterClient)//only work out targets on master
                 if (!bumpInProgress)
                 {
                     Debug.Log("Bump in progress");
@@ -693,6 +709,28 @@ public class PlayerMovement : MonoBehaviourPun {
 
             
             object[] content = new object[] { thisPhotonViewID,bumpStart, bumpStartPos, bumpTarget};
+            //send to everyone but this client
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+
+            //keep resending until server receives
+            SendOptions sendOptions = new SendOptions { Reliability = true };
+
+            PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+        }
+    }
+
+    void SendEdgeBumpToNetwork()
+    {
+
+        //now, if we are master tell the clients where the actual bump target is.
+        if (PhotonNetwork.IsMasterClient)//should be after bump target set in master client?
+        {
+            Debug.Log("[MASTER] - sending edge bump info to clients");
+            byte evCode = 24; // Custom Event 24:
+
+            int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
+
+            object[] content = new object[] { thisPhotonViewID, bumpFinishTime };
             //send to everyone but this client
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
@@ -769,26 +807,27 @@ public class PlayerMovement : MonoBehaviourPun {
                         bumpStart = PhotonNetwork.Time;
                         bumpStartPos = transform.position;
 
+
                         //send results to everyone//only if master client
                         SendBumpTargetToNetwork();
 
+                        return;
 
                         //  Debug.Log("setting target for bump");
                     }
-                    else
-                    {
-                        //already at a wall, cancel bump
-                        bumped = false;
-                    }
                 }
-
-
                 else if (add >= maxBumpDistance)
                 {
                     //missed, will fall in to hole//??
 
                     //already at edge
+                    //set these flags so it is like a bump just finished, which will jump to the cooldown sequence
                     bumped = false;
+                    bumpInProgress = false;
+                    waitingForBumpReset = true;
+                    bumpFinishTime = PhotonNetwork.Time;
+                    //send results to everyone//only if master client
+                    SendBumpTargetToNetwork();
 
                     return;
                 }
@@ -804,6 +843,14 @@ public class PlayerMovement : MonoBehaviourPun {
     void LerpBump()
     {
         float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
+        if(bumpDistance == 0)
+        {
+            //if we are already at abump target, happens when at edge, cancel bump
+            bumped = false;
+            bumpInProgress = false;
+            return;
+        }
+
         //add for arc //half way for arc loop for jumping animation
         Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
 
@@ -814,17 +861,25 @@ public class PlayerMovement : MonoBehaviourPun {
         Vector3 setRelCenterBump = bumpTarget - bumpCenter;
 
         //bumpspeed this step
-
+       // Debug.Log("bump distance = " + bumpDistance);
         float fracCompleteBump = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance / bumpSpeed));
+        
         //Debug.Log(fracComplete);
         /*
         Debug.Log("risRelCenterBump = " + riseRelCenterBump);
         Debug.Log("setRelCenterBump = " + setRelCenterBump);
         Debug.Log("fracComplete = " + fracComplete);
         */
-        transform.position = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracCompleteBump);
-        transform.position += bumpCenter;
-        //transform.position = Vector3.Slerp(bumpStartPos, bumpTarget, fracComplete);
+        Vector3 target = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracCompleteBump) + bumpCenter;
+        
+        
+
+        //smooth if client //testing
+        
+        if (PhotonNetwork.IsMasterClient)
+            transform.position = target;
+        else
+            transform.position = Vector3.Lerp(transform.position, target, playerClassValues.clientMovementLerp);
 
 
         if (fracCompleteBump >= 1f)
@@ -835,6 +890,13 @@ public class PlayerMovement : MonoBehaviourPun {
                 bumped = false;
                 bumpInProgress = false;
                 fracCompleteBump = 0f;
+                waitingForBumpReset = true;
+                bumpFinishTime = PhotonNetwork.Time;
+
+                lastPLayerIdCollision = -1;
+
+                //snap if client
+                transform.position = target;
 
             }
         }
@@ -1061,8 +1123,13 @@ public class PlayerMovement : MonoBehaviourPun {
 
         }
 
-        transform.position = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, fracCompleteForLerp);
-        transform.position += walkCenter;
+        //smooth if client //testing
+        Vector3 target = Vector3.Slerp(riseRelCenterWalk, setRelCenterWalk, fracCompleteForLerp) + walkCenter;
+        if (PhotonNetwork.IsMasterClient)
+            transform.position = target;
+        else
+            transform.position = Vector3.Lerp(transform.position, target, playerClassValues.clientMovementLerp);
+        
 
 
         //finish drop
@@ -1097,6 +1164,9 @@ public class PlayerMovement : MonoBehaviourPun {
 
                 //reset fraccomplete too
                 fracComplete = 0f;
+
+                //snap if client
+                transform.position = target;
             }
         }
     }

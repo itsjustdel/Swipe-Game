@@ -338,6 +338,8 @@ MonoBehaviour:
   playerCooldownAfterLungeHit: 0.5
   playerCooldownAfterLungeBlock: 0.5
   playerCooldownAfterLungeWhiff: 0.5
+  playerCooldownAfterAttackedTooClose: 0.5
+  playerCooldownAfterBump: 0.3
   overheadSpeed: 1
   sideSwipeSpeed: 1
   lungeSpeed: 1
@@ -352,6 +354,7 @@ MonoBehaviour:
   blockMinimum: 0.66
   blockRotation: 0.2
   blockRotationNetworkLerp: 0.5
+  clientMovementLerp: 0.9
 --- !u!114 &578400625
 MonoBehaviour:
   m_ObjectHideFlags: 0
