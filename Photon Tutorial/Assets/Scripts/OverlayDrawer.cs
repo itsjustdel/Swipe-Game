@@ -163,7 +163,7 @@ public class OverlayDrawer : MonoBehaviour
                     //and work out new cells for this player
                     Capture(i);
 
-                    //|Ensnared();
+                    Ensnared(pI.teamNumber);
                 }
             }
         }
@@ -293,23 +293,30 @@ public class OverlayDrawer : MonoBehaviour
             if (pI.currentCell == lastCell && pI.currentCell.GetComponent<AdjacentCells>().controlledBy != pI.playerNumber)
             {
                 DisputedCell(lastCell);
+                return;
             }
         }
-
-
-
     }
 
-    void Ensnared()
+    void Ensnared(int teamNumber)
     {
         //check all cells to see if they have been surrounded by the same team
         List<GameObject> cells = GetComponent<MeshGenerator>().cells;
         //for each cell
         for (int i = 0; i < cells.Count; i++)
         {
+            //only do a check for cells which are frontline
+            AdjacentCells thisAdjacentCells = cells[i].GetComponent<AdjacentCells>();
+            if (thisAdjacentCells.controlledBy != -1)
+                continue;
+
+            //skip if any player is this cell
+            if (PlayerOnCell(cells[i]))
+                continue;
+
             //for each adjacent cell on cell
-            List<GameObject> adjacents = cells[i].GetComponent<AdjacentCells>().adjacentCells;
-            List<int> ownedBy = new List<int>() { 0, 0, 0, 0 };
+            List<GameObject> adjacents = thisAdjacentCells.adjacentCells;
+            int ownedByThisPlayer = 0;
             int disputed = 0;
 
             for (int j = 0; j < adjacents.Count; j++)
@@ -317,10 +324,10 @@ public class OverlayDrawer : MonoBehaviour
                 //who controls it?
                 //if anyone controls it
                 int controlledBy = adjacents[j].GetComponent<AdjacentCells>().controlledBy;
-                if (controlledBy > -1)
+                if (controlledBy == teamNumber)
                 {
                     //count who controls it
-                    ownedBy[controlledBy]++;
+                    ownedByThisPlayer++;
                 }
                 else if (adjacents[j].GetComponent<AdjacentCells>().controlledBy == -1)
                 {
@@ -328,21 +335,36 @@ public class OverlayDrawer : MonoBehaviour
                     disputed++;
                 }
             }
-            //work out if cell is ensnared
-            for (int a = 0; a < ownedBy.Count; a++)
+
+            if (ownedByThisPlayer + disputed == adjacents.Count)
             {
-                if (ownedBy[a] + disputed == adjacents.Count)
-                {
-                    //take central ensnared cell for player with cells ensnaring 
-                    CaptureCell(a, cells[i]);
-                }
+                //take central ensnared cell for player with cells ensnaring 
+                CaptureCell(teamNumber, cells[i]);
+                //Debug.Log("captured");
             }
+
         }
     }
 
 
+    bool PlayerOnCell(GameObject cell)
+    {
+        bool playerOnCell = false;
+        for (int j = 0; j < pgi.playerGlobalList.Count; j++)
+        {
+            if (pgi.playerGlobalList[j].GetComponent<PlayerInfo>().currentCell == cell)
+            {
+                playerOnCell = true;
+                break;
+            }
+        }
 
-    void Capture(int thisPlayer)
+        return playerOnCell;
+    }
+
+
+
+        void Capture(int thisPlayer)
     {
 
         //work out who owns the cell just landed on by the passed player
