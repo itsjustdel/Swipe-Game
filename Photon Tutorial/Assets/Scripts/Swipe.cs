@@ -592,6 +592,18 @@ public class Swipe : MonoBehaviour {
         ProceduralAudioController pAC = newSwipe.AddComponent<ProceduralAudioController>();
         pAC.swipeObject = true;
         pAC.useSinusAudioWave = true;
+      //  pAC.useSawAudioWave = true;
+        pAC.useSquareAudioWave = true;
+        pAC.sinusAudioWaveIntensity = 1f;
+        //pAC.squareAudioWaveIntensity = 0.186f;
+        pAC.sawAudioWaveIntensity = 0.1f;
+        pAC.useAmplitudeModulation = true;
+        pAC.amplitudeModulationOscillatorFrequency = 8f;
+
+        AudioSource aS = newSwipe.AddComponent<AudioSource>();
+        UnityEngine.Audio.AudioMixer mixer = Resources.Load("Sound/SwipeMixer") as UnityEngine.Audio.AudioMixer;
+        aS.outputAudioMixerGroup = mixer.FindMatchingGroups("Master/SwipeObjects")[0];
+        
 
         /// currentSwipes.Add(newSwipe);
     }

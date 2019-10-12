@@ -469,13 +469,13 @@ public class Wall : MonoBehaviour {
 
             walls[i].GetComponent<MeshRenderer>().enabled = true;
             if (GetComponent<AdjacentCells>().controlledBy == 0)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team0a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 1)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team1a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 2)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team2a") as Material;
             else if (GetComponent<AdjacentCells>().controlledBy == 3)
-                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3c") as Material;
+                walls[i].GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Team3a") as Material;
         }
     }
 

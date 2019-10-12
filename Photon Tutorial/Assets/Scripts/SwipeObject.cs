@@ -91,6 +91,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
     void Start ()
     {
+
+
         //grab walk target from parent
         walkTargetOnThisSwipe = parentPlayer.GetComponent<PlayerMovement>().walkTarget;
         wasWalkingAtStartOfSwipe = parentPlayer.GetComponent<PlayerMovement>().walking;

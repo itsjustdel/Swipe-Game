@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 using Photon.Pun;
 using Photon.Realtime;
@@ -82,7 +83,7 @@ namespace DellyWellyWelly
                                                           //vibration info
             player.AddComponent<PlayerVibration>().enabled = false;//////*********disabling atm;
                                                                    //sound
-            player.AddComponent<PlayerSounds>().enabled = false;//////*********disabling atm;
+            player.AddComponent<PlayerSounds>();//.enabled = false;//////*********disabling atm;
                                                                 //tree for diufferent sound types in player
             GameObject soundParent = new GameObject();
             soundParent.name = "Sounds";
@@ -93,9 +94,9 @@ namespace DellyWellyWelly
             walkObject.name = "Walk";
             walkObject.transform.parent = soundParent.transform;
             //noise
-            walkObject.AddComponent<NoiseMaker>().enabled = false;//////*********disabling atm;
-                                                                  // walkObject.AddComponent<ProceduralAudioController>();
-            walkObject.AddComponent<AudioSource>().enabled = false;//////*********disabling atm;
+            walkObject.AddComponent<NoiseMaker>();//.enabled = false;//////*********disabling atm;
+                                                  // walkObject.AddComponent<ProceduralAudioController>();
+            walkObject.AddComponent<AudioSource>();//.enabled = false;//////*********disabling atm;
 
 
             //head
@@ -283,6 +284,8 @@ namespace DellyWellyWelly
             //now set player info script which holds respawn fucntion to enabled
             GetComponent<PlayerInfo>().enabled = true;
 
+
+         
             return player;
 
 
@@ -293,7 +296,7 @@ namespace DellyWellyWelly
 
             //player.AddComponent<SwipeSound>();
             //player.AddComponent<SineWaveExample>();
-
+            
 
             //place player now
             

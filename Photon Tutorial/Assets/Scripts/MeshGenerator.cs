@@ -1077,7 +1077,7 @@ public class MeshGenerator : MonoBehaviour {
             }
         }
 
-        bool addAudio = false;
+        bool addAudio = true;
 
         if (addAudio)
         {

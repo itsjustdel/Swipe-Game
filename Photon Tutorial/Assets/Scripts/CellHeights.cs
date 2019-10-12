@@ -15,7 +15,7 @@ public class CellHeights : MonoBehaviour
     Inputs inputs;
     OverlayDrawer overlayDrawer;
     public float heightSpeed = 1f;// put in pgi
-    public float heightSpeedForFrontline = .05f;
+    public float heightSpeedForFrontline = 4f;//bigger is slower when using with lerps
 
     public bool raisingCell;
     public bool loweringCell;
@@ -65,16 +65,17 @@ public class CellHeights : MonoBehaviour
                 //change temp value that we use for this frame
                 thisHeightSpeed = heightSpeedForFrontline;
 
+                //find which adjacent cell is highest
                 for (int k = 0; k < playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells.Count; k++)
                 {
-                    if (playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
+                    if (playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].GetComponent<AdjacentCells>().targetY > highest)
                     {
                         //worked out max height controlled by how many adjacents there are in OverlayDrawer, (saved in adjacent cell script on each cell)
-                        highest = playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
+                        highest = playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].GetComponent<AdjacentCells>().targetY;
                     }
                 }
             }
-
+            
             float targetY = 0f;
             float fracComplete = 0f;
             float lerpedY = 0f;
@@ -82,15 +83,13 @@ public class CellHeights : MonoBehaviour
             if (raisingCell)
             {
                 targetY = playerInfo.currentCell.GetComponent<AdjacentCells>().targetY;
+
+                if (playerInfo.currentCell.GetComponent<AdjacentCells>().controlledBy == -1)
+                    targetY = highest;
+
                 fracComplete = (float)((PhotonNetwork.Time - eventTime) / thisHeightSpeed);
                 lerpedY = Mathf.Lerp(startingScaleY, targetY, fracComplete);
-
-                //stop if frontline cell and has got higher than another adjacent cell
-                if (playerInfo.currentCell.GetComponent<AdjacentCells>().controlledBy == -1)
-                {
-                    if (lerpedY > highest)
-                        lerpedY = highest;
-                }
+                
             }
             else if (loweringCell)
             {

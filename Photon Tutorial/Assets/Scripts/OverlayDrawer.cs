@@ -131,7 +131,7 @@ public class OverlayDrawer : MonoBehaviour
             ReduceFrontline();
         }
 
-        TransparentCells();
+       // TransparentCells(); 
     }
 
     void UpdateCurrentCells()
@@ -362,9 +362,7 @@ public class OverlayDrawer : MonoBehaviour
         return playerOnCell;
     }
 
-
-
-        void Capture(int thisPlayer)
+    void Capture(int thisPlayer)
     {
 
         //work out who owns the cell just landed on by the passed player
@@ -466,7 +464,7 @@ public class OverlayDrawer : MonoBehaviour
 
     void CaptureCell(int i, GameObject cell)
     {
-        cell.GetComponent<AdjacentCells>().controlledBy = i;
+        cell.GetComponent<AdjacentCells>().controlledBy = pgi.playerGlobalList[i].GetComponent<PlayerInfo>().teamNumber;// i;
 
         //add to list on player if not already
         if (!pgi.playerGlobalList[i].GetComponent<PlayerInfo>().cellsUnderControl.Contains(cell))
@@ -553,11 +551,18 @@ public class OverlayDrawer : MonoBehaviour
         {
             int thisControlledBy = cells[i].GetComponent<AdjacentCells>().controlledBy;
 
-            if (thisControlledBy < 0)
+            if (thisControlledBy < -1)
                 continue;
-
-            float adjacentControlledBySame = 0;
+            //frontline is capped when raising so we can just set this number to amount of adjacents in total
             List<GameObject> adjacents = cells[i].GetComponent<AdjacentCells>().adjacentCells;
+
+            if (thisControlledBy == -1)
+            {
+               // cells[i].GetComponent<AdjacentCells>().targetY = (adjacents.Count);// * heightMultiplier) + minHeight;
+               // continue;
+            }
+
+            float adjacentControlledBySame = 0;            
 
             for (int j = 0; j < adjacents.Count; j++)
             {

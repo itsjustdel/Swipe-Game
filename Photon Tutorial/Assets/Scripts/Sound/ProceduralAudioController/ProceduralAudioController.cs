@@ -91,7 +91,7 @@ public class ProceduralAudioController : MonoBehaviour
     public float volumeMin = -80f;
 
     [Range(100, 2000)]
-    public float mainFrequencyBase = 400;
+    public float mainFrequencyBase = 200;
 
     public float mainFrequencyCeiling = 500;
 
@@ -200,6 +200,7 @@ public class ProceduralAudioController : MonoBehaviour
                 useFrequencyModulation = true;
             }
 
+            /*
             mainFrequency =  Mathf.PingPong(Time.time * 200.0f, 1900.0f) + 100.0f;
             
             sinusAudioWaveIntensity = Mathf.PingPong(Time.time * 0.5f, 1.0f);
@@ -208,7 +209,7 @@ public class ProceduralAudioController : MonoBehaviour
             amplitudeModulationOscillatorFrequency = targetVolume;// Mathf.PingPong(Time.time * 3.0f, 30.0f);
             frequencyModulationOscillatorFrequency = (float)mainFrequency - 2000;// Mathf.PingPong(Time.time * 4.0f, 30.0f);
             frequencyModulationOscillatorIntensity = Mathf.PingPong(Time.time * 10.0f, 100.0f);
-            
+            */
         }
        
         if(guide)
@@ -232,7 +233,8 @@ public class ProceduralAudioController : MonoBehaviour
         float targetFreq = mainFrequencyBase*.5f;
         //how much to speed up audio ahead of swipe generation
         float accelerator = .5f;
-        mainFrequency =  Mathf.Lerp( targetFreq,start,swipeObjectDistance*accelerator);
+        float lerp =1f/ GetComponent<SwipeObject>().per;
+        mainFrequency =  Mathf.Lerp( targetFreq,start,lerp);
 
         
     }

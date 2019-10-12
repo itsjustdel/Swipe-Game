@@ -19,6 +19,7 @@ public class CameraControl : MonoBehaviour {
     OverlayDrawer overlayDrawer;
     public GameObject winner;
     public bool showWinner = false;
+    public bool rotateForTransparent = false;
     
    public  float startingRotX;
     public float rotateForTransparentCells = 10;
@@ -88,7 +89,8 @@ public class CameraControl : MonoBehaviour {
         }
 
         //swing camera up
-        RotateForTransparentCells();
+        if(rotateForTransparent)//not working atm 
+            RotateForTransparentCells();
 	}
 
     void RotateForTransparentCells()
