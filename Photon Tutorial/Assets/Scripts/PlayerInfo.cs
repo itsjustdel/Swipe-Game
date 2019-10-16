@@ -13,7 +13,7 @@ public class PlayerInfo : MonoBehaviour {
     public double lastDeathTime;
     public bool playerDespawned = true;
     public bool playerCanRespawn = true;
-    public int playerNumber;//controller
+    public int playerNumber = 1;//controller
     public int teamNumber = -1;
     public GameObject currentCell;
     public GameObject homeCell;
@@ -36,6 +36,7 @@ public class PlayerInfo : MonoBehaviour {
 
     private void Start()
     {
+     
         //force a respawn if this is our network player
 
         if(GetComponent<PhotonView>().IsMine)
@@ -48,6 +49,8 @@ public class PlayerInfo : MonoBehaviour {
 
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
+
+        playerNumber = pgi.playerGlobalList.Count - 1;//tests
     }
 
 

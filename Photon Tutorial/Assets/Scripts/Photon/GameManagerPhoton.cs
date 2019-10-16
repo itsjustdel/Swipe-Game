@@ -395,7 +395,7 @@ namespace DellyWellyWelly
             //updating walk targets
             if (eventCode == 21)
             {
-               // Debug.Log("Event 21 - walk target update");
+                Debug.Log("Event 21 - walk target update");
                 //walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID 
                 
                 object[] customData = (object[])photonEvent.CustomData;

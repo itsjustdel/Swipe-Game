@@ -263,7 +263,7 @@ public class Swipe : MonoBehaviour {
         {
             if(!attackedTooClose)
             {
-                Debug.Log("Resetting from blocking or not adjusting cell height");
+                //Debug.Log("Resetting from blocking or not adjusting cell height");
                 ResetFlags();
             }
                 
@@ -903,55 +903,7 @@ public class Swipe : MonoBehaviour {
 
     }
 
-    void StickPathSideSwipe()
-    {
-        swipePoint = new Vector3(swipePoint.x, 0f, swipePoint.z);
-        //debugCube.transform.position = head.transform.position + swipePoint;
-        //sometimes, first pull back isn't quite zero height
-        firstPullBackLookDir = new Vector3(firstPullBackLookDir.x, 0f, firstPullBackLookDir.z);
-        //outside start
-
-        //float distanceOfSwipe = Vector3.Distance(swipePoint, firstPullBackLookDir);
-        Vector3 outsideStart = firstPullBackLookDir.normalized * (playerClassValues.armLength + playerClassValues.sideSwipeLength + playerClassValues.swordLength);
-        //Vector3 outsideEnd = outsideStart + ((swipePoint - outsideStart).normalized * distanceOfSwipe * 1.33f);
-        Vector3 outsideEnd = swipePoint.normalized * (playerClassValues.armLength + playerClassValues.sideSwipeLength + playerClassValues.swordLength);
-
-        //        Vector3 insideStart = firstPullBackLookDir.normalized * (playerClassValues.armLength);//closeto player
-        Vector3 insideStart = firstPullBackLookDir.normalized * (playerClassValues.armLength);// - playerClassValues.swordLength);
-        Vector3 insideEnd = swipePoint.normalized * (playerClassValues.armLength);// + playerClassValues.swordLength - playerClassValues.swordLength);
-
-
-        //if swipe is going in reverse - cancel
-
-        float endDot = Vector3.Dot(outsideEnd, transform.forward);
-        float startDot = Vector3.Dot(outsideStart, transform.forward);
-        //  Debug.Log(dot);
-        // Debug.Log("Start dot = " + startDot);
-        //  Debug.Log("End dot = " + endDot);
-        if (endDot < startDot)
-        {
-            // Debug.Log("swipe going backwards, reseting");
-            // planningPhaseOverheadSwipe = false;
-
-            //  ResetFlags();
-            // Debug.Break();
-        }
-
-        //  GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //  c.transform.position = outsideStart + head.transform.position;
-
-        // Debug.DrawLine(outsideStart + head.transform.position, insideStart + head.transform.position);
-        // Debug.DrawLine(insideStart + head.transform.position, insideEnd + head.transform.position);
-        //Debug.DrawLine(insideEnd + head.transform.position, outsideEnd + head.transform.position);
-        //Debug.DrawLine(outsideEnd + head.transform.position, outsideStart + head.transform.position);
-
-
-        List<Vector3> vertices = new List<Vector3>() { outsideStart, outsideEnd, insideEnd, insideStart };
-        sideSwipePoints = vertices;
-
-        if (record)
-            recordedInput = new List<Vector3>(vertices);
-    }
+   
 
     public void CurveHitCheck2(List<Vector3> pointsFromCurve, bool activeSwipe, GameObject thisSwipeObject, bool forOverhead, bool forLunge)
     {
@@ -1782,7 +1734,7 @@ public class Swipe : MonoBehaviour {
     //public so other playesrs can reset swipes
     public void ResetFlags()
     {
-        Debug.Log("resetting");
+       // Debug.Log("resetting");
         //tell current swipe stuiff it needs to know
    
 

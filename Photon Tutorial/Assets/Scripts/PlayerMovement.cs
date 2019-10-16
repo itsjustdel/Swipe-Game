@@ -16,11 +16,9 @@ public class PlayerMovement : MonoBehaviourPun {
     public float walkRotationSpeed = 0.115f;
     public float rotationSpeed = 0.15f;
     public float movementSpeed = 1f;
-   // public float jumpSpeed = 15f;
-   // public float jumpStepDistance = 15f;
-  //  public float jumpBounceAmount = 15f;
-    public float bumpSpeed = 20f;
-    public float bumpBounceAmount = 10f;
+
+   // public float bumpSpeed = 3f;
+   // public float bumpBounceAmount = 10f;
     public float walkSpeed = 5f;
     public float walkStepDistance = 5f;
     public float walkBounceAmount = 5f;
@@ -196,32 +194,26 @@ public class PlayerMovement : MonoBehaviourPun {
 
 
         //adjust speed slowly if between states (bumper etc)
-        Inertias();//look over this again
+        Inertias();//look over this again?
 
-        if(waitingForBumpReset)
-        {
-            Debug.Log("waiting for bump reset");
-            //we are in bump recovery mode, player cant move for a set amount of time, check if we have completed this wait
-            if(PhotonNetwork.Time -  bumpFinishTime > playerClassValues.playerCooldownAfterBump)
-            {
-                Debug.Log("bump reset");
-                waitingForBumpReset = false;
-            }
-        }
-        //work out walk if not bumped
-        else if (!waitingForBumpReset)
-            BasicMove();
 
+        //player movement
+        Movement();
+
+
+        //section name needed
+        //
 
         //heights for head
-        
-        
         HeadHeight();
         
 
-            //rotate player
+        //rotations
+        //
 
-            //rotations for head
+    
+
+        //rotations for head
         if (GetComponent<PlayerAttacks>().blocking)//test blocking- if blocking, should be stuck in animation -ok it seems)
         {
             //rotations are done in player attacks in Block()
@@ -252,6 +244,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     private void Update()
     {
+        return;
         //movement, targets worked out in fixed update
         if (bumpInProgress)
         {
@@ -269,6 +262,12 @@ public class PlayerMovement : MonoBehaviourPun {
         else if (walking)
         {
              LerpPlayer();
+        }
+
+        if(walking && bumped)
+        {
+            Debug.Log("walking and bumped");
+            Debug.Break();
         }
     }
 
@@ -618,9 +617,26 @@ public class PlayerMovement : MonoBehaviourPun {
 
     }
 
-    void BasicMove()
+    void Movement()
     {
+        //check if we have been bumped and waitin for cooldown to finish- cant moveif this is happening
+        if (waitingForBumpReset)
+        {
+            //  Debug.Log("waiting for bump reset");
+            //we are in bump recovery mode, player cant move for a set amount of time, check if we have completed this wait
+            if (PhotonNetwork.Time - bumpFinishTime > playerClassValues.playerCooldownAfterBump)
+            {
+               // Debug.Log("bump reset");
+               
+                Debug.Log("bump reset, walking = " + walking);
+                waitingForBumpReset = false;
+
+            }
+            else
+                return;
+        }
         
+
         Vector3 thisLook = lookDir;
 
         bool blockNewStep = false;
@@ -651,26 +667,32 @@ public class PlayerMovement : MonoBehaviourPun {
             //Debug.Break();
             //set bump target if we are in control of this player
             //  if(thisPhotonView.IsMine)
-            //if(PhotonNetwork.IsMasterClient)//only work out targets on master
+            //if(PhotonNetwork.IsMasterClient)//only work out targets on master/predictive now
                 if (!bumpInProgress)
                 {
-                    Debug.Log("Bump in progress");
+                   // Debug.Log("Bump in progress");
                     BumpTarget();
                 }
 
-            //LerpBump(); //moved to update
+            LerpBump(); //moved to update
             
-        }
-        
-        if (!walking && !bumped && GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
+        }        
+        else if (!walking && !bumped && GetComponent<PhotonView>().IsMine && !waitingForBumpReset)//only work out new target on local client - otherwise the target is sent over the network already worked out
         {
-            WalkTarget(blockNewStep, thisLook);
+            if (lookDir.magnitude >= deadzone)
+            {
+                if(photonView.IsMine)
+                    Debug.Log("setting walk target, walking = " + walking);
+                
+
+                WalkTarget(blockNewStep, thisLook);
+            }
            
 
         }
         else if (walking)
         {
-           // LerpPlayer();//moved to update
+            LerpPlayer();//moved to update
         }
            
         
@@ -819,7 +841,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 else if (add >= maxBumpDistance)
                 {
                     //missed, will fall in to hole//??
-
+                    Debug.Log("Bump at edge");
                     //already at edge
                     //set these flags so it is like a bump just finished, which will jump to the cooldown sequence
                     bumped = false;
@@ -842,6 +864,8 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void LerpBump()
     {
+        walking = false;//worried about master overwriting client with predictive walk
+
         float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
         if(bumpDistance == 0)
         {
@@ -854,7 +878,7 @@ public class PlayerMovement : MonoBehaviourPun {
         //add for arc //half way for arc loop for jumping animation
         Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
 
-        bumpCenter += new Vector3(0, -bumpDistance / bumpBounceAmount, 0);
+        bumpCenter += new Vector3(0, -bumpDistance /playerClassValues.bumpBounceAmount, 0);
 
         //from unity slerp docs
         Vector3 riseRelCenterBump = bumpStartPos - bumpCenter;
@@ -862,7 +886,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
         //bumpspeed this step
        // Debug.Log("bump distance = " + bumpDistance);
-        float fracCompleteBump = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance / bumpSpeed));
+        float fracCompleteBump = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance /playerClassValues.bumpSpeed));
         
         //Debug.Log(fracComplete);
         /*
@@ -907,6 +931,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void WalkTarget(bool blockNewStep,Vector3 thisLook)
     {
+        Debug.Log("setting walk target");
         float maxJumpDistance = 10f;
 
         if (!blockNewStep)
@@ -1038,6 +1063,7 @@ public class PlayerMovement : MonoBehaviourPun {
                     {
                         //missed, will fall in to hole//??
                         //walkTarget = transform.position;
+                        Debug.Log("max jump distance > ");
                         walking = false;
                         break;
                     }
@@ -1156,6 +1182,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //force the player to flick the tick again
             //if (leftStickReset)
             {
+               // Debug.Log("fraccomplete > 1");
                 walking = false;
 
                 //tell sound script to make a noise now we have finished our step
