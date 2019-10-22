@@ -133,6 +133,18 @@ namespace DellyWellyWelly
             }
         }
 
+        void SyncCells(float[] cellHeights)
+        {
+            //heights
+            List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
+
+            for (int i = 0; i < cellHeights.Length; i++)
+            {
+                //cells and cellheights should be the same length
+                cells[i].transform.localScale = new Vector3(1f, cellHeights[i], 1f);
+            }
+        }
+
         void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,Vector3 firstPullBackLookDir,List<Vector3> centralPoints,double swipeTimeStart,int photonViewID)
         {
           //  Debug.Log("creating new swipe object");
@@ -204,7 +216,16 @@ namespace DellyWellyWelly
                     Debug.Log("Master responding to Event 0 - sending map data to client");
 
                     byte evCode = 1;
-                    Vector3[] content = startData;// new int[] { 0, 44, 3 };
+                    //gather all current cell heights
+                    List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
+                    float[] cellHeights = new float[cells.Count];
+                    for (int i = 0; i < cells.Count; i++)
+                    {
+                        cellHeights[i] = cells[i].transform.localScale.y;
+                    }
+
+                    object[] content = new object[] { startData, cellHeights };
+                    //Vector3[] content = startData;// new int[] { 0, 44, 3 };
                     RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
                     SendOptions sendOptions = new SendOptions { Reliability = true };
                     PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
@@ -226,7 +247,10 @@ namespace DellyWellyWelly
                     {
                         Debug.Log("Client map not loaded, updating map data");
 
-                        startData = (Vector3[])photonEvent.CustomData;
+                        //startData = (Vector3[])photonEvent.CustomData;
+                        object[] customData = (object[])photonEvent.CustomData;
+                        startData = (Vector3[])customData[0];
+                        float[] cellHeights = (float[])(customData[1]);
 
                         //feed mesh gen script these positions
                         MeshGenerator mg = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>();
@@ -239,6 +263,9 @@ namespace DellyWellyWelly
 
                         //start generation
                         mg.Lloyds();
+
+                        //sync cells' info. height etc
+                        SyncCells(cellHeights);
 
                         //now we can spawn player, we need the map to havew been created before we could do this
                         SpawnPlayer();
