@@ -281,11 +281,41 @@ namespace DellyWellyWelly
 
             }
 
-            //now set player info script which holds respawn fucntion to enabled
-            GetComponent<PlayerInfo>().enabled = true;
+
+            PlayerInfo pI = GetComponent<PlayerInfo>();
+            //if this prefab is our player, we will need to spawn
+            if (GetComponent<PhotonView>().IsMine)
+            {
+                pI.enabled = true;
+                pI.respawn = true;
+                
+            }
+            else
+            {
+                //if this is master client, and prefab was just created, it means the player just connected - place them at home
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    pI.enabled = true;
+                    pI.respawn = true;
+                }
+                else
+                {
+                    //else, create prefab where we placed it on connect
+
+                    //now set player info script which holds respawn fucntion to enabled
+
+                    //already "spawned" - don't put back to home cell
+                    pI.respawn = false;
+                    pI.playerDespawned = false;
+                    //go!
+                    pI.enabled = true;
+                }
+            }
 
 
-         
+
+
+
             return player;
 
 

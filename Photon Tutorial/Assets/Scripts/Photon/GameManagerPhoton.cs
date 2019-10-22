@@ -27,12 +27,12 @@ namespace DellyWellyWelly
         public Vector3[] startData = new Vector3[0];
         bool mapLoaded = false;
 
-        public void OnEnable()//add new?
+        public new void OnEnable()//add new?
         {
             PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
         }
 
-        public void OnDisable()
+        public new void OnDisable()
         {
             PhotonNetwork.NetworkingClient.EventReceived -= OnEvent;
         }
@@ -51,13 +51,14 @@ namespace DellyWellyWelly
             {
                 Debug.Log("Client requesting map data from master");
 
-                byte evCode = 0; // Custom Event 0: Used as "MoveUnitsToTargetPosition" event             
+                byte evCode = 0; // Custom Event 0: map data
 
                 //ask master client to send this client map data
-                
+                //send who sent it
+                int thisPhotonViewId = GetComponent<PhotonView>().ViewID;
                 SendOptions sendOptions = new SendOptions { Reliability = true };
                 RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient };
-                PhotonNetwork.RaiseEvent(evCode, null,raiseEventOptions,sendOptions);
+                PhotonNetwork.RaiseEvent(evCode, thisPhotonViewId ,raiseEventOptions,sendOptions);
 
 
                 
@@ -133,7 +134,7 @@ namespace DellyWellyWelly
             }
         }
 
-        void SyncCells(float[] cellHeights)
+        void SyncCells(float[] cellHeights,int[] controlledBy)
         {
             //heights
             List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
@@ -142,6 +143,8 @@ namespace DellyWellyWelly
             {
                 //cells and cellheights should be the same length
                 cells[i].transform.localScale = new Vector3(1f, cellHeights[i], 1f);
+                //update controlledby
+                cells[i].GetComponent<AdjacentCells>().controlledBy = controlledBy[i];
             }
         }
 
@@ -207,7 +210,7 @@ namespace DellyWellyWelly
         {
 
             byte eventCode = photonEvent.Code;
-
+            
 
             if (eventCode == 0)//0 is map data request event code// client asking master
             {
@@ -219,12 +222,16 @@ namespace DellyWellyWelly
                     //gather all current cell heights
                     List<GameObject> cells = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>().cells;
                     float[] cellHeights = new float[cells.Count];
+                    //controlled bys
+                    int[] controlledBy = new int[cells.Count];
                     for (int i = 0; i < cells.Count; i++)
                     {
                         cellHeights[i] = cells[i].transform.localScale.y;
+                        controlledBy[i] = cells[i].GetComponent<AdjacentCells>().controlledBy;
                     }
+                    
 
-                    object[] content = new object[] { startData, cellHeights };
+                    object[] content = new object[] { startData, cellHeights,controlledBy};
                     //Vector3[] content = startData;// new int[] { 0, 44, 3 };
                     RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
                     SendOptions sendOptions = new SendOptions { Reliability = true };
@@ -251,7 +258,7 @@ namespace DellyWellyWelly
                         object[] customData = (object[])photonEvent.CustomData;
                         startData = (Vector3[])customData[0];
                         float[] cellHeights = (float[])(customData[1]);
-
+                        int[] controlledBy = (int[])(customData[2]);
                         //feed mesh gen script these positions
                         MeshGenerator mg = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>();
                         mg.masterPoints = new List<Vector3>(startData);
@@ -265,7 +272,7 @@ namespace DellyWellyWelly
                         mg.Lloyds();
 
                         //sync cells' info. height etc
-                        SyncCells(cellHeights);
+                        SyncCells(cellHeights,controlledBy);
 
                         //now we can spawn player, we need the map to havew been created before we could do this
                         SpawnPlayer();
@@ -307,33 +314,70 @@ namespace DellyWellyWelly
                 List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;// GameObject.FindGameObjectsWithTag("Player");
                 int[] views = new int[players.Count];
                 Vector3[] positions = new Vector3[players.Count];
+                //player info variables
+                bool[] respawns = new bool[players.Count];
+                double[] lastDeathTimes = new double[players.Count];
+                bool[] playerCanRespawns = new bool[players.Count];
+                int[] teamNumbers = new int[players.Count];
+                //cells need to be broken down in to index number in cell array - can't send game objects over network
+                int[] currentCell = new int[players.Count];
+                //home cell is worked out in prefab creator (same for every member of team) - son dont need to send                
                 float[] healths = new float[players.Count];
-                int[] teams = new int[players.Count];
+                //
+                int[][] cellsUnderControls = new int[players.Count][];
 
+                MeshGenerator mg = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>();
                 for (int i = 0; i < players.Count; i++)
                 {
                     //get players photon view id (unique across network)                    
                     views[i] = players[i].GetComponent<PhotonView>().ViewID;
                     //get player position on master (this)
                     positions[i] = players[i].transform.position;
-                  //  if (players[i].GetComponent<PlayerInfo>() == null)
+                    PlayerInfo pI = players[i].GetComponent<PlayerInfo>();
+                    respawns[i] = pI.respawn;
+                    lastDeathTimes[i] = pI.lastDeathTime;
+                    //current health
+                    playerCanRespawns[i] = pI.playerCanRespawn;
+                    teamNumbers[i] = pI.teamNumber;
+                    //find current cell number
+                    for (int j = 0; j < mg.cells.Count; j++)
                     {
-                        //player needs new spawn, spawnerscript will take care of this
+                        if(pI.currentCell == mg.cells[j])
+                        {
+                            //match and save index - cells array will match on client - we will do anothe rsearch on the other end
+                            currentCell[i] = j;
+                            break;
+                        }
                     }
-                   // else
+
+                    healths[i] = pI.health;
+
+                    //create array with amount of cells this player owns
+                    int[] thisCellsUnderControl = new int[pI.cellsUnderControl.Count];
+                    //find and populate
+                    for (int j = 0; j < pI.cellsUnderControl.Count; j++)
                     {
-                        //current health
-                        healths[i] = players[i].GetComponent<PlayerInfo>().health;
-                        //which team
-                        teams[i] = players[i].GetComponent<PlayerInfo>().teamNumber;
+                        
+                        for (int k = 0; k < mg.cells.Count; k++)
+                        {
+                            if(pI.cellsUnderControl[j] == mg.cells[k])
+                            {
+                                //save cell index to new array to send over network
+                                thisCellsUnderControl[j] = k;
+                                //skip to next cell under control- we have found what we were looking for
+                                break;                        
+                            }
+                        }                        
                     }
+                    //now add this array to the holding array
+                    cellsUnderControls[i] = thisCellsUnderControl;
                 }
 
                 //pass back a list of viewID and a list of positions, and the photonview id of who requested it
                 //To create less traffic, i could sen only to who requested it but i dont know how to do that atm
 
                 byte evCode = 11; // Custom Event 11: 
-                object[] content = new object[] { initialPhotonViewID, views, positions, healths, teams};
+                object[] content = new object[] { initialPhotonViewID, views, positions, respawns, lastDeathTimes, playerCanRespawns, teamNumbers, currentCell, healths, cellsUnderControls };
                 //send to everyone but this client
                 RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
@@ -362,10 +406,22 @@ namespace DellyWellyWelly
 
 
                     //unpack more of what we need
+                    
+
                     int[] views = (int[])customData[1];
                     Vector3[] positions = (Vector3[])customData[2];
-                    float[] healths = (float[])customData[3];
-                    int[] teams = (int[])customData[4];
+                    //player info variables
+                    bool[] respawns = (bool[])(customData[3]);
+                    double[] lastDeathTimes = (double[])(customData[4]);
+                    bool[] playerCanRespawns = (bool[])(customData[5]);
+                    int[] teamNumbers = (int[])customData[6];
+                    //cells need to be broken down in to index number in cell array - can't send game objects over network
+                    int[] currentCell = (int[])(customData[7]);
+                    //home cell is worked out in prefab creator (same for every member of team) - son dont need to send                
+                    float[] healths = (float[])(customData[8]);
+                    //
+                    int[][] cellsUnderControls = (int[][])(customData[9]);
+
 
                     //find players with view ids in array and set positions, health, teams etc
                     for (int i = 0; i < views.Length; i++)
@@ -376,15 +432,28 @@ namespace DellyWellyWelly
 
                         //use data passed from the network to update other clients
                         pV.transform.position = positions[i];
-                        pV.GetComponent<PlayerInfo>().health = healths[i];
-                        pV.GetComponent<PlayerInfo>().teamNumber = teams[i];
+                        PlayerInfo pI = pV.GetComponent<PlayerInfo>();
+                        pI.respawn = respawns[i];
+                        pI.lastDeathTime = lastDeathTimes[i];
+                        pI.playerCanRespawn = playerCanRespawns[i];
+                        pI.teamNumber = teamNumbers[i];
+                        //find cell number in cells array on generator
+                        MeshGenerator mg = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>();
+                        pI.currentCell = mg.cells[currentCell[i]];
+                        pI.health = healths[i];
+
+                        Debug.Log("cells under control = " + cellsUnderControls.Length);
+                        //create list from indexes matching cells in mesh generator list
+                        for (int j = 0; j < cellsUnderControls[i].Length; j++)
+                        {
+                            Debug.Log("cell index = " + cellsUnderControls[i][j]);
+                            pI.cellsUnderControl.Add(mg.cells[cellsUnderControls[i][j]]);
+                        }
 
                         //start avator
                         pV.GetComponent<PrefabCreator>().enabled = true;
 
-
                     }
-
                 }
             }
 
@@ -422,7 +491,7 @@ namespace DellyWellyWelly
             //updating walk targets
             if (eventCode == 21)
             {
-                Debug.Log("Event 21 - walk target update");
+                //Debug.Log("Event 21 - walk target update");
                 //walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID 
                 
                 object[] customData = (object[])photonEvent.CustomData;
@@ -446,7 +515,7 @@ namespace DellyWellyWelly
             //clients receive info on a bump and overwrites any local prediction info
             if (eventCode == 22)
             {
-                Debug.Log("[CLIENT] - Master overwriting bump target and bump start time");
+               // Debug.Log("[CLIENT] - Master overwriting bump target and bump start time");
                 object[] customData = (object[])photonEvent.CustomData;
 
                 

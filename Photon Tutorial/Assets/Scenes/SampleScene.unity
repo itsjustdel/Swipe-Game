@@ -335,20 +335,17 @@ MonoBehaviour:
   playerCooldownAfterOverheadHit: 0.5
   playerCooldownAfterOverheadBlock: 0.5
   playerCooldownAfterOverheadWhiff: 0.5
-  playerCooldownAfterLungeHit: 0.5
-  playerCooldownAfterLungeBlock: 0.5
-  playerCooldownAfterLungeWhiff: 0.5
   playerCooldownAfterAttackedTooClose: 0.5
   playerCooldownAfterBump: 0.3
   overheadSpeed: 1
-  sideSwipeSpeed: 1
-  lungeSpeed: 1
-  sideSwipeLength: 15
-  lungeLength: 20
   armLength: 6
   swordLength: 3
   swordWidth: 2
-  lungeHitHealthReduce: 15
+  bumpSpeed: 10
+  bumpBounceAmount: 10
+  bumpMulitplier: 3
+  shieldBumpForBumpedMulitplier: 5
+  shieldBumpForBumperMulitplier: 5
   blockRaise: 0.33
   blockLower: 0.33
   blockMinimum: 0.66
@@ -419,6 +416,7 @@ GameObject:
   - component: {fileID: 646830352}
   - component: {fileID: 646830351}
   - component: {fileID: 646830353}
+  - component: {fileID: 646830354}
   m_Layer: 0
   m_Name: Launcher
   m_TagString: Untagged
@@ -469,6 +467,28 @@ MonoBehaviour:
   canvasPrefab: {fileID: 6398095390482331474, guid: 62f04ca76f7fccf48b30d1e113a83457,
     type: 3}
   startData: []
+--- !u!114 &646830354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 646830350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 0
+  OwnershipTransfer: 0
+  ObservedComponents:
+  - {fileID: 0}
+  viewIdField: 1
+  InstantiationId: 1
+  isRuntimeInstantiated: 0
 --- !u!1001 &722701306
 PrefabInstance:
   m_ObjectHideFlags: 0
