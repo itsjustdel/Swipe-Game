@@ -11,7 +11,7 @@ public class PlayerAttacks : MonoBehaviour {
 
     public bool autoShield = false;
 
-    public int playerNumber = 0;
+    
     public float deadzone = 0.4f;//make global for other stick too?
     public bool rightStickReset = false;
 
@@ -103,7 +103,7 @@ public class PlayerAttacks : MonoBehaviour {
       //  playerGlobalList = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
         spawner= GameObject.FindGameObjectWithTag("Code").GetComponent<Spawner>();
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
-        playerNumber = GetComponent<PlayerInfo>().playerNumber;
+
 
 
         head = transform.Find("Head").gameObject;

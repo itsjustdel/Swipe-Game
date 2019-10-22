@@ -290,7 +290,7 @@ public class OverlayDrawer : MonoBehaviour
             PlayerInfo pI = pgi.playerGlobalList[i].GetComponent<PlayerInfo>();
             //make disputed cell if the team now on it is different to that who owned it before
             //keeps up the advantage of pushing opponent back
-            if (pI.currentCell == lastCell && pI.currentCell.GetComponent<AdjacentCells>().controlledBy != pI.playerNumber)
+            if (pI.currentCell == lastCell && pI.currentCell.GetComponent<AdjacentCells>().controlledBy != pI.teamNumber)
             {
                 DisputedCell(lastCell);
                 return;

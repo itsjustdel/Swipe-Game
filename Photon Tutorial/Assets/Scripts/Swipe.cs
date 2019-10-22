@@ -293,7 +293,7 @@ public class Swipe : MonoBehaviour {
             else
             {
                 //check to see if player has corrected input enough so they are not considered to be making an angle with the stick that is too close
-                bool angleOk = false;
+               // bool angleOk = false;
                 for (int i = 0; i < playerGlobalInfo.playerGlobalList.Count; i++) 
                 {
                     //skip out own player
@@ -314,7 +314,7 @@ public class Swipe : MonoBehaviour {
                     if (angle > angleForNoAttack)
                     {
 
-                        angleOk = true;
+                       // angleOk = true;
                         Debug.Log("resetting from AttackedTooCloseCooldown - angle");
                         ResetFlags();
                         
@@ -1259,14 +1259,14 @@ public class Swipe : MonoBehaviour {
                     //else if another player's overhead , smash it,smash our own and reset players, only if we swung first
                     else if (totalRayList[i][j].transform.gameObject.GetComponent<SwipeObject>().overheadSwipe)
                     {
-                        Debug.Log("Hit another swipe, player numer = " + GetComponent<PlayerInfo>().playerNumber);
+                        Debug.Log("Hit another swipe, player numer = " + GetComponent<PlayerInfo>().teamNumber);
                        // Debug.Log("this time start = " + thisSwipeObjectScript.swipeTimeStart + " , player numer = " + GetComponent<PlayerInfo>().playerNumber);
                         //Debug.Log("other time start = " + otherSwipeObjectScript.swipeTimeStart + " , player numer = " +otherSwipeObjectScript.parentPlayer.GetComponent<PlayerInfo>().playerNumber);
                         //smash the weaker of the two strikes ( the one that started last is weaker)
                         if (thisSwipeObjectScript.swipeTimeStart < otherSwipeObjectScript.swipeTimeStart)
                         {
 
-                            Debug.Log("this swipe is greater than other, player numer = " + GetComponent<PlayerInfo>().playerNumber);
+                            Debug.Log("this swipe is greater than other, player numer = " + GetComponent<PlayerInfo>().teamNumber);
                          
                           
                             
@@ -1300,7 +1300,7 @@ public class Swipe : MonoBehaviour {
                         }
                         else if(thisSwipeObjectScript.swipeTimeStart > otherSwipeObjectScript.swipeTimeStart)
                         {
-                            Debug.Log("this swipe is less than other, player numer = " + GetComponent<PlayerInfo>().playerNumber);
+                            Debug.Log("this swipe is less than other, player numer = " + GetComponent<PlayerInfo>().teamNumber);
 
                             //break this swipe
                             

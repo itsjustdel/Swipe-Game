@@ -199,7 +199,7 @@ public class Spawner : MonoBehaviour {
 
         //add info script
         PlayerInfo pI = player.AddComponent<PlayerInfo>();
-        pI.playerNumber = playerNumber;
+        //pI.playerNumber = playerNumber;
        // pI.homeCell = homeCell;
 
 

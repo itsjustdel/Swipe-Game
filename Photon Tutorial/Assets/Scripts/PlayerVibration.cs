@@ -50,7 +50,7 @@ public class PlayerVibration : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        playerNumber = GetComponent<PlayerInfo>().playerNumber;
+        playerNumber = GetComponent<PlayerInfo>().controllerNumber;
         playerIndex = (PlayerIndex)playerNumber;
         swipe = GetComponent<Swipe>();
     }

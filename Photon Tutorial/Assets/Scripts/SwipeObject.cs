@@ -613,11 +613,11 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
 
-        if(parentPlayer.GetComponent<PlayerInfo>().playerNumber == 0)
+        if(parentPlayer.GetComponent<PlayerInfo>().teamNumber== 0)
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Cyan0") as Material;
-        else if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 1)
+        else if (parentPlayer.GetComponent<PlayerInfo>().teamNumber == 1)
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Orange0") as Material;
-        else if (parentPlayer.GetComponent<PlayerInfo>().playerNumber == 2)
+        else if (parentPlayer.GetComponent<PlayerInfo>().teamNumber == 2)
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green0") as Material;
 
         pointsFromCurveReturning = pointsFromCurve;
