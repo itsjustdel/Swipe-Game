@@ -158,19 +158,19 @@ public class MovementHelper : MonoBehaviour {
               
             }
 
-          
+
 
             //if (targetCell != null)
-           //     targetCell.transform.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red") as Material;
-
+            //     targetCell.transform.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red") as Material;
+            PlayerInfo pI = pM.GetComponent<PlayerInfo>();
 
             bool buttonLBPressed = false;
-            if (pM.playerNumber == 0)
+            if (pI.controllerNumber == 0)
             {
-                if (Input.GetButton("LB_1"))
+                if (Input.GetButton("LB_1"))///***needs changed to inputs directx
                     buttonLBPressed = true;
             }
-            else if (pM.playerNumber == 1)
+            else if (pI.controllerNumber == 1)
             {
                 if (Input.GetButton("LB_2"))
                     buttonLBPressed = true;

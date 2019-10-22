@@ -15,7 +15,7 @@ public class Inputs : MonoBehaviour {
     // Use this for initialization
     public float rightStickAxisX;
     public float rightStickAxisY;
-    public int playerNumber;
+    public int controllerNumber;
 
     public bool blocking0 = false;
     public bool blocking1 = false;
@@ -37,8 +37,8 @@ public class Inputs : MonoBehaviour {
        // if(!playerIndexSet)  //testing network stuff, when working, remove comment
         {
             
-            playerNumber = GetComponent<PlayerInfo>().playerNumber;
-            playerIndex = (PlayerIndex)playerNumber;
+            controllerNumber = GetComponent<PlayerInfo>().controllerNumber;
+            playerIndex = (PlayerIndex)controllerNumber;
 
             playerIndexSet = true;
         }
@@ -60,7 +60,7 @@ public class Inputs : MonoBehaviour {
         KeyCode raiseCell = KeyCode.R;
         KeyCode lowerCell = KeyCode.F;
 
-        if (GetComponent<PlayerInfo>().playerNumber == 1)
+        if (GetComponent<PlayerInfo>().controllerNumber == 1)
         {
             upKey = KeyCode.UpArrow;
             downKey = KeyCode.DownArrow;

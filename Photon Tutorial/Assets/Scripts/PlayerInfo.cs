@@ -13,7 +13,7 @@ public class PlayerInfo : MonoBehaviour {
     public double lastDeathTime;
     public bool playerDespawned = true;
     public bool playerCanRespawn = true;
-    public int playerNumber = 1;//controller
+    public int controllerNumber = 1;//controller
     public int teamNumber = -1;
     public GameObject currentCell;
     public GameObject homeCell;
@@ -50,7 +50,7 @@ public class PlayerInfo : MonoBehaviour {
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
 
-        playerNumber = pgi.playerGlobalList.Count - 1;//tests
+        controllerNumber = pgi.playerGlobalList.Count - 1;//tests
     }
 
 
@@ -97,7 +97,7 @@ public class PlayerInfo : MonoBehaviour {
         if (currentCell == null)
             return;
 
-        if(currentCell.GetComponent<AdjacentCells>().controlledBy == playerNumber)
+        if(currentCell.GetComponent<AdjacentCells>().controlledBy == controllerNumber)
         {
             health += healthRegenSpeed;
 
@@ -257,7 +257,7 @@ public class PlayerInfo : MonoBehaviour {
             PlayerInfo pI = pgi.playerGlobalList[i].GetComponent<PlayerInfo>();
 
             //don't check own player
-            if (playerNumber == pI.playerNumber)
+            if (controllerNumber == pI.controllerNumber)
                 continue;
 
             //if last cell is another player's currenct cell (and they are alone) - give them the cell
@@ -265,7 +265,7 @@ public class PlayerInfo : MonoBehaviour {
             {
                 //Debug.Log("found");
                 //give lsat cell to this play
-                lastCell.GetComponent<AdjacentCells>().controlledBy = pI.playerNumber;
+                lastCell.GetComponent<AdjacentCells>().controlledBy = pI.controllerNumber;
             }
         }
     }
@@ -273,7 +273,7 @@ public class PlayerInfo : MonoBehaviour {
     public void AdjustLists()
     {
         //remove this cell if in any other player's list
-        if (currentCell.GetComponent<AdjacentCells>().controlledBy != playerNumber)
+        if (currentCell.GetComponent<AdjacentCells>().controlledBy != controllerNumber)
         {
             //Debug.Log("not player number");
 
@@ -288,7 +288,7 @@ public class PlayerInfo : MonoBehaviour {
                 PlayerInfo pI = pgi.playerGlobalList[j].GetComponent<PlayerInfo>();
 
                 //don't check our own player
-                if (pI.playerNumber == playerNumber)
+                if (pI.controllerNumber == controllerNumber)
                     continue;
 
                 //if other player's currenct cell matches this current cell
@@ -310,7 +310,7 @@ public class PlayerInfo : MonoBehaviour {
                         otherTeamOnAdjacentCell = true;
 
                     //we don't need to do this check if the adjacent cell is owned by us, we can claim it
-                    if (aJ.adjacentCells[a].GetComponent<AdjacentCells>().controlledBy == playerNumber)
+                    if (aJ.adjacentCells[a].GetComponent<AdjacentCells>().controlledBy == controllerNumber)
                     {
                         //don't need to check
                     }
@@ -337,7 +337,7 @@ public class PlayerInfo : MonoBehaviour {
                     otherCells.Remove(currentCell);
                 }
 
-                aJ.controlledBy = playerNumber;
+                aJ.controlledBy = controllerNumber;
                 //no longer frontline
                 //aJ.frontlineCell = false;
 
@@ -406,16 +406,16 @@ public class PlayerInfo : MonoBehaviour {
                 tooHigh = true;
             }
 
-            //Debug.Log("aj.controlled by =" + (aJ.controlledBy != playerNumber));
+            //Debug.Log("aj.controlled by =" + (aJ.controlledBy != controllerNumber));
             //  Debug.Log("opponnet on adj = " + opponentOnAdjacent);            
             //  Debug.Log("Too High = " + tooHigh);
             //  Debug.Log("oppnonent on current = " + opponentOnCurrent);
-            if (aJ.controlledBy != playerNumber && !opponentOnThisAdjacent && !tooHigh && !opponentOnCurrent)
+            if (aJ.controlledBy != controllerNumber && !opponentOnThisAdjacent && !tooHigh && !opponentOnCurrent)
             {
                 //   currentAdjacents[i].GetComponent<AdjacentCells>().frontlineCell = true;
             }
             //if adjacent is too high to be turned in to be turned in to a frontline cell, the current cell becomes a frontline instead unless is it that own the high cell
-            else if (tooHigh && aJ.controlledBy != playerNumber)
+            else if (tooHigh && aJ.controlledBy != controllerNumber)
             {
                 //  currentCell.GetComponent<AdjacentCells>().frontlineCell = true;
             }
@@ -434,7 +434,7 @@ public class PlayerInfo : MonoBehaviour {
         for (int i = 0; i < pgi.playerGlobalList.Count; i++)
         {
             //don't check this player
-            if (i == playerNumber)
+            if (i == controllerNumber)
                 continue;
             //populate list with all current cells - note, we will not know who owns what from this list, but we do not need this
             opponentsCurrentCells.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);
@@ -461,7 +461,7 @@ public class PlayerInfo : MonoBehaviour {
         for (int i = 0; i < pgi.playerGlobalList.Count; i++)//**work this loop out in opponentOnAdjacent too (small opto)
         {
             //don't check this player
-            if (i == playerNumber)
+            if (i == controllerNumber)
                 continue;
             //populate list with all current cells - note, we will not know who owns what from this list, but we do not need this
             opponentsCurrentCells.Add(pgi.playerGlobalList[i].GetComponent<PlayerInfo>().currentCell);

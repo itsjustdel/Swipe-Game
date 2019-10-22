@@ -141,13 +141,13 @@ public class ProceduralAudioController : MonoBehaviour
             //setting output to mixer
             AudioSource audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.outputAudioMixerGroup = swipeMixer.FindMatchingGroups("Guides/0")[0];
-            if (GetComponent<PlayerInfo>().playerNumber == 0)
+            if (GetComponent<PlayerInfo>().controllerNumber== 0)
                 guideVolumeString = "GuideVolume0";
-            else if (GetComponent<PlayerInfo>().playerNumber == 1)
+            else if (GetComponent<PlayerInfo>().controllerNumber == 1)
                 guideVolumeString = "GuideVolume1";
-            else if (GetComponent<PlayerInfo>().playerNumber == 2)
+            else if (GetComponent<PlayerInfo>().controllerNumber == 2)
                 guideVolumeString = "GuideVolume2";
-            else if (GetComponent<PlayerInfo>().playerNumber == 3)
+            else if (GetComponent<PlayerInfo>().controllerNumber == 3)
                 guideVolumeString = "GuideVolume3";
 
             mainFrequency = 500;
@@ -232,7 +232,7 @@ public class ProceduralAudioController : MonoBehaviour
         //float targetFreq = (float)((mainFrequencyBase / 8) * 12);
         float targetFreq = mainFrequencyBase*.5f;
         //how much to speed up audio ahead of swipe generation
-        float accelerator = .5f;
+       // float accelerator = .5f;
         float lerp =1f/ GetComponent<SwipeObject>().per;
         mainFrequency =  Mathf.Lerp( targetFreq,start,lerp);
 

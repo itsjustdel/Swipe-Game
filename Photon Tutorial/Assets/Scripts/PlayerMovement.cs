@@ -66,7 +66,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public float startTime;
     public float journeyTime;
 
-    public int playerNumber = 0;
+   
 
 
     public List<GameObject> currentAdjacents = new List<GameObject>();
@@ -144,7 +144,7 @@ public class PlayerMovement : MonoBehaviourPun {
         
        
         codeObject = GameObject.FindGameObjectWithTag("Code");
-        playerNumber = GetComponent<PlayerInfo>().playerNumber;
+        
       
         
         //enable if we are controlling this
@@ -787,11 +787,11 @@ public class PlayerMovement : MonoBehaviourPun {
     void BumpTarget()
     {
         walking = false;
-        Debug.Log("setting bump target " + GetComponent<PlayerInfo>().playerNumber);
+        //Debug.Log("setting bump target " + GetComponent<PlayerInfo>().teamNumber);
         // Debug.Break();
         if (!bumpInProgress)
         {
-            Debug.Log("if not bump in progress");
+          //  Debug.Log("if not bump in progress");
 
             /*  //applied from network or from bump collision script
             fracComplete = 0f;
