@@ -45,7 +45,7 @@ public class ShieldCollision : MonoBehaviour {
             pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
-            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<Swipe>().head.transform.localScale.x * playerClassValues.shieldBumpForBumpedMulitplier;
+            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumpedMulitplier;
 
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
@@ -68,7 +68,7 @@ public class ShieldCollision : MonoBehaviour {
 
             //simplifying
             
-            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<Swipe>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;
+            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 
@@ -104,7 +104,7 @@ public class ShieldCollision : MonoBehaviour {
             pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
-            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<Swipe>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;//both bumper var, just a small penalty for both
+            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;//both bumper var, just a small penalty for both
 
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
@@ -127,7 +127,7 @@ public class ShieldCollision : MonoBehaviour {
 
             //simplifying
 
-            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<Swipe>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;
+            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 

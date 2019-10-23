@@ -25,6 +25,7 @@ public class OverlayDrawer : MonoBehaviour
     public float heightSpeedSiege = .01f;
     public float heightMultiplier = 2f;
     public float minHeight = 3f;
+    public float wallHeight = 1f;//set at start, can't be altered at runtime
     public int totalCellsTransparent = 0;
     public List<int> opponents;
     //holds all meshes off voronoi generation before we altered them
@@ -183,6 +184,10 @@ public class OverlayDrawer : MonoBehaviour
             for (int j = 0; j < pgi.playerGlobalList.Count; j++)
             {
                 CellHeights cellHeights = pgi.playerGlobalList[j].GetComponent<CellHeights>();
+                //happens on first frame of spawn in
+                if (cellHeights == null)
+                    continue;
+
                 if (cellHeights.loweringCell || cellHeights.raisingCell)
                 {
 

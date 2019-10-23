@@ -93,6 +93,9 @@ public class PlayerMovement : MonoBehaviourPun {
     public double bumpFinishTime;
     public int lastPLayerIdCollision = -1;//-1 is no team, teams start at 0
 
+    //wall
+    public bool onWall = false;
+
     //rotation stuff
     private Vector3 rotateTarget;
 
@@ -132,6 +135,10 @@ public class PlayerMovement : MonoBehaviourPun {
         swipe = GetComponent<Swipe>();
         pA = GetComponent<PlayerAttacks>();//??
         inputs = GetComponent<Inputs>();
+
+        // needed for swipe height if swipe is used instantly
+        walkTarget = transform.position;
+
        // playerAttacks = GetComponent<PlayerAttacks>();
         //only control our own player - the network will move the rest
         if (!GetComponent<PhotonView>().IsMine)// && PhotonNetwork.IsConnected == true)
@@ -626,14 +633,19 @@ public class PlayerMovement : MonoBehaviourPun {
             //we are in bump recovery mode, player cant move for a set amount of time, check if we have completed this wait
             if (PhotonNetwork.Time - bumpFinishTime > playerClassValues.playerCooldownAfterBump)
             {
-               // Debug.Log("bump reset");
-               
+                // Debug.Log("bump reset");
+
                 Debug.Log("bump reset, walking = " + walking);
                 waitingForBumpReset = false;
 
             }
             else
+            {
+                //just checkin this if bumped and some one else is adjusting cell height - will keep player at correct height
+                RaycastForHeight();
+
                 return;
+            }
         }
         
 
@@ -652,7 +664,7 @@ public class PlayerMovement : MonoBehaviourPun {
             }
         }
         //stop move if changing cell height or attacking
-        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.overheadSwiping)
+        if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.overheadSwiping) //block new step is only used sometimes to block new step, other times just if statements.. two methods, bad
             blockNewStep = true;
 
         bool glideWalk = false; //keeping for idea/ice/slide attack..
@@ -677,18 +689,26 @@ public class PlayerMovement : MonoBehaviourPun {
             LerpBump(); //moved to update
             
         }        
-        else if (!walking && !bumped && GetComponent<PhotonView>().IsMine && !waitingForBumpReset)//only work out new target on local client - otherwise the target is sent over the network already worked out
+        else if (!walking && !bumped && !waitingForBumpReset) // if not walking or bumped
         {
-            if (lookDir.magnitude >= deadzone)
+            //check cells ahvent been moved up or down
+            RaycastForHeight();
+            //Debug.Log("here");
+
+            if (GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
             {
-                if(photonView.IsMine)
-                    Debug.Log("setting walk target, walking = " + walking);
-                
+                //check for input
+                if (lookDir.magnitude >= deadzone)
+                {
+                    if (photonView.IsMine)
+                        Debug.Log("setting walk target, walking = " + walking);
 
-                WalkTarget(blockNewStep, thisLook);
+
+                    WalkTarget(blockNewStep, thisLook);
+                }
             }
-           
-
+            
+            
         }
         else if (walking)
         {
@@ -696,6 +716,28 @@ public class PlayerMovement : MonoBehaviourPun {
         }
            
         
+    }
+
+    void RaycastForHeight()
+    {
+        //move player up - could prob work this out fine with maffs
+
+        Vector3 shootFrom2 = transform.position;
+        RaycastHit hit;
+
+        if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, pA.head.transform.localScale.x * 0.5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
+        {
+            Debug.Log("hitting");
+            Debug.DrawLine(hit.point, hit.point - Vector3.up * 10);
+            transform.position = hit.point;
+
+            if (hit.transform.gameObject.layer == LayerMask.NameToLayer("Wall"))
+                onWall = true;
+            else
+                onWall = false;
+
+        }
+
     }
 
     void SendWalkTargetToNetwork()

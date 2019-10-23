@@ -271,7 +271,7 @@ public class Wall : MonoBehaviour {
         adjacentEdgesCount = adjacentEdgeCells.Count;
     }
 
-   public void BuildWalls(GameObject parent)
+   public void BuildWalls(GameObject parent,float wallHeight)
     {
         //build walls off shared edges found - cells on edge wont have walls on outside
         Mesh mesh = GetComponent<ExtrudeCell>().originalMesh;
@@ -311,7 +311,7 @@ public class Wall : MonoBehaviour {
             Vector3 miterDir1 = mitersSorted[i][0];
 
             Debug.DrawLine(p0, p0 + miterDir0,Color.red);
-            wall.GetComponent<MeshFilter>().mesh = IndividualWall(originalMesh, p0, p1, 1f, miterDir0,miterDir1);//wall height 1
+            wall.GetComponent<MeshFilter>().mesh = IndividualWall(originalMesh, p0, p1, wallHeight, miterDir0,miterDir1);
             wall.AddComponent<MeshCollider>().sharedMesh = wall.GetComponent<MeshFilter>().mesh;
         }
     }

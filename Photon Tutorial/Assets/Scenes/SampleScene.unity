@@ -190,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   materials: []
   cubePrefab: {fileID: 0}
-  volume: {x: 120, y: 0, z: 120}
+  volume: {x: 85, y: 0, z: 85}
   rootTriMultiplier: 1
   cellNumber: 20
   lloydIterations: 3
@@ -310,7 +310,7 @@ MonoBehaviour:
   doHeights: 0
   doFrontline: 0
   doHomeCellHeightsToStart: 0
-  reduceFrontline: 0
+  reduceFrontline: 1
   heightSpeed: 1
   heightSpeedSiege: 0.01
   heightMultiplier: 2
@@ -337,8 +337,8 @@ MonoBehaviour:
   playerCooldownAfterOverheadWhiff: 0.5
   playerCooldownAfterAttackedTooClose: 0.5
   playerCooldownAfterBump: 0.3
-  overheadSpeed: 1
-  armLength: 6
+  overheadSpeed: 1.5
+  armLength: 5
   swordLength: 3
   swordWidth: 2
   bumpSpeed: 10

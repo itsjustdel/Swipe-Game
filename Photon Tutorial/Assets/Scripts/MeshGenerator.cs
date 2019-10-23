@@ -1071,8 +1071,9 @@ public class MeshGenerator : MonoBehaviour {
             if (walls)
             {
                 Wall wall = cells[i].GetComponent<Wall>();
-               // wall.FindSharedEdges();//?
-                wall.BuildWalls(wallsParent);
+                // wall.FindSharedEdges();//?
+                float wallHeight = GetComponent<OverlayDrawer>().wallHeight;
+                wall.BuildWalls(wallsParent,wallHeight);
                 wall.enabled = true;
             }
         }

@@ -37,7 +37,6 @@ public class TestValueUpdater : MonoBehaviour
 
         //what we want to send
 
-
         object[] content = new object[]
         {
             //player values
@@ -71,8 +70,8 @@ public class TestValueUpdater : MonoBehaviour
                 overlayDrawer.reduceFrontline,
                 //overlayDrawer.doCapture
             }
-
         };
+
         //send to everyone but this client
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 

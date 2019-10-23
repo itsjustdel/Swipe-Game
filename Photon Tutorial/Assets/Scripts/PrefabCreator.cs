@@ -7,15 +7,15 @@ using Photon.Pun;
 using Photon.Realtime;
 //using ExitGames.Client.Photon;
 
-namespace DellyWellyWelly
-{
+//namespace DellyWellyWelly
+//{
     public class PrefabCreator : MonoBehaviour
     {
 
         
         private float baseSize = 1f;
         private float headSize = 3f;
-        private float headHeight = 3f;
+        public float headHeight = 3f;
         private float shieldX = 3f;
         private float shieldY = 3f;
         private float shieldZ = 0.5f;
@@ -341,5 +341,5 @@ namespace DellyWellyWelly
 
 
     }
-}
+//}
 

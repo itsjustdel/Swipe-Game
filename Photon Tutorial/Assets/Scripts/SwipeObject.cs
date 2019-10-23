@@ -399,10 +399,11 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
                     //  float x = (parentPlayer.transform.position.x - playerOriginalPosition.x);
                     //float z = (parentPlayer.transform.position.z - playerOriginalPosition.z);
                     Vector3 pos = p0;// + new Vector3(x, 0f, z);
-                    
 
+                    //Vector3 zeroY = new Vector3(transform.position.x, 0f, transform.position.z);
+                    pos -= transform.position;// zeroY; //bezierspline class automatically adds transform.position
 
-                    pointsFromCurve.Add(pos - transform.position); //bezierspline class automatically adds transform.position
+                    pointsFromCurve.Add(pos);
                     directions.Add(spline.GetDirection(i * step));
 
                     // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);                    
@@ -451,10 +452,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             if (i > pointsFromCurve.Count - 1)
                 i = pointsFromCurve.Count - 1;
 
-          //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //  c.transform.position = pointsFromCurve[i] + transform.position;
-        //  c.name = "Curve point";
-         // Destroy(c, 3);
+         //    GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+         // c.transform.position = pointsFromCurve[i] + transform.position;
+         // c.name = "Curve point";
+        //  Destroy(c, 3);
 
 
            // Debug.Log(i.ToString() + " count =" + pointsFromCurve.Count);
@@ -470,8 +471,9 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //pass this to movement script to force slow down when attacking that is linked with how far the swipe has built
             parentPlayer.GetComponent<PlayerMovement>().attackLerp = percentage;
 
+            
             Vector3 zeroTPos = transform.position;
-            zeroTPos.y = 0f;
+            zeroTPos.y = walkTargetOnThisSwipe.y;
             Vector3 targetDir = walkTargetOnThisSwipe - zeroTPos;
             //only if walking
             if (!wasWalkingAtStartOfSwipe) // i==0)
@@ -483,7 +485,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
             Debug.DrawLine(transform.position + closePoint, transform.position, Color.red);
             Vector3 endPoint = dirToEnd * (playerClassValues.armLength + playerClassValues.swordLength);//playerClassValues.overheadLength// removed, needed?
-            endPoint+= percentage * (targetDir + dirToEnd);
+            endPoint += percentage * (targetDir + dirToEnd);
 
 
             //get perpendiular vector using .cross

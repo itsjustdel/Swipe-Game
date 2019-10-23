@@ -102,16 +102,20 @@ public class Inputs : MonoBehaviour {
             blocking0 = false;
 
         //cell heights
-        if (Input.GetKey(raiseCell))
-            cellHeights.SetCellRaising();
-        else
-            cellHeights.DisableCellRaising();
+        //only raise cell if not walking
+        if (!GetComponent<PlayerMovement>().walking)
+        {
+            if (Input.GetKey(raiseCell))
+                cellHeights.SetCellRaising();
+            else
+                cellHeights.DisableCellRaising();
 
-        if (Input.GetKey(lowerCell))
-            cellHeights.SetCellLowering();
+            if (Input.GetKey(lowerCell))
+                cellHeights.SetCellLowering();
 
-        else
-            cellHeights.DisableCellLowering();
+            else
+                cellHeights.DisableCellLowering();
+        }
     }
 
     void Pad()
@@ -151,16 +155,20 @@ public class Inputs : MonoBehaviour {
         else
             startButtonPressed = false;
 
-        //cell heights
-        if (state.Buttons.B == XInputDotNetPure.ButtonState.Pressed)        
-            cellHeights.SetCellRaising();        
-        else        
-            cellHeights.DisableCellRaising();       
+        //if not walking, cell heights //or not despawned
+        if (!GetComponent<PlayerMovement>().walking && !GetComponent<PlayerInfo>().playerDespawned)
+        {
+            //cell heights
+            if (state.Buttons.B == XInputDotNetPure.ButtonState.Pressed)
+                cellHeights.SetCellRaising();
+            else
+                cellHeights.DisableCellRaising();
 
-        if (state.Buttons.Y == XInputDotNetPure.ButtonState.Pressed)
-            cellHeights.SetCellLowering();        
-        else        
-            cellHeights.DisableCellLowering();
+            if (state.Buttons.Y == XInputDotNetPure.ButtonState.Pressed)
+                cellHeights.SetCellLowering();
+            else
+                cellHeights.DisableCellLowering();
+        }
         
     }
     

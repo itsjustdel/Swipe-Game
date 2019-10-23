@@ -21,7 +21,7 @@ public class CellHeights : MonoBehaviour
     public bool loweringCell;
     public double eventTime;
     public float startingScaleY;
-    
+    public float highest;
     // Start is called before the first frame update
     void Start()
     {
@@ -35,8 +35,11 @@ public class CellHeights : MonoBehaviour
     void FixedUpdate()
     {
         //client only? - no, we will do networked players too by updating their inputs from network event
-       // if (GetComponent<PhotonView>().IsMine)
-            Height();
+        // if (GetComponent<PhotonView>().IsMine)
+        if (GetComponent<PlayerInfo>().playerDespawned)
+            return;
+
+        Height();
     }
 
     void Height()
@@ -55,7 +58,7 @@ public class CellHeights : MonoBehaviour
             //if frontline cell
             //limit to adjacent hieghts
             //find highest adjacent cell
-            float highest = 0f;
+             highest = 0f;
 
             float thisHeightSpeed = heightSpeed;
             
@@ -68,10 +71,10 @@ public class CellHeights : MonoBehaviour
                 //find which adjacent cell is highest
                 for (int k = 0; k < playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells.Count; k++)
                 {
-                    if (playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].GetComponent<AdjacentCells>().targetY > highest)
+                    if (playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y > highest)
                     {
                         //worked out max height controlled by how many adjacents there are in OverlayDrawer, (saved in adjacent cell script on each cell)
-                        highest = playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].GetComponent<AdjacentCells>().targetY;
+                        highest = playerInfo.currentCell.GetComponent<AdjacentCells>().adjacentCells[k].transform.localScale.y;
                     }
                 }
             }
@@ -105,15 +108,7 @@ public class CellHeights : MonoBehaviour
 
 
 
-        //move player up - could prob work this out fine with maffs
-
-        Vector3 shootFrom2 = transform.position;
-        RaycastHit hit;
-        if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, 3f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
-        {
-            transform.position = hit.point;
-        }
-
+        
 
         if (!loweringCell && !raisingCell)
         {

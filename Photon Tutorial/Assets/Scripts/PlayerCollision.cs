@@ -56,7 +56,7 @@ public class PlayerCollision : MonoBehaviour
             pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
-            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<Swipe>().head.transform.localScale.x*playerClassValues.bumpMulitplier;
+            Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x*playerClassValues.bumpMulitplier;
 
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
@@ -79,7 +79,7 @@ public class PlayerCollision : MonoBehaviour
 
             //simplifying
             //.Vector3 thisBumpTarget = pMthis.transform.position + (pMthis.transform.position - pMother.transform.position);// * .5f + (pMthis.transform.position - walkTargetThis); //how do we get this?
-            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<Swipe>().head.transform.localScale.x * playerClassValues.bumpMulitplier;
+            Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.bumpMulitplier;
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
 

@@ -48,7 +48,7 @@ public class PlayerInfo : MonoBehaviour
         pgi = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>();
         playerClassValues = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerClassValues>();
 
-        controllerNumber = pgi.playerGlobalList.Count - 1;//tests
+        controllerNumber = 0;// pgi.playerGlobalList.Count - 1;//tests
     }
 
 

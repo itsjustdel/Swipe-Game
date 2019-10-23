@@ -175,7 +175,7 @@ public class Swipe : MonoBehaviour {
 
     private void Start()
     {
-
+        
 
         playerGlobalInfo = GameObject.FindWithTag("Code").GetComponent<PlayerGlobalInfo>();
         //tell sound script where we are at
@@ -547,7 +547,21 @@ public class Swipe : MonoBehaviour {
         newSwipe.name = "swipe Current " + type;
         newSwipe.AddComponent<MeshFilter>();
         newSwipe.AddComponent<MeshRenderer>();
-        newSwipe.transform.position = head.transform.position;
+
+        /*
+        //make the swipe swipe along at a set height from the ground - so ground plus head position - might need reviewed if i change head sizes etc
+        Vector3 swipePosition = transform.position;
+        swipePosition.y =  GetComponent<PlayerInfo>().currentCell.transform.localScale.y + GetComponent<PrefabCreator>().headHeight; 
+        if(GetComponent<PlayerMovement>().onWall)
+        {
+            //add the wall height
+            float wallHeight = playerGlobalInfo.GetComponent<OverlayDrawer>().wallHeight;
+            swipePosition.y += wallHeight;
+        }
+        */
+
+        newSwipe.transform.position = head.transform.position;// swipePosition;
+
         newSwipe.layer = LayerMask.NameToLayer("Swipe");
         newSwipe.AddComponent<MeshCollider>();
         currentSwipeObject = newSwipe;
@@ -633,7 +647,7 @@ public class Swipe : MonoBehaviour {
                 Debug.Log("Distance = " + d);
                 Debug.Log("arm etc = " +  (playerClassValues.armLength + playerClassValues.swordLength));
                 //add player attacked's scale to arm and sword length so we can definitily can't hit them on first part of swipe
-                float distanceAllowed = playerGlobalInfo.playerGlobalList[i].GetComponent<Swipe>().head.transform.localScale.x + playerClassValues.armLength + playerClassValues.swordLength;
+                float distanceAllowed = playerGlobalInfo.playerGlobalList[i].GetComponent<PlayerAttacks>().head.transform.localScale.x + playerClassValues.armLength + playerClassValues.swordLength;
                 if (d > distanceAllowed)
                     continue;
 
@@ -1534,8 +1548,8 @@ public class Swipe : MonoBehaviour {
                             //force a recheck on cells by making this null- will upate when this happens
                             GetComponent<PlayerInfo>().currentCell = null;
 
-                            //reset this player
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                            //reset this player// yeah? - shouldnt swipe do this when finsihed?
+                            //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
                             //tell hit player to vibrate
                             PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
