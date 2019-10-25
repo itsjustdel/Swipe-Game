@@ -538,7 +538,7 @@ public class Swipe : MonoBehaviour {
         }
     }
 
-    void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe)
+    void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,bool straightFinish)
     {
        // Debug.Log("creating new swipe object");
         //Debug.Log("frac complete after swipe obj = " + GetComponent<PlayerMovement>().fracComplete);
@@ -815,7 +815,36 @@ public class Swipe : MonoBehaviour {
 
         if (sendToRender)
         {
-            centralPoints.Add(swipePoint.normalized);//makes sure it alwys goes to end
+
+            //if strike is coming down at the end, extend points to floor (overheadSmash!)
+            bool overheadSmash = false;
+            //check for overhead smash
+           // GameObject c = null;
+            for (int i = centralPoints.Count-2; i < centralPoints.Count; i++)
+            {
+             //   c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+             //   c.transform.position = centralPoints[i]*5 + head.transform.position;
+             //   Destroy(c, 3);
+
+                
+            }
+            //check angle of last two points
+            //float angle = Vector3.Angle(centralPoints[centralPoints.Count - 1], centralPoints[centralPoints.Count - 2]);
+            //c.name = angle.ToString();
+            //if second last point is high enough - consider it an overhead smash
+            if (centralPoints[centralPoints.Count - 2].y - centralPoints[centralPoints.Count - 1].y > 0.5f)
+            {
+                overheadSmash = true;
+                //c.name = "Smash!";
+                //move the last point down to the ground
+                centralPoints[centralPoints.Count - 1] -= Vector3.up*.5f;
+                //and also add right underneath player- this will make it swing over walls - we will check for walls/cells on swipe hit checks to stop it going through
+                
+                centralPoints[centralPoints.Count - 1].Normalize();
+                centralPoints.Add(-Vector3.up);
+            }
+
+            centralPoints.Add(centralPoints[ centralPoints.Count-1]);//makes sure it alwys goes to end
             
           //  Debug.Log("Over head - finished planning");
          //   Debug.Log("frac complete = " + GetComponent<PlayerMovement>().fracComplete);
@@ -830,7 +859,7 @@ public class Swipe : MonoBehaviour {
             pM.walkStartPos = transform.position;
             
                 
-            CreateNewSwipeObject("Overhead", true, false, false);
+            CreateNewSwipeObject("Overhead", true, false, false,overheadSmash);
             currentSwipeObject.GetComponent<SwipeObject>().activeSwipe = true;
             currentSwipeObject.GetComponent<SwipeObject>().overheadSwipe = true;
             //note time of the the user finishing their swipe plan
@@ -917,7 +946,7 @@ public class Swipe : MonoBehaviour {
 
     }
 
-   
+
 
     public void CurveHitCheck2(List<Vector3> pointsFromCurve, bool activeSwipe, GameObject thisSwipeObject, bool forOverhead, bool forLunge)
     {
@@ -942,7 +971,7 @@ public class Swipe : MonoBehaviour {
 
         //if swipe is active, activestrike = true, then look for player, shields and other swipes
         //else if it is on cooldown phase(static), don't look for other swipes, it can not destroy them
-        LayerMask mask = LayerMask.GetMask("PlayerBody", "Shield", "Swipe");
+        LayerMask mask = LayerMask.GetMask("PlayerBody", "Shield", "Swipe","Cells","Wall");
         if (activeSwipe == false)
             mask = LayerMask.GetMask("PlayerBody", "Shield");
 
@@ -965,7 +994,7 @@ public class Swipe : MonoBehaviour {
 
         bool doSelfCheck = false;
         if (doSelfCheck)
-        //ggoing round mesh and moving points slightly inside so they dont coddile with outer mesh. Not perfect, how to check self hit ?
+
         {
 
             for (int j = 0; j < pointsFromCurve.Count - 16 - 8; j += 16)
@@ -1177,7 +1206,7 @@ public class Swipe : MonoBehaviour {
                         waitingOnResetOverhead = true;
                         buttonSwipeAvailable = false;
                         blocked = true;
-                        
+
                         //start timer for reset
                         //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
                     }
@@ -1185,7 +1214,7 @@ public class Swipe : MonoBehaviour {
                     //tell hit player to vibrate
                     GameObject parentOfHitHeadMesh = totalRayList[i][j].transform.parent.parent.parent.gameObject;
                     PlayerVibration pV = parentOfHitHeadMesh.GetComponent<PlayerVibration>();
-                    pV.shakeTimerShield+= pV.shieldHitLength;
+                    pV.shakeTimerShield += pV.shieldHitLength;
                     //tell player who successfully hit too - just use non lethal for hit confirm
                     pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
                     pV.shakeTimerShield += pV.shieldHitLength;
@@ -1208,9 +1237,6 @@ public class Swipe : MonoBehaviour {
         }
 
         //swipe check
-
-
-
 
         for (int i = 0; i < totalRayList.Count; i++)
         {
@@ -1250,7 +1276,7 @@ public class Swipe : MonoBehaviour {
 
                 if (totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("Swipe"))
                 {
-                    
+
 
                     //if it is this player's swipe, just knock through it
                     SwipeObject otherSwipeObjectScript = totalRayList[i][j].transform.GetComponent<SwipeObject>();
@@ -1274,16 +1300,16 @@ public class Swipe : MonoBehaviour {
                     else if (totalRayList[i][j].transform.gameObject.GetComponent<SwipeObject>().overheadSwipe)
                     {
                         Debug.Log("Hit another swipe, player numer = " + GetComponent<PlayerInfo>().teamNumber);
-                       // Debug.Log("this time start = " + thisSwipeObjectScript.swipeTimeStart + " , player numer = " + GetComponent<PlayerInfo>().playerNumber);
+                        // Debug.Log("this time start = " + thisSwipeObjectScript.swipeTimeStart + " , player numer = " + GetComponent<PlayerInfo>().playerNumber);
                         //Debug.Log("other time start = " + otherSwipeObjectScript.swipeTimeStart + " , player numer = " +otherSwipeObjectScript.parentPlayer.GetComponent<PlayerInfo>().playerNumber);
                         //smash the weaker of the two strikes ( the one that started last is weaker)
                         if (thisSwipeObjectScript.swipeTimeStart < otherSwipeObjectScript.swipeTimeStart)
                         {
 
                             Debug.Log("this swipe is greater than other, player numer = " + GetComponent<PlayerInfo>().teamNumber);
-                         
-                          
-                            
+
+
+
                             //tell hit player to vibrate
 
                             PlayerVibration pV = otherSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
@@ -1295,8 +1321,8 @@ public class Swipe : MonoBehaviour {
 
                             //send resolution to network
                             byte evCode = 40; // Custom Event 40: send hit to clients
-                                              
-                            int photonViewID =otherSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
+
+                            int photonViewID = otherSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
 
                             object[] content = new object[] { photonViewID, impactDirections[i] };
                             //send to everyone but this client
@@ -1308,19 +1334,19 @@ public class Swipe : MonoBehaviour {
                             otherSwipeObjectScript.DestroySwipe();
                             //reset player if it was an active strike //always is atm sipwes dont hang when this was written
                             //if (otherSwipeObjectScript.activeSwipe)
-                              //  otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                            //  otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
 
                         }
-                        else if(thisSwipeObjectScript.swipeTimeStart > otherSwipeObjectScript.swipeTimeStart)
+                        else if (thisSwipeObjectScript.swipeTimeStart > otherSwipeObjectScript.swipeTimeStart)
                         {
                             Debug.Log("this swipe is less than other, player numer = " + GetComponent<PlayerInfo>().teamNumber);
 
                             //break this swipe
-                            
-                           
+
+
                             //reset player if it was an active strike //always is atm sipwes dont hang when this was written
-                            
+
                             //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
                             //send resolution to network
@@ -1333,7 +1359,7 @@ public class Swipe : MonoBehaviour {
                             PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
 
 
-                           // thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                            // thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
                             thisSwipeObjectScript.DestroySwipe();
 
                             //add vibrate
@@ -1344,11 +1370,11 @@ public class Swipe : MonoBehaviour {
                             Debug.Log("similiar starts- destroy both");//this will likely never hppen because of double accuracy - force for gameplay? - happens with testing mastr and client with same pad
 
                             //Debug.Break();
-                           // otherSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;//on destroy swipe
+                            // otherSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;//on destroy swipe
                             otherSwipeObjectScript.DestroySwipe();
                             otherSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
-                           // thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+                            // thisSwipeObjectScript.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
                             thisSwipeObjectScript.DestroySwipe();
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
 
@@ -1356,7 +1382,7 @@ public class Swipe : MonoBehaviour {
                             SendOptions sendOptions = new SendOptions { Reliability = true };
                             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
                             //this
-                            int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;                            
+                            int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
                             object[] content = new object[] { photonViewID, Vector3.down };
                             PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
 
@@ -1364,7 +1390,7 @@ public class Swipe : MonoBehaviour {
                             photonViewID = otherSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
                             content = new object[] { photonViewID, Vector3.down };
                             PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
-                            
+
                         }
 
                         //below commented code smashes both swipes if they hit each other
@@ -1403,7 +1429,7 @@ public class Swipe : MonoBehaviour {
                     continue;
 
 
-                
+
                 else if (totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("PlayerBody"))
                 {
 
@@ -1451,14 +1477,14 @@ public class Swipe : MonoBehaviour {
                         //    p = 1f;
 
                         playerInfo.health -= Mathf.RoundToInt(p);// playerClassValues.overheadHitHealthReduce; ///put back mathf round
-                       //network needs to know?
+                                                                 //network needs to know?
                         Debug.Log("hit power = " + p);
 
                         Swipe otherSwipeScript = totalRayList[i][j].transform.parent.parent.GetComponent<Swipe>();
 
-                        
 
-                       
+
+
                         thisSwipeObjectScript.hitOpponent = true;
                         thisSwipeObjectScript.timeSwingFinished = PhotonNetwork.Time;
 
@@ -1470,7 +1496,7 @@ public class Swipe : MonoBehaviour {
 
                         //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
 
-                        if (playerInfo.health > 0 )
+                        if (playerInfo.health > 0)
                         {
                             bool interruptSwipeOnNonLethal = false;
                             if (interruptSwipeOnNonLethal)
@@ -1485,22 +1511,22 @@ public class Swipe : MonoBehaviour {
                             //let player object know when we finished this swing too
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
                             thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;                            
-                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;                            
+                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
+                            thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;
 
-                          
+
                             thisSwipeObjectScript.DeactivateSwipe();
-                            
+
                             Debug.Log("health > 0 overhead");
 
                             //destroy this swipe
                             thisSwipeObjectScript.impactDirection = (totalRayList[i][j].point - head.transform.position).normalized;
                             //overwrite impact dir for network that we worked out above
                             impactDir = thisSwipeObjectScript.impactDirection;
-                            thisSwipeObjectScript.impactPoint = totalRayList[i][j].point;                            
+                            thisSwipeObjectScript.impactPoint = totalRayList[i][j].point;
 
                             thisSwipeObject.GetComponent<SwipeObject>().DestroySwipe();
-                            
+
                             pMother.bumped = true;
                             //hit point is on the near side, so get dir to hit transform and extend it through. point will now be on the rear side of hit transform
                             float hitBumpAmount = 1f;//*global var
@@ -1512,7 +1538,7 @@ public class Swipe : MonoBehaviour {
                             //tell player who successfully hit too - just use non lethal for hit confirm
                             pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
                             pV.shakeTimerHit += pV.nonLethatHitLength;
-                            
+
                         }
                         else if (playerInfo.health <= 0f)
                         {
@@ -1525,8 +1551,8 @@ public class Swipe : MonoBehaviour {
 
                             //flag for this player
                             Debug.Log("overhead hit opponent");
-                            
-                            
+
+
                             //reset other player
                             parentOfHitHeadMesh.GetComponent<Swipe>().ResetFlags();
 
@@ -1560,8 +1586,8 @@ public class Swipe : MonoBehaviour {
                             pV.shakeTimerHit += pV.nonLethatHitLength;
 
 
-                            
-                           
+
+
                         }
 
                         //gather network info
@@ -1586,7 +1612,7 @@ public class Swipe : MonoBehaviour {
                         //deactivate swipe (the swipe that hit)
                         //tell swipe it hit opponent on event code
                         //impact dir
-                        
+
                         //impact point
                         Vector3 impactPoint = thisSwipeObjectScript.impactPoint;
                         //destroy swipe on event code
@@ -1605,7 +1631,56 @@ public class Swipe : MonoBehaviour {
             }
         }
 
+        //cell/walls check
+        for (int i = 0; i < totalRayList.Count; i++)
+        {
+            for (int j = 0; j < totalRayList[i].Length; j++)
+            {
+                
+                if(totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("Cells") || totalRayList[i][j].transform.gameObject.layer == LayerMask.NameToLayer("Wall"))
+                {
+                    Debug.Log("Hit Cerll or wall ( overhead )");
+
+                    thisSwipeObject.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+
+                    thisSwipeObjectScript.hitShield = true;
+                    thisSwipeObjectScript.DestroySwipe();
+
+                    if (thisSwipeObjectScript.activeSwipe)
+                    {
+                        finishTimeSriking = PhotonNetwork.Time;
+                        waitingOnResetOverhead = true;
+                        buttonSwipeAvailable = false;
+                        blocked = true;
+
+                        //start timer for reset
+                        //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
+                    }
+
+                    //tell player to vibrate
+                    
+                    
+                    //tell player who hit to vibrate - just use non lethal for hit confirm
+                    PlayerVibration pV = thisSwipeObjectScript.parentPlayer.GetComponent<PlayerVibration>();
+                    pV.shakeTimerShield += pV.shieldHitLength;
+
+                    //send resolution to network
+                    byte evCode = 43; // Custom Event 43: send shield hit to clients //REUSING SHIELD HIT EVENT
+
+                    int photonViewID = thisSwipeObjectScript.parentPlayer.GetComponent<PhotonView>().ViewID;
+
+                    object[] content = new object[] { photonViewID };
+                    //send to everyone but this client
+                    RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
+                    SendOptions sendOptions = new SendOptions { Reliability = true };
+                    PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
+
+                    return;
+                }
+            }
+        }
     }
+
 
     void InterruptSwipe(Swipe otherSwipeScript)
     {

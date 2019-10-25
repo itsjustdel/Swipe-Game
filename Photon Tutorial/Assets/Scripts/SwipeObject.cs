@@ -13,6 +13,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public List<Vector3> centralPoints = new List<Vector3>();
     public List<Vector3> sideSwipePoints = new List<Vector3>();
     public List<Vector3> lungePointsFinal = new List<Vector3>();
+    //spline info to make mesh from
+    public List<Vector3> pointsFromCurve = new List<Vector3>();
+    public List<Vector3> directions = new List<Vector3>();
+
     public BezierSpline spline;
     public float finishTimePlanning;
     public float swordStart;
@@ -131,11 +135,22 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             flip = true;
         }
 
+        //work out as much as we can for mesh before update
+
+        PrepareSplinePoints();
 
         // local call to instantiate this wipe across network
-        if(local)
+        if (local)
             SendToNetwork();
 
+    }
+
+    void PrepareSplinePoints()
+    {
+        //add control points to make smooth curve
+        List<Vector3> curvePointsWithControlPoints = AddControlPoints(centralPoints);
+        //create evenyl spaced points along spline - populates public variables
+        UniformPointsFromCurve(curvePointsWithControlPoints);
     }
 
     void CalculateStartArrayRenderCount()
@@ -184,29 +199,11 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     // Update is called once per frame
     void FixedUpdate ()
     {
-        /*
-        if (swipeFinishedBuilding)
-        {
-            if (PhotonNetwork.Time - activeTime > timeSwingFinished) //probs isnt happening ever now swipe follows itself to its death
-            {
-
-                //find this object in swipe list and remove it
-                // List<GameObject> currentSwipes = parentPlayer.GetComponent<Swipe>().currentSwipes;
-                //  for (int i = 0; i < currentSwipes.Count; i++)
-                {
-                    // if (currentSwipes[i] == gameObject)
-                    //     currentSwipes.RemoveAt(i);
-                }
-                Debug.Log("destroying on timeout");
-                Destroy(this.gameObject);
-
-            }
-        }
-       */
+      
         if (overheadSwipe)
         {
            
-                RenderOverHead(); //moved to update - HMMMM NOT OWRKING THERE, TOO FAST
+            RenderOverHead(); //moved to update - HMMMM NOT OWRKING THERE, TOO FAST
 
             if (!hitOpponent)
             {
@@ -263,61 +260,14 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         }
     }
 
-    public void RenderOverHead()
+    List<Vector3> AddControlPoints(List<Vector3> passedCurvePoints)
     {
-      //  Debug.Log("overhead rendering");
-
-        List<Vector3> pointsFromCurve = new List<Vector3>();
-
-        //create mesh and return the points created by the curve. We will use these points to hit check the strike
-        Mesh mesh = RenderCurve(out pointsFromCurve, centralPoints);
-
-
-        GetComponent<MeshFilter>().mesh = mesh;
-        //last sliver will break physics- 2d slice
-        if(mesh.vertexCount > 16)//check this number?
-            GetComponent<MeshCollider>().sharedMesh = mesh;
-
-        List<Vector3> verticesToCheck = new List<Vector3>(mesh.vertices);
-        GetComponent<SwipeObject>().originalVertices = verticesToCheck;
-        // CurveHitCheck2(verticesToCheck, true, currentSwipeObject,true,false);//done on object
-    }
-
-    Mesh RenderCurve(out List<Vector3> pointsFromCurveReturning, List<Vector3> passedCurvePoints)
-    {
-        //do we need to work out curve points every frame?(unless i inted to influence last curve point with movement, no)
-
-        List<Vector3> pointsFromCurve = new List<Vector3>();
-        List<Vector3> directions = new List<Vector3>();
-
-        // lastSwipePoint = swipePoint;
-        //debugCube.GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Red") as Material;
-
-
-
-        //extend cruve in diretion of walk
-
-        if (passedCurvePoints.Count < 3)
-        {
-            //   Debug.Log("Less than three");
-            //   pointsFromCurveReturning = null;
-            //   return null;
-
-        }
-
         List<Vector3> curvePoints = new List<Vector3>();
-        //curvePoints.Add(passedCurvePoints[0]);
-        // curvePoints.Add(passedCurvePoints[0]);//booken
-        //curvePoints.Add(passedCurvePoints[0]);
+
 
         //we now havea  uniform set of points  -we can create a smooth curve between them now
-
-      
-
-
-            //we now havea  uniform set of points  -we can create a smooth curve between them now
-            //start at 1 to jump the bookends used to define the curve shape at the start
-            for (int i = 1; i < passedCurvePoints.Count - 1; i++)
+        //start at 1 to jump the bookends used to define the curve shape at the start
+        for (int i = 1; i < passedCurvePoints.Count - 1; i++)
         {
 
             Vector3 p0 = Vector3.Lerp(passedCurvePoints[i - 1], passedCurvePoints[i], 0.5f);
@@ -341,9 +291,16 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         curvePoints.Add(passedCurvePoints[passedCurvePoints.Count - 1]);
         curvePoints.Add(passedCurvePoints[passedCurvePoints.Count - 1]);
 
-       
+        return curvePoints;
 
+    }
 
+    void UniformPointsFromCurve(List<Vector3> curvePoints)
+    {
+        pointsFromCurve = new List<Vector3>();
+        directions = new List<Vector3>();
+
+        //add bezier if we havent already - this component works out the quadratic functions for us to get points along spline
         if (GetComponent<BezierSpline>() == null)
         {
             spline = gameObject.AddComponent<BezierSpline>();
@@ -417,10 +374,10 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         }
         for (int a = 0; a < pointsFromCurve.Count; a++)
         {
-          //  GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-         //  c.transform.position = pointsFromCurve[a] + transform.position;
-         //   c.name = "Curve point a";
-         //  Destroy(c, 3);
+            //  GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            //  c.transform.position = pointsFromCurve[a] + transform.position;
+            //   c.name = "Curve point a";
+            //  Destroy(c, 3);
 
         }
 
@@ -428,9 +385,31 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //make sure it goes to end of curve - not sure of necessary
         pointsFromCurve.Add(pointsFromCurve[pointsFromCurve.Count - 1]);
         directions.Add(directions[directions.Count - 1]);
+    }
 
-        //keep track of how far we have made it round the mesh. we will update it every frame
-       // int p = arrayRenderCount;
+    public void RenderOverHead()
+    {
+      //  Debug.Log("overhead rendering");
+
+       
+
+        //create mesh and return the points created by the curve. We will use these points to hit check the strike
+        Mesh mesh = RenderCurve();
+
+
+        GetComponent<MeshFilter>().mesh = mesh;
+        //last sliver will break physics- 2d slice
+        if(mesh.vertexCount > 16)//check this number?
+            GetComponent<MeshCollider>().sharedMesh = mesh;
+
+        List<Vector3> verticesToCheck = new List<Vector3>(mesh.vertices);
+        GetComponent<SwipeObject>().originalVertices = verticesToCheck;
+        // CurveHitCheck2(verticesToCheck, true, currentSwipeObject,true,false);//done on object
+    }
+
+    Mesh RenderCurve()
+    {
+        
 
         //give audio an indication how far we are in creting swipe///***needs to be percentage
         GetComponent<ProceduralAudioController>().swipeObjectDistance = 1f/arrayRenderCount;//??? not testesd
@@ -438,10 +417,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //create box/mesh points from central spine of points
         List<Vector3> swipePoints = new List<Vector3>();
 
-        //vertices
-        // Debug.Log("points total = " + pointsFromCurve.Count);// + ",p = " + p);
-
-        //Debug.Log("here");
+        
         //force passed first point, one point alone only makes a slither
         if (arrayRenderCount < 2)
             arrayRenderCount = 2;
@@ -478,8 +454,6 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //only if walking
             if (!wasWalkingAtStartOfSwipe) // i==0)
                 targetDir = Vector3.zero;
-
-            
 
             closePoint += percentage *  (targetDir + dirToEnd);
 
@@ -622,7 +596,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         else if (parentPlayer.GetComponent<PlayerInfo>().teamNumber == 2)
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Green0") as Material;
 
-        pointsFromCurveReturning = pointsFromCurve;
+        //pointsFromCurveReturning = pointsFromCurve;
 
         //used for animating swipe finishing/receding
         if (arrayRenderCount >= pointsFromCurve.Count * parentPlayer.GetComponent<Swipe>().dragSize)
@@ -683,6 +657,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //array is how far we have travelled
         //arrayrendercount is total
         Color red = (Resources.Load("Materials/Red0") as Material).color;
+        red.a = 0f;
+
        // Debug.Log("array count = " + arrayRenderCount);
        // Debug.Log("points from curve count = " + pointsFromCurve.Count);
        // Debug.Log("points from curve count = " + pointsFromCurve.Count);
@@ -695,7 +671,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //forLerp *= 1.66f;
         Color orange = new Color(255/255, .66f, 0);
        // if(forLerp <0.5f)
-            GetComponent<MeshRenderer>().material.color = Color.Lerp(Color.yellow, red, forLerp);
+         GetComponent<MeshRenderer>().material.color = Color.Lerp(Color.yellow, red, forLerp);
+        
        // else
        //     GetComponent<MeshRenderer>().material.color = Color.Lerp(orange, red, forLerp);
 
@@ -742,6 +719,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     {
         if(hitShield || hitByOverhead)
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("Materials/Grey0") as Material;
+
+        StandardShaderUtils.ChangeRenderMode(GetComponent<MeshRenderer>().material, StandardShaderUtils.BlendMode.Transparent);
 
         parentPlayer.GetComponent<Swipe>().ResetFlags();
 

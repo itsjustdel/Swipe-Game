@@ -315,6 +315,7 @@ MonoBehaviour:
   heightSpeedSiege: 0.01
   heightMultiplier: 2
   minHeight: 1
+  wallHeight: 1
   totalCellsTransparent: 0
   opponents: 
   originalMeshes: []

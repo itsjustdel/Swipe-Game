@@ -727,7 +727,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
         if (Physics.SphereCast(shootFrom2 + Vector3.up * 50f, pA.head.transform.localScale.x * 0.5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
         {
-            Debug.Log("hitting");
+           // Debug.Log("hitting");
             Debug.DrawLine(hit.point, hit.point - Vector3.up * 10);
             transform.position = hit.point;
 
