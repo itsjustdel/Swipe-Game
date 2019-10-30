@@ -13,7 +13,7 @@ public class PlayerInfo : MonoBehaviour
     public bool respawn = true;
     public double lastDeathTime;
     public bool playerDespawned = true;
-    public bool playerCanRespawn = true;
+    //public bool playerCanRespawn = true;
     public int controllerNumber = 1;//controller
     public int teamNumber = -1;
     public GameObject currentCell;
@@ -143,10 +143,7 @@ public class PlayerInfo : MonoBehaviour
     //perhaps should be in its own script
     void RespawnPlayer()
     {
-        //has function fired for respawn - called from BreakUpPlayer in Swipe
-        if (!playerCanRespawn)
-            return;
-
+        
         for (int i = 0; i < transform.childCount; i++)
         {
             transform.GetChild(i).gameObject.SetActive(true);
@@ -187,10 +184,6 @@ public class PlayerInfo : MonoBehaviour
         PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
     }
 
-    public void SetSpawnAvailable()
-    {
-        playerCanRespawn = true;
-    }
 }
 
     

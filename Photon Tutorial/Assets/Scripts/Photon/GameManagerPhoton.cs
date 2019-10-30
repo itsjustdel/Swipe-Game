@@ -317,7 +317,7 @@ namespace DellyWellyWelly
                 //player info variables
                 bool[] respawns = new bool[players.Count];
                 double[] lastDeathTimes = new double[players.Count];
-                bool[] playerCanRespawns = new bool[players.Count];
+                bool[] playerDespawned = new bool[players.Count];
                 int[] teamNumbers = new int[players.Count];
                 //cells need to be broken down in to index number in cell array - can't send game objects over network
                 int[] currentCell = new int[players.Count];
@@ -337,7 +337,7 @@ namespace DellyWellyWelly
                     respawns[i] = pI.respawn;
                     lastDeathTimes[i] = pI.lastDeathTime;
                     //current health
-                    playerCanRespawns[i] = pI.playerCanRespawn;
+                    playerDespawned[i] = pI.playerDespawned;
                     teamNumbers[i] = pI.teamNumber;
                     //find current cell number
                     for (int j = 0; j < mg.cells.Count; j++)
@@ -377,7 +377,7 @@ namespace DellyWellyWelly
                 //To create less traffic, i could sen only to who requested it but i dont know how to do that atm
 
                 byte evCode = 11; // Custom Event 11: 
-                object[] content = new object[] { initialPhotonViewID, views, positions, respawns, lastDeathTimes, playerCanRespawns, teamNumbers, currentCell, healths, cellsUnderControls };
+                object[] content = new object[] { initialPhotonViewID, views, positions, respawns, lastDeathTimes, playerDespawned, teamNumbers, currentCell, healths, cellsUnderControls };
                 //send to everyone but this client
                 RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
@@ -413,7 +413,7 @@ namespace DellyWellyWelly
                     //player info variables
                     bool[] respawns = (bool[])(customData[3]);
                     double[] lastDeathTimes = (double[])(customData[4]);
-                    bool[] playerCanRespawns = (bool[])(customData[5]);
+                    bool[] playerDespawned = (bool[])(customData[5]);
                     int[] teamNumbers = (int[])customData[6];
                     //cells need to be broken down in to index number in cell array - can't send game objects over network
                     int[] currentCell = (int[])(customData[7]);
@@ -435,7 +435,7 @@ namespace DellyWellyWelly
                         PlayerInfo pI = pV.GetComponent<PlayerInfo>();
                         pI.respawn = respawns[i];
                         pI.lastDeathTime = lastDeathTimes[i];
-                        pI.playerCanRespawn = playerCanRespawns[i];
+                        pI.playerDespawned= playerDespawned[i];
                         pI.teamNumber = teamNumbers[i];
                         //find cell number in cells array on generator
                         MeshGenerator mg = GameObject.FindGameObjectWithTag("Code").GetComponent<MeshGenerator>();

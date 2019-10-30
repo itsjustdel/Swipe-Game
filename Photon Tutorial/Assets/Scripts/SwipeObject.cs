@@ -424,7 +424,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
 
         for (float a = startRenderCount ; a < arrayRenderCount ;a++)// -1 because a will be round up to finsih last one ( i think) - otherwise, we get a flat swipe end causing mesh physics problems
         {
-            int i =  Mathf.RoundToInt(a);
+            int i = (int)(a);// Mathf.RoundToInt(a);//rounding on .5 mewans double the vertices every secodn frame
             if (i > pointsFromCurve.Count - 1)
                 i = pointsFromCurve.Count - 1;
 
@@ -599,8 +599,8 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
         //pointsFromCurveReturning = pointsFromCurve;
 
         //used for animating swipe finishing/receding
-        if (arrayRenderCount >= pointsFromCurve.Count * parentPlayer.GetComponent<Swipe>().dragSize)
-            startRenderCount+= playerClassValues.overheadSpeed;
+        if (arrayRenderCount >= parentPlayer.GetComponent<Swipe>().dragSize || arrayRenderCount>= pointsFromCurve.Count-1)//pointsFromCurve.Count * 
+            startRenderCount += playerClassValues.overheadSpeed;
         //check for whiff, if strike has made it all the way to the end and not hit anything
         //if (Time.time - swipeTimeStart - Time.fixedDeltaTime > playerClassValues.overheadSpeed)// + overheadWaitBeforeReset)//overheadWaitBeforeReset
 

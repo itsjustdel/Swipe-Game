@@ -58,23 +58,23 @@ public class Guide : MonoBehaviour {
         //bool renderGuide = false;
 
 
-        float d =Vector3.Distance( swipe.pA.lookDirRightStick,Vector3.zero);
+        // float d =Vector3.Distance( swipe.pA.lookDirRightStick,Vector3.zero);
         //if (d < swipe.pA.deadzone)
-          //  d = 0;
-        if (d > 1f)
-            d = 1f;
-        d = Easings.ExponentialEaseIn(d);
+        //  d = 0;
+        //// if (d > 1f)
+        //d = 1f;
+        // d = Easings.ExponentialEaseIn(d);
 
-        //commented code here makes the guide stay large if in planning phase - still deciding if i like it
-
+        //commented code here makeswipe.swipePoint.magnitude s the guide stay large if in planning phase - still deciding if i like it
+        float swipeMagnitude = swipe.pA.lookDirRightStick.magnitude;
       //  if (!swipe.planningPhaseOverheadSwipe)
         {
 
             //  float movementDistance = Vector3.Distance(swipe.previousSwipePoint, swipe.swipePoint);
             //  GetComponent<TrailRenderer>().time =trailTime- movementDistance;
 
-            transform.GetComponent<TrailRenderer>().widthMultiplier = d * guideSize;
-            transform.localScale = Vector3.one * d * guideSize;
+            transform.GetComponent<TrailRenderer>().widthMultiplier = swipeMagnitude* guideSize;
+            transform.localScale = Vector3.one * swipeMagnitude * guideSize;
         }
      //   else if(swipe.planningPhaseOverheadSwipe)
         {
@@ -88,7 +88,7 @@ public class Guide : MonoBehaviour {
         {
            //can also set scaling mode to "hierarchy" 
             ParticleSystem.MainModule main =transform.GetChild(0).GetComponent<ParticleSystem>().main;
-            main.startSize = d*guideSize;
+            main.startSize = swipeMagnitude * guideSize;
         }
 
         transform.position = swipe.head.transform.position + swipe.swipePoint.normalized*(swipe.playerClassValues.armLength + swipe.playerClassValues.swordLength);

@@ -35,7 +35,7 @@ public class Swipe : MonoBehaviour {
  //   public int framesForCancel = 1;
  //   public int stillStickFramesCurrent = 1;
     public float maxThumbMagnitude = 0.85f;
-
+    public float maxPlanningTime = 1f;
     // float swordStart = 10f;
     //public float swordWidth = 2f;
     public float overheadActivationAngle = 0f;// 30f;//145;//     changed how this works - availabel from any angle now
@@ -44,8 +44,8 @@ public class Swipe : MonoBehaviour {
     //flags
     public bool swiping;
     public bool overheadAvailable = true;
-    public bool sideSwipeAvailable = true;
-    public bool lungeAvailable = true;
+    //public bool sideSwipeAvailable = true;
+    //public bool lungeAvailable = true;
     
     public bool buttonSwipeAvailable;
     public bool rightStickPulledBack;
@@ -72,7 +72,7 @@ public class Swipe : MonoBehaviour {
     public bool pulledBackForOverhead;
     public bool planningPhaseSideSwipe;
     public bool planningPhaseOverheadSwipe;
-
+    
   
     public bool buttonSwipeFirstLookDirSet = false;
 
@@ -90,7 +90,7 @@ public class Swipe : MonoBehaviour {
     // public float finishTimePlanning;
     public double finishTimeSriking;
     //public int deadzoneTimesInSwipe;
-    public double pullBackTimeStart;
+    public double planningStartTime;
     public double swipeTimeStart;
     public float firstPullBackAngle;
     public float angleTravelled = 0;
@@ -135,7 +135,7 @@ public class Swipe : MonoBehaviour {
     public float previousAngle;
     public float startAngle;
     public float startAngleRelative;
-    public float swingMagnitude;
+    
 
     public BezierSpline spline;
 
@@ -165,7 +165,7 @@ public class Swipe : MonoBehaviour {
 
     public float curveSmoothing = 1f;
     public float arcDetail = .05f;//changing this affects overhead speed (great!) perhaps multiply overhead speeed by this so stays consistent?
-    public float dragSize = .5f;//divides array for curve points, so 1f wil let the full curve come out before starting the exit animation, and 0.1f will start exit animation quickly
+    public float dragSize = 20;//how many points pass before we recede swing  linked with arc detail
 
     public GameObject guide;
 
@@ -196,16 +196,15 @@ public class Swipe : MonoBehaviour {
         pA = transform.GetComponent<PlayerAttacks>();
 
         //instantiate guide objectif we are local player
-        if(GetComponent<PhotonView>().IsMine)
+        if (GetComponent<PhotonView>().IsMine)
+        {
             guide = Guide.GenerateGuide(this);
+        }
+        //disable this script if not for our player - we don not need to check for swipes from other players
+        else
+            enabled = false;
 
 
-
-
-
-        // swiper = transform.Find("Swiper").gameObject;
-
-        // spline = swiper.AddComponent<BezierSpline>();
     }
 
 
@@ -221,31 +220,18 @@ public class Swipe : MonoBehaviour {
     {
 
 
-        if (playback)
-        {
-            //play recorded input
-            if (playbackTimeSet == false)
-            {
 
-                //  CreateNewSwipeObject("Side Swipe Recorded");
-                //  swipeTimeStart= Time.time;
-                //  playbackTimeSet = true;
-            }
-
-            // RenderSideSwipe(recordedInput);
-        }
-
-
-
-
-        DetectForwardMovementRightStick();//also updates current dot
+       //DetectForwardMovementRightStick();//also updates current dot
 
         GetSwipePoint();
 
-        if(attackedTooClose)
+        //check for overhead reset
+        ButtonOverHeadReset();
+
+        if(attackedTooClose)//commented out above
         {
             //bool set to true if angle of pullback too close to another player
-            AttackedTooCloseCooldown();
+           // AttackedTooCloseCooldown();
         }
 
         bool adjustingCellHeight = false;            
@@ -257,7 +243,8 @@ public class Swipe : MonoBehaviour {
         {
             //look for user input and determine which swing to start
 
-            SwipePlanning();
+            //SwipePlanning();
+            ButttonOverhead();
         }
         else if (pA.blocking || !adjustingCellHeight)
         {
@@ -406,7 +393,7 @@ public class Swipe : MonoBehaviour {
         //startAngleRelative = MovementHelper.SignedAngle(rotatedLookDir, transform.transform.forward, Vector3.up);
 
         //get magnitude and clamp it
-        swingMagnitude = pA.RSMagnitude ;
+        float swingMagnitude = pA.lookDirRightStick.magnitude ;
         if (swingMagnitude > 1f)
             swingMagnitude = 1f;
         //this rounds up any magnitude at 0.99
@@ -429,10 +416,130 @@ public class Swipe : MonoBehaviour {
         //create cureve from this linear paramater
         yAdd = Easings.CubicEaseOut(yAdd);
         
-        swipePoint = pA.lookDirRightStick.normalized * swingMagnitude + Vector3.up * (yAdd);
+        swipePoint = pA.lookDirRightStick * swingMagnitude + Vector3.up * (yAdd);
 
 
         //debugCube.transform.position = head.transform.position + swipePoint;
+    }
+
+    void ButttonOverhead()
+    {
+        //check user as released attack button after attacking
+
+        //start swipe planmning if attack button is pressed, stop planning when button is released
+        if(inputs.attack0 && overheadAvailable)
+        {
+            //gather points
+            if (!planningPhaseOverheadSwipe)
+            {
+                //start time to control how long a player can plan for - otherwise they can make extreme curves
+                planningPhaseOverheadSwipe = true;
+                planningStartTime = PhotonNetwork.Time;
+
+                //reset list
+                centralPoints.Clear();
+                
+            }
+            //populate list with joystick input
+            firstPullBackLookDir = swipePoint;
+            StickPathOverhead();
+        }
+        //stop strike if
+
+        bool stopPlanning = false;
+
+        if (planningPhaseOverheadSwipe)
+        {
+            if (centralPoints.Count > 2)
+            {
+                if (!inputs.attack0 || PhotonNetwork.Time - planningStartTime >= maxPlanningTime)
+                    //send to render
+                    stopPlanning = true;
+            }
+            else
+            {
+                if(!inputs.attack0)// || PhotonNetwork.Time - planningStartTime >= maxPlanningTime)
+                {
+                    centralPoints.Clear();
+                    planningPhaseOverheadSwipe = false;
+                    //player held attack
+                }
+
+            }
+        
+            
+
+
+
+
+        }
+        
+        if(stopPlanning)
+        {
+            //we have started swinging
+            overheadAvailable = false;
+
+            //if strike is coming down at the end, extend points to floor (overheadSmash!)
+            bool overheadSmash = false;
+            //check for overhead smash
+            // GameObject c = null;
+            for (int i = centralPoints.Count - 2; i < centralPoints.Count; i++)
+            {
+                //   c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                //   c.transform.position = centralPoints[i]*5 + head.transform.position;
+                //   Destroy(c, 3);
+
+
+            }
+            //check angle of last two points
+            //float angle = Vector3.Angle(centralPoints[centralPoints.Count - 1], centralPoints[centralPoints.Count - 2]);
+            //c.name = angle.ToString();
+            //if second last point is high enough - consider it an overhead smash
+            if (centralPoints[centralPoints.Count - 2].y - centralPoints[centralPoints.Count - 1].y > 0.5f)
+            {
+                overheadSmash = true;
+                //c.name = "Smash!";
+                //move the last point down to the ground
+                centralPoints[centralPoints.Count - 1] -= Vector3.up * .5f;
+                //and also add right underneath player- this will make it swing over walls - we will check for walls/cells on swipe hit checks to stop it going through
+
+                centralPoints[centralPoints.Count - 1].Normalize();
+                centralPoints.Add(-Vector3.up);
+            }
+
+            centralPoints.Add(centralPoints[centralPoints.Count - 1]);//makes sure it alwys goes to end
+
+            //  Debug.Log("Over head - finished planning");
+            //   Debug.Log("frac complete = " + GetComponent<PlayerMovement>().fracComplete);
+            planningPhaseOverheadSwipe = false;
+            //start swipe being rendered and being checked for any hits
+            overheadSwiping = true;
+
+            //set walk speed from here
+            PlayerMovement pM = GetComponent<PlayerMovement>();
+            pM.walkSpeedThisFrame = pM.walkSpeedWhileAttacking;
+            pM.walkStart = PhotonNetwork.Time;
+            pM.walkStartPos = transform.position;
+
+
+            CreateNewSwipeObject("Overhead", true, false, false, overheadSmash);
+            currentSwipeObject.GetComponent<SwipeObject>().activeSwipe = true;
+            currentSwipeObject.GetComponent<SwipeObject>().overheadSwipe = true;
+
+        }
+    }
+
+    void ButtonOverHeadReset()
+    {
+        //check user has released attack button after swiping
+        if(!overheadSwiping && waitingOnResetOverhead)
+        {
+            if(!inputs.attack0)
+            {
+                waitingOnResetOverhead = false;
+                overheadAvailable = true;
+            } 
+        }
     }
 
     /// <summary>
@@ -488,8 +595,8 @@ public class Swipe : MonoBehaviour {
         }
 
 
-        lungeAvailable = false;
-        sideSwipeAvailable = false;
+        //lungeAvailable = false;
+       // sideSwipeAvailable = false;
         buttonSwipeAvailable = false;
 
 
@@ -506,14 +613,6 @@ public class Swipe : MonoBehaviour {
         //if stick is in a swipe start position, check to see if player has moved the stick enough to start loking for a path (allows some wobbly finger movements(small))
         if (pulledBackForOverhead)
         {
-            //not using button swipe
-
-           // if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
-          //  {
-                //user pressed button. over ride witrh side swipe
-          //      ResetFlags();
-          //      return;
-          //  }
 
             float distanceFromInitialPullBack = Vector3.Distance(firstPullBackLookDir, swipePoint);
 
@@ -540,7 +639,7 @@ public class Swipe : MonoBehaviour {
 
     void CreateNewSwipeObject(string type, bool overhead, bool sideSwipe, bool buttonSwipe,bool straightFinish)
     {
-       // Debug.Log("creating new swipe object");
+        Debug.Log("creating new swipe object - own player");
         //Debug.Log("frac complete after swipe obj = " + GetComponent<PlayerMovement>().fracComplete);
 
         GameObject newSwipe = new GameObject();
@@ -671,9 +770,9 @@ public class Swipe : MonoBehaviour {
             pulledBackForOverhead = true;
             pulledBackForSideSwipe = false;
 
-            lungeAvailable = false;
+            //lungeAvailable = false;
             overheadAvailable = false;
-            sideSwipeAvailable = false;
+            //sideSwipeAvailable = false;
 
             swipeTimeStart = PhotonNetwork.Time;
             firstPullBackLookDir = swipePoint;
@@ -681,7 +780,7 @@ public class Swipe : MonoBehaviour {
             firstPullBackAngle = MovementHelper.SignedAngle(firstPullBackLookDir, transform.forward, Vector3.up);
             angleTravelled = 0f;
 
-            pullBackTimeStart = PhotonNetwork.Time;
+            
             stopwatch.Start();
 
             //clear mesh
@@ -1471,12 +1570,12 @@ public class Swipe : MonoBehaviour {
                     //must be opponent - team mates? - for the future...
                     {
 
-                        PlayerInfo playerInfo = totalRayList[i][j].transform.parent.parent.GetComponent<PlayerInfo>();
+                        PlayerInfo hitPlayerInfo = totalRayList[i][j].transform.parent.parent.GetComponent<PlayerInfo>();
                         float p = thisSwipeObjectScript.per;
                         //if (p > 1f)
                         //    p = 1f;
 
-                        playerInfo.health -= Mathf.RoundToInt(p);// playerClassValues.overheadHitHealthReduce; ///put back mathf round
+                        hitPlayerInfo.health -= Mathf.RoundToInt(p);// playerClassValues.overheadHitHealthReduce; ///put back mathf round
                                                                  //network needs to know?
                         Debug.Log("hit power = " + p);
 
@@ -1496,7 +1595,7 @@ public class Swipe : MonoBehaviour {
 
                         //thisSwipeObjectScript.activeTime = thisSwipeObjectScript.playerClassValues.overheadHitCooldown;
 
-                        if (playerInfo.health > 0)
+                        if (hitPlayerInfo.health > 0)
                         {
                             bool interruptSwipeOnNonLethal = false;
                             if (interruptSwipeOnNonLethal)
@@ -1540,7 +1639,7 @@ public class Swipe : MonoBehaviour {
                             pV.shakeTimerHit += pV.nonLethatHitLength;
 
                         }
-                        else if (playerInfo.health <= 0f)
+                        else if (hitPlayerInfo.health <= 0f)
                         {
                             //stop other player's swipe if he is swiping
                             bool interruptSwipeOnLethal = true;
@@ -1651,7 +1750,7 @@ public class Swipe : MonoBehaviour {
                         finishTimeSriking = PhotonNetwork.Time;
                         waitingOnResetOverhead = true;
                         buttonSwipeAvailable = false;
-                        blocked = true;
+                        
 
                         //start timer for reset
                         //thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().ResetFlags();
@@ -1686,7 +1785,7 @@ public class Swipe : MonoBehaviour {
     {
         //if hit player is swiping, interrupt swipe and reset him // should this only be when killed? - YES, or allow strike to continue if only been popped
 
-        otherSwipeScript.GetComponent<PlayerInfo>().lastDeathTime = PhotonNetwork.Time;
+       
         //player got hit, cancel anything they were doing
         otherSwipeScript.ResetFlags();
 
@@ -1711,7 +1810,7 @@ public class Swipe : MonoBehaviour {
             return;
 
         //set flag to stop instant respawn
-        headMesh.transform.parent.parent.GetComponent<PlayerInfo>().playerCanRespawn = false;
+       // headMesh.transform.parent.parent.GetComponent<PlayerInfo>().playerCanRespawn = false;
         //start timed function to enable respawn - this flag also helps camera
         PlayerClassValues playerClassValues = GameObject.FindWithTag("Code").GetComponent<PlayerClassValues>();
         headMesh.transform.parent.parent.GetComponent<PlayerInfo>().Invoke("SetSpawnAvailable", playerClassValues.respawnTime);
@@ -1789,10 +1888,15 @@ public class Swipe : MonoBehaviour {
             //reset player current cell to force a recheck of cells captured
             parent.GetComponent<PlayerInfo>().currentCell = null;
 
+            //set time of death
+            parent.GetComponent<PlayerInfo>().lastDeathTime = PhotonNetwork.Time;
+
         }
 
         //remove current cell from player
         parent.GetComponent<PlayerInfo>().currentCell = null;
+
+
     }
 
     private void StartCoolDownReset()
@@ -1829,8 +1933,8 @@ public class Swipe : MonoBehaviour {
 
         //finishTimePlanning = Time.time;
 
-        overheadAvailable = true;
-        sideSwipeAvailable = true;
+        //overheadAvailable = true;
+        //sideSwipeAvailable = true;
         
        // waitingOnResetLunge = true;
         waitingOnResetButtonSwipe = false;

@@ -833,7 +833,7 @@ public class PlayerMovement : MonoBehaviourPun {
         // Debug.Break();
         if (!bumpInProgress)
         {
-          //  Debug.Log("if not bump in progress");
+            Debug.Log("if not bump in progress");
 
             /*  //applied from network or from bump collision script
             fracComplete = 0f;
@@ -841,20 +841,25 @@ public class PlayerMovement : MonoBehaviourPun {
             */
             RaycastHit hit;
 
-            float maxBumpDistance = 10f;
+            
             //what to use for radius? - review if gettin no hits
             float add = 0f;
             bool bumpTargetFound = false;
             while (bumpTargetFound == false)
             {
-                Vector3 bumpDirection = (bumpTarget - transform.position).normalized;
+                Vector3 bumpDirection = (transform.position - bumpShootfrom).normalized;
                 Vector3 shootFrom = bumpShootfrom + (bumpDirection * (add));
-                if (Physics.SphereCast(shootFrom + Vector3.up * 50f, walkStepDistance * .5f, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
+                GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                c.transform.position = shootFrom;
+                c.name = "shoot from";
+                Destroy(c, 3);
+                if (Physics.SphereCast(shootFrom + Vector3.up * 50f, head.transform.localScale.x, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
                 {
 
-                    //   GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    ////   c.transform.position = hit.point;
-                    //  c.transform.parent = transform;
+                    c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    c.transform.position = hit.point;                    
+                    Destroy(c, 3);
+                    c.name = "hit.point";
 
                     //stop at edge
                     if (hit.point.y - transform.position.y <= playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier)//testing, not checked
@@ -880,19 +885,13 @@ public class PlayerMovement : MonoBehaviourPun {
                         //  Debug.Log("setting target for bump");
                     }
                 }
-                else if (add >= maxBumpDistance)
+                //if target for bump is close enough to player position, consider this to be at an edge
+                else if (add >= 10)//??
                 {
+                    //this shouldn't get here? at the very least a hit should be registered underneath the feet of the player
                     //missed, will fall in to hole//??
-                    Debug.Log("Bump at edge");
-                    //already at edge
-                    //set these flags so it is like a bump just finished, which will jump to the cooldown sequence
-                    bumped = false;
-                    bumpInProgress = false;
-                    waitingForBumpReset = true;
-                    bumpFinishTime = PhotonNetwork.Time;
-                    //send results to everyone//only if master client
-                    SendBumpTargetToNetwork();
-
+                    Debug.Log("Bump at edge - PROBLEM?");
+                    Debug.Break();
                     return;
                 }
 

@@ -17,6 +17,7 @@ public class Inputs : MonoBehaviour {
     public float rightStickAxisY;
     public int controllerNumber;
 
+    public bool attack0 = false;
     public bool blocking0 = false;
     public bool blocking1 = false;
    // public bool raisingCell = false;
@@ -133,6 +134,12 @@ public class Inputs : MonoBehaviour {
         rightStickAxisX = state.ThumbSticks.Right.X;
         rightStickAxisY = state.ThumbSticks.Right.Y;
 
+        if (state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
+        {
+            attack0 = true;
+        }
+        else
+            attack0 = false;
 
         if (state.Buttons.LeftShoulder == XInputDotNetPure.ButtonState.Pressed)
         {

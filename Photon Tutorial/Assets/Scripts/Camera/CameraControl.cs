@@ -165,7 +165,7 @@ public class CameraControl : MonoBehaviour {
         for (int i = 0; i < players.Count; i++)
         {
             //ony not do if both true
-            if(players[i].GetComponent<PlayerInfo>().playerDespawned && players[i].GetComponent<PlayerInfo>().playerCanRespawn)
+            if(players[i].GetComponent<PlayerInfo>().playerDespawned && players[i].GetComponent<PlayerInfo>().playerDespawned)
             {
                 //don't count
             }
