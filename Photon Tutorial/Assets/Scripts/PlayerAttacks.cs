@@ -152,7 +152,7 @@ public class PlayerAttacks : MonoBehaviour {
         
 
         //can block if not attacking, or changing cell height
-        if(!swipe.overheadSwiping && !swipe.buttonSwiping && !swipe.whiffed && (!GetComponent<CellHeights>().loweringCell || !GetComponent<CellHeights>().raisingCell))
+        if(!swipe.overheadSwiping && (!GetComponent<CellHeights>().loweringCell || !GetComponent<CellHeights>().raisingCell))
             Block();
     }
 
@@ -161,6 +161,8 @@ public class PlayerAttacks : MonoBehaviour {
         //move shield etc if values allow
         BlockLerp();
     }
+
+
 
     void SendShieldToNetwork()
     {
@@ -183,9 +185,7 @@ public class PlayerAttacks : MonoBehaviour {
 
         PhotonNetwork.RaiseEvent(evCode, content, raiseEventOptions, sendOptions);
 
-    }
-    
-
+    }   
 
     void GetInputs()
     {
@@ -242,9 +242,7 @@ public class PlayerAttacks : MonoBehaviour {
         else
             rightStickReset = false;
     }
-
-   
-
+    
     void Block()
     {
         //place shield in front of player if block button pushed
@@ -499,6 +497,7 @@ public class PlayerAttacks : MonoBehaviour {
             }
         }
     }
+
 
     public GameObject NearestCellToStickAngle(Vector3 lookDir)
     {

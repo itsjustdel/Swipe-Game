@@ -21,7 +21,6 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     public float finishTimePlanning;
     public float swordStart;
     public float swordLength;
-    //public float swordWidth;
     public float weaponSpeed;
 
     public bool overheadSwipe;
@@ -621,7 +620,7 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
             //let player object know when we finished this swing too
             parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;
             parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
-            parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
+            
 
            // parentPlayer.GetComponent<Swipe>().whiffed = true; //not suing whiff
 
@@ -686,25 +685,6 @@ public class SwipeObject : MonoBehaviourPunCallbacks {
     }
 
    
-
-    void StartTimerForLunge()
-    {
-       // swipeFinishedBuilding = true;
-        timeSwingFinished = Time.time;
-
-        //let player object know when we finished this swing too
-        parentPlayer.GetComponent<Swipe>().finishTimeSriking = Time.time;
-        parentPlayer.GetComponent<Swipe>().waitingOnResetButtonSwipe = true;
-        parentPlayer.GetComponent<Swipe>().overheadAvailable = false;
-        parentPlayer.GetComponent<Swipe>().buttonSwiping = false;
-        parentPlayer.GetComponent<Swipe>().whiffed = true;
-
-        //time for this swipe to stay alive  - removed this, swipes dont hang anymore
-        //activeTime = playerClassValues.lungeWhiffCooldown;
-        //activeSwipe = false;
-        Invoke("DeactivateSwipe", Time.fixedDeltaTime);//why did i do this?
-    }
-
     void TestSplit()
     {
         if (!overheadSwipe)

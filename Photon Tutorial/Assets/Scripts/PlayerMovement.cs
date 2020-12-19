@@ -225,18 +225,18 @@ public class PlayerMovement : MonoBehaviourPun {
         {
             //rotations are done in player attacks in Block()
         }
-        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose || waitingForBumpReset)
+        else if (GetComponent<CellHeights>().loweringCell || GetComponent<CellHeights>().raisingCell || waitingForBumpReset)
         {
             //we are adjusting cell, ignore any right stick input
             LookToGround();
             
         }
-        else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+        else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe )
         {
             //Debug.Log("rotating for swipe");
             RotateForSwipe();
         }
-        else if (!swipe.whiffed && !swipe.overheadSwiping) //using whiff? dont think so
+        else if ( !swipe.overheadSwiping) 
         {
             //Debug.Log("Rotating to face right stick");            
 
@@ -251,31 +251,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     private void Update()
     {
-        return;
-        //movement, targets worked out in fixed update
-        if (bumpInProgress)
-        {
-            
-             LerpBump(); 
-
-        }
-
-        if (!walking && !bumped && GetComponent<PhotonView>().IsMine)//only work out new target on local client - otherwise the target is sent over the network already worked out
-        {
         
-
-
-        }
-        else if (walking)
-        {
-             LerpPlayer();
-        }
-
-        if(walking && bumped)
-        {
-            Debug.Log("walking and bumped");
-            Debug.Break();
-        }
     }
 
     void GetInputs()
@@ -378,7 +354,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 head.transform.rotation = Quaternion.Lerp(head.transform.rotation, targetRotation, pA.headRotationSpeed);
             }
         }
-        else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+        else if (swipe.planningPhaseOverheadSwipe )
         {
              Quaternion targetRotation = Quaternion.LookRotation(swipe.firstPullBackLookDir);
              head.transform.rotation = Quaternion.Lerp(head.transform.rotation, targetRotation, pA.headRotationSpeed);
@@ -435,39 +411,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
     }
 
-    void RotateForWhiff()
-    {
-
-        //player looks towards ground if in whiff state
-        Quaternion targetRot = Quaternion.LookRotation(Vector3.forward);
-        if (swipe.whiffed)
-        {
-
-            targetRot = Quaternion.LookRotation(Vector3.forward - Vector3.up * .5f);
-
-            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.whiffDuckSpeed);
-
-            //duck
-            //head.transform.localPosition -= Vector3.up * whiffDuckSpeed;
-            if (pA.headOriginalPos.y - head.transform.localPosition.y < head.transform.localScale.y)
-                head.transform.localPosition -= Vector3.up * pA.whiffDuckSpeed;
-
-        }
-        else
-        {
-            
-            //unduck
-            head.transform.localPosition += Vector3.up * pA.whiffDuckSpeed;
-            if (head.transform.localPosition.y > pA.headOriginalPos.y)
-                head.transform.localPosition = pA.headOriginalPos;
-
-
-            targetRot = Quaternion.LookRotation(Vector3.forward);
-
-            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.duckSpeed);
-            
-        }
-    }
+   
 
     void LookToGround()
     {
@@ -1001,7 +945,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 {
                     walkSpeedThisFrame = walkSpeedWhileBlocking * leftStickMagnitude;
                 }
-                else if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+                else if (swipe.planningPhaseOverheadSwipe)
                 {
                     walkSpeedThisFrame = walkSpeedWhilePullBack * leftStickMagnitude;
                 }
@@ -1040,7 +984,7 @@ public class PlayerMovement : MonoBehaviourPun {
                 
                 //also if holding swing
                 //else 
-                if (swipe.planningPhaseOverheadSwipe || swipe.pulledBackForOverhead)
+                if (swipe.planningPhaseOverheadSwipe )
                     walkStepDistanceThisFrame = pullBackStepDistance * leftStickMagnitude;  //need var?  using shield 
 
                 /*

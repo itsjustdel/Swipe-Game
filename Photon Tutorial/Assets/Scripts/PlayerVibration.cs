@@ -11,7 +11,7 @@ public class PlayerVibration : MonoBehaviour
 
     public bool walkVibrate;
     public float walkTimer;
-    public bool pullBack = false;    
+   // public bool pullBack = false;    
     public bool playerHit = true;    
     public bool shieldHit = true;
     public bool swipeHit = true;
@@ -65,9 +65,7 @@ public class PlayerVibration : MonoBehaviour
 
         if(doWalk)
             Walk();
-
-        if (pullBack)
-            PullBack();
+        
 
         if (playerHit)
             PlayerHit();
@@ -115,15 +113,7 @@ public class PlayerVibration : MonoBehaviour
         if(walkTimer > 0)
             walkTimer -= Time.fixedDeltaTime;
     }
-
-    void PullBack()
-    {
-        if(swipe.pulledBackForOverhead)
-        {
-            // GamePad.SetVibration(playerIndex, pullBackShakeAmount, pullBackShakeAmount);
-            vibrateAmount += pullBackShakeAmount;
-        }
-    }
+    
 
     void PlayerHit()
     {

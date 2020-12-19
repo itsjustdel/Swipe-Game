@@ -753,7 +753,7 @@ namespace DellyWellyWelly
                         //let player object know when we finished this swing too
                         thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().finishTimeSriking = PhotonNetwork.Time;//should be network time?
                         thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().waitingOnResetOverhead = true;
-                        thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().buttonSwipeAvailable = false;
+                        
                         thisSwipeObjectScript.parentPlayer.GetComponent<Swipe>().hit = true;
 
 
@@ -860,8 +860,7 @@ namespace DellyWellyWelly
                 if (thisSwipeObjectScript.activeSwipe)
                 {
                     swipe.finishTimeSriking = PhotonNetwork.Time;
-                    swipe.waitingOnResetOverhead = true;
-                    swipe.buttonSwipeAvailable = false;
+                    swipe.waitingOnResetOverhead = true;                    
                     swipe.blocked = true;
 
                     //reset so clients avatar is looking where they are meant to be looking or not etc

@@ -96,7 +96,7 @@ public class Guide : MonoBehaviour {
 
         //ChangeColourOnAngle(); //old
 
-        if (inputs.blocking0 || swipe.GetComponent<CellHeights>().loweringCell || swipe.GetComponent<CellHeights>().raisingCell || swipe.attackedTooClose)
+        if (inputs.blocking0 || swipe.GetComponent<CellHeights>().loweringCell || swipe.GetComponent<CellHeights>().raisingCell )
         {
             GetComponent<MeshRenderer>().enabled = false;
             GetComponent<TrailRenderer>().enabled = false;
@@ -114,10 +114,8 @@ public class Guide : MonoBehaviour {
     {
         if (inputs.state.Buttons.RightShoulder == XInputDotNetPure.ButtonState.Pressed)
         {
-            if(swipe.buttonSwiping)
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("FlatMaterials/BlueFlat0") as Material;
-            else
-                GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("FlatMaterials/BlueFlat1") as Material;
+          
+              GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("FlatMaterials/BlueFlat1") as Material;
         }
         else if(swipe.overheadSwiping)
         {
@@ -140,7 +138,7 @@ public class Guide : MonoBehaviour {
 
     void ChangeColourOnState()
     {
-        if(swipe.pulledBackForOverhead)
+        if(inputs.attack0)//?
         {
             GetComponent<MeshRenderer>().sharedMaterial = Resources.Load("FlatMaterials/YellowFlat") as Material;
         }
