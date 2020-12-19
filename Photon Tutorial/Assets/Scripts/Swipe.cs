@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
+
 public class Swipe : MonoBehaviour {
 
 
@@ -48,7 +50,9 @@ public class Swipe : MonoBehaviour {
     //positions    
     public Vector3 firstPullBackLookDir;//can all occurences be changed to centralpoints[0]?    
     public Vector3 swipePoint;
-    public Vector3 previousSwipePoint;
+    public int previousSwipePointsAmount = 1;
+    public List<Vector3> previousSwipePoints = new List<Vector3>();
+    
     //debug helpers
     public float previousAngle;
     public float startAngle;
@@ -59,7 +63,8 @@ public class Swipe : MonoBehaviour {
     public BezierSpline spline;    
     public List<Vector3> centralPoints = new List<Vector3>();
 
-    //floats
+    //floats    
+    
     private float yAdd;//add height to 2d thumbstick input
     public float curveSmoothing = 1f;
     public float arcDetail = .05f;//changing this affects overhead speed (great!) perhaps multiply overhead speeed by this so stays consistent? //needs looked at, unsure of effect
@@ -132,7 +137,10 @@ public class Swipe : MonoBehaviour {
     void GetSwipePoint()
     {
         //save for sound script to know how far swipe point has moved
-        previousSwipePoint = swipePoint;
+        previousSwipePoints.Add(swipePoint);
+        if (previousSwipePoints.Count > previousSwipePointsAmount)
+            //remove first element, only keeping the last x positions. x = stillStickFrameLimit
+            previousSwipePoints.RemoveAt(0);
 
         previousAngle = startAngle;
         startAngle = MovementHelper.SignedAngle(pA.lookDirRightStick, transform.forward, Vector3.up);
@@ -180,12 +188,15 @@ public class Swipe : MonoBehaviour {
 
         if (planningPhaseOverheadSwipe)
         {
+            //if we have started a swipe
             if (centralPoints.Count > 2)
             {
-                if (!inputs.attack0 || PhotonNetwork.Time - planningStartTime >= maxPlanningTime)
+                //if attack button released or we get to max input time or if right stick was still for too long
+                if (!inputs.attack0 || PhotonNetwork.Time - planningStartTime >= maxPlanningTime )
                     //send to render
                     stopPlanning = true;
             }
+            //if button was pressed but no input from thumbstick, look to cancel
             else
             {
                 if(!inputs.attack0)

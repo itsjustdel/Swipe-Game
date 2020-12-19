@@ -35,7 +35,7 @@ public class SwipeSound : MonoBehaviour {
 	void Update ()
     {
         //calculate how far the swipe point has moved
-        float difference = Vector3.Distance(swipe.previousSwipePoint, swipe.swipePoint);
+        float difference = Vector3.Distance(swipe.previousSwipePoints[swipe.previousSwipePointsAmount - 1], swipe.swipePoint);
 
         float RsPos = swipe.pA.lookDirRightStick.magnitude;
 

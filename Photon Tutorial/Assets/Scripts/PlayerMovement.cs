@@ -231,9 +231,15 @@ public class PlayerMovement : MonoBehaviourPun {
             LookToGround();
             
         }
-        else if (swipe.overheadSwiping || swipe.planningPhaseOverheadSwipe )
+        else if(swipe.planningPhaseOverheadSwipe)
         {
-            //Debug.Log("rotating for swipe");
+            //look at start of plan (first direction player pulled stick to)
+            RotateToFirstLookDirection();
+
+        }
+        else if (swipe.overheadSwiping )//|| swipe.planningPhaseOverheadSwipe )
+        {
+            Debug.Log("rotating for swipe");
             RotateForSwipe();
         }
         else if ( !swipe.overheadSwiping) 
@@ -303,31 +309,6 @@ public class PlayerMovement : MonoBehaviourPun {
                 currentWalkSpeed += inertiaSpeed;
             if (currentWalkSpeed >= walkSpeedThisFrame)
                 currentWalkSpeed = walkSpeedThisFrame;
-        }
-    }
-
-    void RotateToFaceRightStick()//old
-    {
-        //get target cell, cell which stick is pointing closest to
-        pA.targetCellRightStick = pA.NearestCellToStickAngle(pA.lookDirRightStick);
-
-        //if outside dead zone
-        //dont spin if stabbing, commit to the move
-        if (!pA.rightStickReset)
-        {
-            //face the way way the stick is pushed
-            //set new target
-            Vector3 targetY0 = pA.targetCellRightStick.GetComponent<ExtrudeCell>().centroid - transform.position;
-
-            targetY0.y = 0;
-            rotateTarget = targetY0;
-
-        }
-        //always rotate towards target unles left stick is guiding movement and right stick is zero
-        if (!pA.rightStickReset && GetComponent<PlayerMovement>().leftStickReset)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(rotateTarget);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, GetComponent<PlayerMovement>().rotationSpeed);
         }
     }
 
@@ -411,7 +392,24 @@ public class PlayerMovement : MonoBehaviourPun {
 
     }
 
-   
+   void RotateToFirstLookDirection()
+    {
+        float tempRotSpeed = pA.headRotationSpeed;
+        if (bumpedOther)
+            tempRotSpeed = pA.headRotationSpeedWhenBumping;
+
+        //look out for overhead block, this is cosmetic
+
+
+        
+
+        
+            //stops look direction zero problem
+            Quaternion targetRotation = Quaternion.LookRotation(swipe.centralPoints[0]);
+            targetRotation.Normalize();
+            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRotation, tempRotSpeed);
+        
+    }
 
     void LookToGround()
     {

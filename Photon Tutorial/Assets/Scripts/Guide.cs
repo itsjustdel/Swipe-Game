@@ -12,6 +12,11 @@ public class Guide : MonoBehaviour {
     public Swipe swipe;
     public Inputs inputs;
 
+    float previousMagnitude = 0f;
+    float swipeMagnitude = 0f;
+
+    public float scaleSizeOnStationary = 8f;
+
     public static GameObject GenerateGuide(Swipe swipe)
     {
         
@@ -49,39 +54,28 @@ public class Guide : MonoBehaviour {
 
     public void Update()
     {
+        previousMagnitude = swipeMagnitude;
 
         if (inputs == null)
             inputs = GetComponent<Inputs>();
 
         //animate sword guide
         //disable if within deadzone/not moving
-        //bool renderGuide = false;
+        
+        swipeMagnitude = swipe.pA.lookDirRightStick.magnitude;
+        
+        transform.GetComponent<TrailRenderer>().widthMultiplier = swipeMagnitude* guideSize;
 
+        //if planning phase, make guide visible , nicely
+        if (swipe.planningPhaseOverheadSwipe)
+            swipeMagnitude += previousMagnitude + (scaleSizeOnStationary*Time.deltaTime);
 
-        // float d =Vector3.Distance( swipe.pA.lookDirRightStick,Vector3.zero);
-        //if (d < swipe.pA.deadzone)
-        //  d = 0;
-        //// if (d > 1f)
-        //d = 1f;
-        // d = Easings.ExponentialEaseIn(d);
+        //clamp --elastic easing?
+        if (swipeMagnitude >= 1)
+            swipeMagnitude = 1f;
 
-        //commented code here makeswipe.swipePoint.magnitude s the guide stay large if in planning phase - still deciding if i like it
-        float swipeMagnitude = swipe.pA.lookDirRightStick.magnitude;
-      //  if (!swipe.planningPhaseOverheadSwipe)
-        {
-
-            //  float movementDistance = Vector3.Distance(swipe.previousSwipePoint, swipe.swipePoint);
-            //  GetComponent<TrailRenderer>().time =trailTime- movementDistance;
-
-            transform.GetComponent<TrailRenderer>().widthMultiplier = swipeMagnitude* guideSize;
-            transform.localScale = Vector3.one * swipeMagnitude * guideSize;
-        }
-     //   else if(swipe.planningPhaseOverheadSwipe)
-        {
-          //  float scale = guideSize;
-          //  transform.GetComponent<TrailRenderer>().widthMultiplier = guideSize;
-          //  transform.localScale = Vector3.one * guideSize;
-        }
+        transform.localScale = Vector3.one * swipeMagnitude * guideSize;
+     
         
 
         if(useParticleSystem)//enable child in hierarchy
