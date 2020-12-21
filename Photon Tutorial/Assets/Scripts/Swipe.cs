@@ -48,7 +48,7 @@ public class Swipe : MonoBehaviour {
     public System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
     //positions    
-    public Vector3 firstPullBackLookDir;//can all occurences be changed to centralpoints[0]?    
+    public Vector3 firstPullBackLookDir;//can all occurences be changed to centralpoints[0]?    //no, using firstPullBack to send over network so we don't need to send a full list
     public Vector3 swipePoint;
     public int previousSwipePointsAmount = 1;
     public List<Vector3> previousSwipePoints = new List<Vector3>();
@@ -72,6 +72,7 @@ public class Swipe : MonoBehaviour {
 
     //test stuff
     //private List<Vector3> testPoints = new List<Vector3>() { new Vector3(1, 0, 1), new Vector3(1, 0, 1, new Vector3(1, 0, 0, new Vector3(-1, 0, 0, new Vector3(-1, 0, 1, new Vector3(-1, 0, 1};
+
     
     private void Start()
     {
@@ -79,7 +80,7 @@ public class Swipe : MonoBehaviour {
         
         inputs = GetComponent<Inputs>();
 
-        head = transform.Find("Head").gameObject;
+      //  head = transform.Find("Head").gameObject; //asigned on spawner
 
         UpdateValues();
 
@@ -387,7 +388,7 @@ public class Swipe : MonoBehaviour {
 
         //if (pointsFromCurve.Count > 24 * 3)
 
-        bool doSelfCheck = false;
+        bool doSelfCheck = false; //if set to true, overhead available needs reset if self hit occurs
         if (doSelfCheck)
 
         {

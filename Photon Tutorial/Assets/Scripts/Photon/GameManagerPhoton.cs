@@ -20,6 +20,7 @@ namespace DellyWellyWelly
 
         public bool startCanvas = false;
         public GameObject canvasPrefab;
+        public GameObject playerPrefab;
 
         private bool masterGetsPlayer = true;
         
@@ -85,7 +86,7 @@ namespace DellyWellyWelly
                 mapLoaded = true;
 
                 if(masterGetsPlayer)
-                    SpawnPlayer();
+                    SpawnPlayer(playerPrefab);
 
                 ActivatePlayers();
 
@@ -110,10 +111,11 @@ namespace DellyWellyWelly
         }
      
 
-        public static void SpawnPlayer()
+        public static void SpawnPlayer(GameObject playerPrefab)
         {
             Debug.Log("Spawning");
-            GameObject playerPrefab = Resources.Load("PlayerPrefab") as GameObject;
+         //   GameObject playerPrefab = Resources.Load("PlayerPrefab") as GameObject;
+           // if(playerPrefab == null) Debug.Log("null player");
           
             Vector3 spawnPos = Vector3.zero;            
             PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity, 0);
@@ -275,7 +277,7 @@ namespace DellyWellyWelly
                         SyncCells(cellHeights,controlledBy);
 
                         //now we can spawn player, we need the map to havew been created before we could do this
-                        SpawnPlayer();
+                        SpawnPlayer(playerPrefab);
 
                         //turn all players on!
                         ActivatePlayers();
@@ -617,12 +619,14 @@ namespace DellyWellyWelly
             //30+ predictive
             if (eventCode == 30)
             {
-                
+                Debug.Log("30");
                 //receiving constant stream of unreliable client input
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
                 Vector3 lookDir = (Vector3)customData[1];
                 Vector3 rightStickLookDir = (Vector3)customData[2];
+                Vector3 firstPullBackLookDirection = (Vector3)customData[3];
+                bool planningPhaseOverheadSwipe = (bool)customData[4];
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
                 if (pM != null)// && inputs !=null)// || !PhotonNetwork.IsMasterClient)//happens on connect // master doesnt need predcition?
@@ -630,8 +634,12 @@ namespace DellyWellyWelly
                     pM.lookDir = lookDir;//left
                 }
 
+                //doing this triggers head rotation towards swipe point
+                viewOwner.GetComponent<Swipe>().firstPullBackLookDir = firstPullBackLookDirection;
+                viewOwner.GetComponent<Swipe>().planningPhaseOverheadSwipe = planningPhaseOverheadSwipe;
+
                // Debug.Log("sending unreliable");
-               if(viewOwner.GetComponent<PlayerAttacks>() != null)
+                if (viewOwner.GetComponent<PlayerAttacks>() != null)
                     viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
 
             }

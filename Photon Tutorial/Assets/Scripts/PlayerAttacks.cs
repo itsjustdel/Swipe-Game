@@ -7,6 +7,7 @@ using ExitGames.Client.Photon;
 
 public class PlayerAttacks : MonoBehaviour {
 
+    private Spawner spawner;
     public Inputs inputs;
 
     public bool autoShield = false;
@@ -42,7 +43,7 @@ public class PlayerAttacks : MonoBehaviour {
     public bool skipFrame = true;
    // public List<GameObject> playerGlobalList;
     public GameObject targetCellRightStick;
-    public Spawner spawner;
+    //public Spawner spawner;
     public Vector3 stabberStartLocalPos;
     public Vector3 currentTargetCentroid;
     

@@ -103,6 +103,7 @@ using Photon.Realtime;
             GameObject child = new GameObject();
             child.transform.position =transform.position + Vector3.up * headHeight;
             child.name = "Head";
+        player.GetComponent<Swipe>().head = child;//asign here so if script never gets activated, head variable still is accessible
             //add mesh object
             GameObject headMesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
             headMesh.name = "HeadMesh";

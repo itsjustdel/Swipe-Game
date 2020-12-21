@@ -231,12 +231,12 @@ public class PlayerMovement : MonoBehaviourPun {
             LookToGround();
             
         }
-        else if(swipe.planningPhaseOverheadSwipe)
-        {
+        //else if(swipe.planningPhaseOverheadSwipe)
+        //{
             //look at start of plan (first direction player pulled stick to)
-            RotateToFirstLookDirection();
+          //  RotateToFirstLookDirection();
 
-        }
+        //}
         else if (swipe.overheadSwiping )//|| swipe.planningPhaseOverheadSwipe )
         {
             Debug.Log("rotating for swipe");
@@ -249,7 +249,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //rotate transform to either look at closest player or face the direciton of movement(left stick)
             RotateToFaceClosestPlayer();
             //rotate head back to neutral
-            RotateHeadToFaceRightStick();
+          //  RotateHeadToFaceRightStick();
         }
 
       
@@ -405,7 +405,7 @@ public class PlayerMovement : MonoBehaviourPun {
 
         
             //stops look direction zero problem
-            Quaternion targetRotation = Quaternion.LookRotation(swipe.centralPoints[0]);
+            Quaternion targetRotation = Quaternion.LookRotation(swipe.firstPullBackLookDir);
             targetRotation.Normalize();
             head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRotation, tempRotSpeed);
         
@@ -491,6 +491,8 @@ public class PlayerMovement : MonoBehaviourPun {
         {
            // Debug.Log("rotating to face look dir");
                 
+            //no other player near
+
             freeWalk = true;
             RotateToMovementDirection();
         }
@@ -510,6 +512,10 @@ public class PlayerMovement : MonoBehaviourPun {
             Quaternion targetRotation = Quaternion.LookRotation(rotateTarget);
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed); //**re using var
 
+            //move head to look at player too (so they look up or down) - Do I like this? head bobs with other player's jumps
+            Quaternion targetRot = Quaternion.LookRotation(closestPlayer.GetComponent<Swipe>().head.transform.position - head.transform.position);
+            head.transform.rotation = Quaternion.Lerp(head.transform.rotation, targetRot, walkRotationSpeed);
+
             freeWalk = false;
         }
         
@@ -518,52 +524,49 @@ public class PlayerMovement : MonoBehaviourPun {
     void RotateToMovementDirection()
     {
         //rotation
-        //using right stick for rotation
-
-        //if (GetComponent<PlayerAttacks>().rightStickReset == true)// && (GetComponent<PlayerAttacks>().stabbing == false || GetComponent<PlayerAttacks>().pullBackStab))
+             
+        if (lookDir.magnitude < deadzone)//was x ==0  and y == 0 - changed for network sending lookdir
         {
-            if (lookDir.magnitude < deadzone)//was x ==0  and y == 0 - changed for network sending lookdir
+            //do nothing for main transform but rotate head back to level
+            //note - this rotation is local only - shuold absolutely everything have a start and end time and a network event? (probably)
+
+
+            Quaternion targetRot = Quaternion.LookRotation(Vector3.forward );
+            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, walkRotationSpeed);
+
+        }
+        else
+        {
+            if (moveToAdjacent)
             {
-                //do nothing
-            }
-            else
-            {
-                if (moveToAdjacent)
+                if (!leftStickReset && lastTarget != target)  //what happens if right stick is pushed too?
                 {
-                    if (!leftStickReset && lastTarget != target)  //what happens if right stick is pushed too?
-                    {
-                        //this needs start and end target, not lerp from current transform
+                    //this needs start and end target, not lerp from current transform
 
-                        //face the way way the stick is pushed
-                        Vector3 targetY = target - lastTarget;
-                        Vector3 targetY0 = targetY;
-                        targetY0.y = 0;
-                        Quaternion targetRotation = Quaternion.LookRotation(targetY0);
-                        transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, walkRotationSpeed);
-                    }
-
-
-
+                    //face the way way the stick is pushed
+                    Vector3 targetY = target - lastTarget;
+                    Vector3 targetY0 = targetY;
+                    targetY0.y = 0;
+                    Quaternion targetRotation = Quaternion.LookRotation(targetY0);
+                    transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, walkRotationSpeed);
                 }
-                else if (doBasicMove)
+
+
+
+            }
+            else if (doBasicMove)
+            {
+                if (!leftStickReset)
                 {
-                    if (!leftStickReset)
-                    {
 
                         
-                        //face the way way the stick is pushed
-                        Vector3 targetY = lookDir;
-                        Quaternion targetRotation = Quaternion.LookRotation(targetY);
-                        transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, walkRotationSpeed);
-                    }
+                    //face the way way the stick is pushed
+                    Vector3 targetY = lookDir;
+                    Quaternion targetRotation = Quaternion.LookRotation(targetY);
+                    transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, walkRotationSpeed);
                 }
-            }
+            }        
         }
-        //else
-        {
-            //let the right stick have priority
-        }
-
     }
 
     void Movement()
@@ -756,7 +759,10 @@ public class PlayerMovement : MonoBehaviourPun {
                               
             int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
 
-            object[] content = new object[] { thisPhotonViewID, lookDir, pA.lookDirRightStick };
+            //sending planningphase bool here too, this is the client input stream
+            //also sending pullback direction //optomisation could be to send only one look direction lookDir/swipe.firstPullBackDirection (Player can only look one way at a time)
+                        
+            object[] content = new object[] { thisPhotonViewID, lookDir, pA.lookDirRightStick,swipe.firstPullBackLookDir, swipe.planningPhaseOverheadSwipe };
             //send to everyone but this client
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
