@@ -28,7 +28,7 @@ public class ShieldCollision : MonoBehaviour {
             PlayerMovement pMthis = transform.parent.parent.parent.GetComponent<PlayerMovement>();
             PlayerMovement pMother = collision.transform.parent.parent.GetComponent<PlayerMovement>();
 
-            if (pMthis.lastPLayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
+            if (pMthis.lastPlayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
             {
                 Debug.Log("Already worked out collisions SHIELD, returning");
                 return;
@@ -41,8 +41,8 @@ public class ShieldCollision : MonoBehaviour {
             pMthis.walking = false;
 
             //remember who we bumped os we don't work out two bumps from same player
-            pMthis.lastPLayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
-            pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
+            pMthis.lastPlayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
+            pMother.lastPlayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
             Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumpedMulitplier;
@@ -87,7 +87,7 @@ public class ShieldCollision : MonoBehaviour {
 
             PlayerMovement pMthis = transform.parent.parent.parent.GetComponent<PlayerMovement>();
             PlayerMovement pMother = collision.transform.parent.parent.parent.GetComponent<PlayerMovement>();
-            if (pMthis.lastPLayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
+            if (pMthis.lastPlayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
             {
                 Debug.Log("Already worked out collisions SHIELD, returning");
                 return;
@@ -100,8 +100,8 @@ public class ShieldCollision : MonoBehaviour {
             pMthis.walking = false;
 
             //remember who we bumped os we don't work out two bumps from same player
-            pMthis.lastPLayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
-            pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
+            pMthis.lastPlayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
+            pMother.lastPlayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
             Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.shieldBumpForBumperMulitplier;//both bumper var, just a small penalty for both

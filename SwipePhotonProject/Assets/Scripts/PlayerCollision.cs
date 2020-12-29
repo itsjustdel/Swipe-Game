@@ -19,12 +19,6 @@ public class PlayerCollision : MonoBehaviour
     {
 
         //simplified at the moment, once stable, consider putting momentum back in - can use walk target or fracComplete for walk as a multiplier for distance
-        if (!PhotonNetwork.IsMasterClient)
-        {
-          //  Debug.Log("not master, returning");//usign predictive which will then be overwritten by master (if client)
-          //  return;
-        }
-        //only workign out bumps on master
         
 
         //alter bump target on hit player
@@ -38,7 +32,7 @@ public class PlayerCollision : MonoBehaviour
             
             PlayerMovement pMother = collision.transform.parent.parent.GetComponent<PlayerMovement>();
 
-            if(pMthis.lastPLayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
+            if(pMthis.lastPlayerIdCollision == pMother.GetComponent<PhotonView>().ViewID)
             {
                 Debug.Log("Already worked out collisions, returning");
                 return;
@@ -52,8 +46,8 @@ public class PlayerCollision : MonoBehaviour
             pMthis.walking = false;
 
             //remember who we bumped os we don't work out two bumps from same player
-            pMthis.lastPLayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
-            pMother.lastPLayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
+            pMthis.lastPlayerIdCollision = pMother.GetComponent<PhotonView>().ViewID;
+            pMother.lastPlayerIdCollision = pMthis.GetComponent<PhotonView>().ViewID;
 
             //simplfying bump penalties - not using walk target- use transfor.forward * size of player who bumped them
             Vector3 otherBumpTarget = pMother.transform.position - pMother.transform.forward * pMthis.GetComponent<PlayerAttacks>().head.transform.localScale.x*playerClassValues.bumpMulitplier;
@@ -68,10 +62,10 @@ public class PlayerCollision : MonoBehaviour
             
             //Debug.Log("reporting hit");
 
-            //consider if other player hasd a walk target
-            Vector3 walkTargetThis = pMthis.transform.position;
-            if (pMthis.walking)
-                walkTargetThis = pMthis.walkTarget;
+            //consider if other player has a walk target
+            //Vector3 walkTargetThis = pMthis.transform.position;
+            //if (pMthis.walking)
+            //    walkTargetThis = pMthis.walkTarget;
 
             //reset this flag in case we ahve way through another bump - will force to calculate new target
             pMthis.bumpInProgress = false;
@@ -82,10 +76,7 @@ public class PlayerCollision : MonoBehaviour
             Vector3 thisBumpTarget = pMthis.transform.position - pMthis.transform.forward * pMother.GetComponent<PlayerAttacks>().head.transform.localScale.x * playerClassValues.bumpMulitplier;
             //set vibration for our player only
             pMthis.GetComponent<PlayerVibration>().bumpTimer += pMthis.GetComponent<PlayerVibration>().bumpLength;
-
-            // pMthis.bumped = true;
-
-            //pMthis.bumpStartPos = transform.position;
+            
             pMthis.bumpShootfrom = thisBumpTarget;
 
 

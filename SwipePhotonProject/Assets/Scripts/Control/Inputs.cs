@@ -5,6 +5,7 @@ using XInputDotNetPure; // Required in C#
 
 public class Inputs : MonoBehaviour {
 
+    public bool zeroLeftStick =false;
     public bool useKeys = false;
     public float keySpeed = .05f;
 
@@ -48,6 +49,12 @@ public class Inputs : MonoBehaviour {
             Keys();
         else
             Pad();
+
+        if(zeroLeftStick)
+        {
+            x = 0f;
+            y = 0f;
+        }
 
     }
 

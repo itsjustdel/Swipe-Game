@@ -345,7 +345,7 @@ MonoBehaviour:
   playerCooldownAfterOverheadBlock: 0.5
   playerCooldownAfterOverheadWhiff: 0.5
   playerCooldownAfterAttackedTooClose: 0.5
-  playerCooldownAfterBump: 0.3
+  playerCooldownAfterBump: 2
   overheadSpeed: 1.5
   armLength: 5
   swordLength: 3

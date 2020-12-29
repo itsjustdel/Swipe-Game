@@ -493,7 +493,7 @@ namespace DellyWellyWelly
             //updating walk targets
             if (eventCode == 21)
             {
-                //Debug.Log("Event 21 - walk target update");
+                Debug.Log("Event 21 - walk target update");
                 //walkStartPos, walkStart, walkTarget,walkSpeedThisFrame, photonViewID 
                 
                 object[] customData = (object[])photonEvent.CustomData;
@@ -517,7 +517,7 @@ namespace DellyWellyWelly
             //clients receive info on a bump and overwrites any local prediction info
             if (eventCode == 22)
             {
-               // Debug.Log("[CLIENT] - Master overwriting bump target and bump start time");
+                
                 object[] customData = (object[])photonEvent.CustomData;
 
                 
@@ -528,7 +528,8 @@ namespace DellyWellyWelly
                 Vector3 target = (Vector3)customData[3];
 
                 GameObject viewOwner = PhotonView.Find(photonViewID).gameObject;
-                
+                Debug.Log("[CLIENT] - Master overwriting bump target and bump start time - Player = " + viewOwner.GetComponent<PlayerInfo>().teamNumber);
+
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
 
                 pM.bumpStartPos = startPos;
@@ -597,7 +598,7 @@ namespace DellyWellyWelly
 
             }
             //edge bump
-            //if player gets bumped but can't go anywhere
+            //if player gets bumped but can't go anywhere -- no calls to this?
             if(eventCode == 24)
             {
                 Debug.Log("[CLIENT] - Getting edge bump");
@@ -619,7 +620,7 @@ namespace DellyWellyWelly
             //30+ predictive
             if (eventCode == 30)
             {
-                Debug.Log("30");
+               // Debug.Log("30");
                 //receiving constant stream of unreliable client input
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];

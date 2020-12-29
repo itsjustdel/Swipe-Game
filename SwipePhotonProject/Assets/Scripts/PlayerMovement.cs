@@ -53,8 +53,8 @@ public class PlayerMovement : MonoBehaviourPun {
     public bool sprinting = false;
 
     public bool targetFound = false;
-    public Vector3 lastTarget;//spawner needs access
-    public Vector3 target;
+    //public Vector3 lastTarget;//spawner needs access
+    //public Vector3 target;
     public GameObject targetCell;
     public bool leftStickReset = true;
 
@@ -91,7 +91,7 @@ public class PlayerMovement : MonoBehaviourPun {
     public Vector3 bumpStartPos;
     public bool waitingForBumpReset = false;
     public double bumpFinishTime;
-    public int lastPLayerIdCollision = -1;//-1 is no team, teams start at 0
+    public int lastPlayerIdCollision = -1;//-1 is no team, teams start at 0
 
     //wall
     public bool onWall = false;
@@ -164,7 +164,7 @@ public class PlayerMovement : MonoBehaviourPun {
         pA.enabled = true;
        // playerAttacks.enabled = true;
         
-        lastTarget = transform.position;//using?>
+        //lastTarget = transform.position;//using?>
         
 
 
@@ -537,24 +537,7 @@ public class PlayerMovement : MonoBehaviourPun {
         }
         else
         {
-            if (moveToAdjacent)
-            {
-                if (!leftStickReset && lastTarget != target)  //what happens if right stick is pushed too?
-                {
-                    //this needs start and end target, not lerp from current transform
-
-                    //face the way way the stick is pushed
-                    Vector3 targetY = target - lastTarget;
-                    Vector3 targetY0 = targetY;
-                    targetY0.y = 0;
-                    Quaternion targetRotation = Quaternion.LookRotation(targetY0);
-                    transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, walkRotationSpeed);
-                }
-
-
-
-            }
-            else if (doBasicMove)
+           //if (doBasicMove)//old?
             {
                 if (!leftStickReset)
                 {
@@ -580,7 +563,7 @@ public class PlayerMovement : MonoBehaviourPun {
             {
                 // Debug.Log("bump reset");
 
-                Debug.Log("bump reset, walking = " + walking);
+                Debug.Log("bump reset, walking = " + walking + "Player = " + gameObject.GetComponent<PlayerInfo>().teamNumber);
                 waitingForBumpReset = false;
 
             }
@@ -711,14 +694,14 @@ public class PlayerMovement : MonoBehaviourPun {
         //now, if we are master tell the clients where the actual bump target is.
         if (PhotonNetwork.IsMasterClient)//should be after bump target set in master client?
         {
-            Debug.Log("[MASTER] - sending bump info to clients");
-            byte evCode = 22; // Custom Event 21: Used to update player walk targets
+            Debug.Log("[MASTER] - sending bump info to clients" + " - PLayer Number = " + GetComponent<PlayerInfo>().teamNumber);
+            byte evCode = 22; // Custom Event 22: Used to update player bump targets
                               //enter the data we need in to an object array to send over the network
             int thisPhotonViewID = GetComponent<PhotonView>().ViewID;
 
             
             object[] content = new object[] { thisPhotonViewID,bumpStart, bumpStartPos, bumpTarget};
-            //send to everyone but this client
+            //send to everyone but this 
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
 
             //keep resending until server receives
@@ -776,10 +759,12 @@ public class PlayerMovement : MonoBehaviourPun {
 
     void BumpTarget()
     {
+        //works out end position for bump
+
         walking = false;
         //Debug.Log("setting bump target " + GetComponent<PlayerInfo>().teamNumber);
         // Debug.Break();
-        if (!bumpInProgress)
+        if (!bumpInProgress)//check not needed?
         {
             Debug.Log("if not bump in progress");
 
@@ -855,67 +840,84 @@ public class PlayerMovement : MonoBehaviourPun {
     {
         walking = false;//worried about master overwriting client with predictive walk
 
+        //work out jump/bump distances 
         float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
-        if(bumpDistance == 0)
-        {
-            //if we are already at abump target, happens when at edge, cancel bump
-            bumped = false;
-            bumpInProgress = false;
-            return;
-        }
-
         //add for arc //half way for arc loop for jumping animation
         Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
 
-        bumpCenter += new Vector3(0, -bumpDistance /playerClassValues.bumpBounceAmount, 0);
-
+        bumpCenter += new Vector3(0, -bumpDistance / playerClassValues.bumpBounceAmount, 0);
         //from unity slerp docs
         Vector3 riseRelCenterBump = bumpStartPos - bumpCenter;
         Vector3 setRelCenterBump = bumpTarget - bumpCenter;
-
         //bumpspeed this step
-       // Debug.Log("bump distance = " + bumpDistance);
-        float fracCompleteBump = (float) ((PhotonNetwork.Time - bumpStart) / (bumpDistance /playerClassValues.bumpSpeed));
         
-        //Debug.Log(fracComplete);
-        /*
-        Debug.Log("risRelCenterBump = " + riseRelCenterBump);
-        Debug.Log("setRelCenterBump = " + setRelCenterBump);
-        Debug.Log("fracComplete = " + fracComplete);
-        */
-        Vector3 target = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracCompleteBump) + bumpCenter;
-        
-        
+        float fracCompleteBump = (float)((PhotonNetwork.Time - bumpStart) / (bumpDistance / playerClassValues.bumpSpeed));
+        Vector3 slerpTarget = Vector3.Slerp(riseRelCenterBump, setRelCenterBump, fracCompleteBump) + bumpCenter;
+
+
+        if (PhotonNetwork.IsMasterClient)
+            transform.position = slerpTarget;
+        else
+            transform.position = Vector3.Lerp(transform.position, slerpTarget, playerClassValues.clientMovementLerp); //this is Nan sometimes?
+
+        //if bump taget is already where player is - happens if back agaisnt wall, can't go anywhere. Just start cool down
+        if (bumpDistance == 0)
+        {
+            //if we are already at abump target, happens when at edge, cancel bump
+            Debug.Log("Cancelling bump");
+
+            CompleteBump(slerpTarget);
+
+            return;
+        }
 
         //smooth if client //testing
-        
-        if (PhotonNetwork.IsMasterClient)
-            transform.position = target;
-        else
-            transform.position = Vector3.Lerp(transform.position, target, playerClassValues.clientMovementLerp);
+       
 
 
         if (fracCompleteBump >= 1f)
         {
             //force the player to flick the tick again
             //if (leftStickReset)
-            {
-                bumped = false;
-                bumpInProgress = false;
-                fracCompleteBump = 0f;
-                waitingForBumpReset = true;
-                bumpFinishTime = PhotonNetwork.Time;
 
-                lastPLayerIdCollision = -1;
+            /*
+            Debug.Log("Completing bump " + GetComponent<PlayerInfo>().teamNumber);
 
-                //snap if client
-                transform.position = target;
+            bumped = false;
+            bumpInProgress = false;
+            //fracCompleteBump = 0f;
+            waitingForBumpReset = true;
+            bumpFinishTime = PhotonNetwork.Time;
 
-            }
+            lastPlayerIdCollision = -1;
+
+            //snap if client?
+            transform.position = target;
+            */
+            
+            CompleteBump(slerpTarget);
+
+
         }
 
         Debug.DrawLine(bumpStartPos, bumpTarget);
         return;
+    }
+
+    void CompleteBump(Vector3 slerpTarget)
+    {
+        Debug.Log("Completing bump " + GetComponent<PlayerInfo>().teamNumber);
+
+        bumped = false;
+        bumpInProgress = false;
+        //fracCompleteBump = 0f;
+        waitingForBumpReset = true;
+        bumpFinishTime = PhotonNetwork.Time;
+
+        lastPlayerIdCollision = -1;
+
+        //snap if client?
+        transform.position = slerpTarget;
     }
 
     void WalkTarget(bool blockNewStep,Vector3 thisLook)
