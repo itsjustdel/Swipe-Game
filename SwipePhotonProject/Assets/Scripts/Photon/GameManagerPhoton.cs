@@ -536,10 +536,23 @@ namespace DellyWellyWelly
                 pM.bumpTarget = target;
                 pM.bumpStart = bumpStartTime;
 
-                //should already be set unless desync?
-                pM.bumped = true;
-                pM.bumpInProgress = true;
-                pM.walking = false;
+
+                //check if client flags are different from expected
+                //flags will not be the same if client has already finished bump and is in cooldown
+                if(pM.waitingForBumpReset)
+                {
+                    Debug.Log("Player is bump cooldown already");
+
+                    //move player to where master thinks it should be
+                    pM.transform.position = target;
+                    //don't overwrite flags
+
+                    //if further problems with bumps, consider creating a seperate event for cooldown with start and end times so comparisons can be made and overwrites to states possible.
+                    //e.g if cooldown start time > bump start time .. overwrite. something like that
+
+                }
+
+
 
             }
 

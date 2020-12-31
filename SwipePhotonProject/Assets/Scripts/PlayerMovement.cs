@@ -429,7 +429,7 @@ public class PlayerMovement : MonoBehaviourPun {
             //Quaternion lerpedRot = Quaternion.Slerp -- current head starting position needed to ad this
 
             
-            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.whiffDuckSpeed);
+            head.transform.localRotation = Quaternion.Lerp(head.transform.localRotation, targetRot, pA.headRotationSpeedWhenBumping);
 
         }
     }
@@ -782,17 +782,17 @@ public class PlayerMovement : MonoBehaviourPun {
             {
                 Vector3 bumpDirection = (transform.position - bumpShootfrom).normalized;
                 Vector3 shootFrom = bumpShootfrom + (bumpDirection * (add));
-                GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                c.transform.position = shootFrom;
-                c.name = "shoot from";
-                Destroy(c, 3);
+               // GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+              //  c.transform.position = shootFrom;
+              //  c.name = "shoot from";
+               // Destroy(c, 3);
                 if (Physics.SphereCast(shootFrom + Vector3.up * 50f, head.transform.localScale.x, Vector3.down, out hit, 100f, LayerMask.GetMask("Cells", "Wall")))
                 {
 
-                    c = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    c.transform.position = hit.point;                    
-                    Destroy(c, 3);
-                    c.name = "hit.point";
+                  //  c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                  //  c.transform.position = hit.point;                    
+                  //  Destroy(c, 3);
+                  //  c.name = "hit.point";
 
                     //stop at edge
                     if (hit.point.y - transform.position.y <= playerClassValues.maxClimbHeight * overlayDrawer.heightMultiplier)//testing, not checked
@@ -840,8 +840,29 @@ public class PlayerMovement : MonoBehaviourPun {
     {
         walking = false;//worried about master overwriting client with predictive walk
 
+
+       // Debug.Log("Player " + GetComponent<PlayerInfo>().teamNumber + ", Bump start pos = " + bumpStartPos);
+        //Debug.Log("Player " + GetComponent<PlayerInfo>().teamNumber + ", Bump Target = " + bumpTarget); //problem if both are the same/is small? -- if lerp finishes before master checks collisions and sends an overwrite it does the bump cooldown again
+                                                                                                                                        //get master to check if not bumped and if not bumped/bump in progress, don't reset flags? 
+
+
+
         //work out jump/bump distances 
         float bumpDistance = (bumpStartPos - bumpTarget).magnitude;
+
+        //if bump taget is already where player is - happens if back agaisnt wall, can't go anywhere. Just start cool down
+        if (bumpDistance == 0)
+        {
+            //if we are already at abump target, happens when at edge, cancel bump
+            Debug.Log("Cancelling bump");
+
+            //send final position
+            CompleteBump(bumpTarget);
+
+            return;
+        }
+
+
         //add for arc //half way for arc loop for jumping animation
         Vector3 bumpCenter = Vector3.Lerp(bumpStartPos, bumpTarget, 0.5f);// (transform.position + (transform.position + lookDir * walkAmount)) * 0.5F;///**    
 
@@ -860,16 +881,7 @@ public class PlayerMovement : MonoBehaviourPun {
         else
             transform.position = Vector3.Lerp(transform.position, slerpTarget, playerClassValues.clientMovementLerp); //this is Nan sometimes?
 
-        //if bump taget is already where player is - happens if back agaisnt wall, can't go anywhere. Just start cool down
-        if (bumpDistance == 0)
-        {
-            //if we are already at abump target, happens when at edge, cancel bump
-            Debug.Log("Cancelling bump");
-
-            CompleteBump(slerpTarget);
-
-            return;
-        }
+      
 
         //smooth if client //testing
        
@@ -895,7 +907,7 @@ public class PlayerMovement : MonoBehaviourPun {
             transform.position = target;
             */
             
-            CompleteBump(slerpTarget);
+            CompleteBump(bumpTarget);//was slerp tatget but surely if slerl >=1f, that is just bumptarget
 
 
         }
