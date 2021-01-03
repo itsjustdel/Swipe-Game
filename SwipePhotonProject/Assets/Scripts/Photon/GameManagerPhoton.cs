@@ -649,8 +649,11 @@ namespace DellyWellyWelly
                 }
 
                 //doing this triggers head rotation towards swipe point
-                viewOwner.GetComponent<Swipe>().firstPullBackLookDir = firstPullBackLookDirection;
-                viewOwner.GetComponent<Swipe>().planningPhaseOverheadSwipe = planningPhaseOverheadSwipe;
+                if (viewOwner.GetComponent<Swipe>() != null)
+                {
+                    viewOwner.GetComponent<Swipe>().firstPullBackLookDir = firstPullBackLookDirection;
+                    viewOwner.GetComponent<Swipe>().planningPhaseOverheadSwipe = planningPhaseOverheadSwipe;
+                }
 
                // Debug.Log("sending unreliable");
                 if (viewOwner.GetComponent<PlayerAttacks>() != null)
