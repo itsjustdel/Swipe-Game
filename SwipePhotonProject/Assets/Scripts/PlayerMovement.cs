@@ -735,6 +735,8 @@ public class PlayerMovement : MonoBehaviourPun {
    
     void SendInputsToNetwork()
     {
+
+
       //  if (!PhotonNetwork.IsMasterClient) ///**** testing. otherwise master wont get rotation info otherwise?
         {
             
