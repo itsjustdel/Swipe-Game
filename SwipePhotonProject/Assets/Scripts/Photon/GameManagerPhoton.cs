@@ -444,11 +444,11 @@ namespace DellyWellyWelly
                         pI.currentCell = mg.cells[currentCell[i]];
                         pI.health = healths[i];
 
-                      //  Debug.Log("cells under control = " + cellsUnderControls.Length);
+                        Debug.Log("cells under control = " + cellsUnderControls.Length);
                         //create list from indexes matching cells in mesh generator list
                         for (int j = 0; j < cellsUnderControls[i].Length; j++)
                         {
-                        //    Debug.Log("cell index = " + cellsUnderControls[i][j]);
+                            Debug.Log("cell index = " + cellsUnderControls[i][j]);
                             pI.cellsUnderControl.Add(mg.cells[cellsUnderControls[i][j]]);
                         }
 
@@ -633,7 +633,7 @@ namespace DellyWellyWelly
             //30+ predictive
             if (eventCode == 30)
             {
-                //Debug.Log("30");
+               // Debug.Log("30");
                 //receiving constant stream of unreliable client input
                 object[] customData = (object[])photonEvent.CustomData;
                 int photonViewID = (int)customData[0];
@@ -648,16 +648,12 @@ namespace DellyWellyWelly
                     pM.lookDir = lookDir;//left
                 }
 
-                //if swipe hasn't been asigned, return - happens when spawning
-                if (viewOwner.GetComponent<Swipe>() == null)
-                    return;
-
                 //doing this triggers head rotation towards swipe point
                 viewOwner.GetComponent<Swipe>().firstPullBackLookDir = firstPullBackLookDirection;
                 viewOwner.GetComponent<Swipe>().planningPhaseOverheadSwipe = planningPhaseOverheadSwipe;
 
                // Debug.Log("sending unreliable");
-                //if (viewOwner.GetComponent<PlayerAttacks>() != null)
+                if (viewOwner.GetComponent<PlayerAttacks>() != null)
                     viewOwner.GetComponent<PlayerAttacks>().lookDirRightStick = rightStickLookDir;
 
             }

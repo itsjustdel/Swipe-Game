@@ -46,7 +46,7 @@ public class Spawner : MonoBehaviour {
 
     public static List<GameObject> SpawnCells(List<GameObject> cells, int teams)//if teams = 2, breaks?
     {
-        //Debug.Log("Cells count = " + cells.Count);
+        Debug.Log("Cells count = " + cells.Count);
         List<GameObject> spawnCells = new List<GameObject>();
         //gather edge cells
 
