@@ -49,7 +49,9 @@ namespace DellyWellyWelly
             //if client is spawning, get own info on healths, score etc //updates all players' avatars for this client
             if (!PhotonNetwork.IsMasterClient)
             {
-                GetGameState();
+                //and is a local player - we only need to do this once
+                if(GetComponent<PhotonView>().IsMine)
+                    GetGameState();
                // gameObject.GetComponent<PrefabCreator>().enabled = true;
             }
             else

@@ -26,7 +26,7 @@ namespace DellyWellyWelly
         
 
         public Vector3[] startData = new Vector3[0];
-        bool mapLoaded = false;
+        public bool mapLoaded = false;
 
         public new void OnEnable()//add new?
         {
@@ -88,7 +88,7 @@ namespace DellyWellyWelly
                 if(masterGetsPlayer)
                     SpawnPlayer(playerPrefab);
 
-                ActivatePlayers();
+                ActivatePlayers();//will just be master
 
                 if(startCanvas)
                     AddCanvas();
@@ -117,11 +117,11 @@ namespace DellyWellyWelly
          //   GameObject playerPrefab = Resources.Load("PlayerPrefab") as GameObject;
            // if(playerPrefab == null) Debug.Log("null player");
           
-            Vector3 spawnPos = Vector3.zero;            
+            Vector3 spawnPos = Vector3.zero;//creates player at zero then moves?
             PhotonNetwork.Instantiate(playerPrefab.name, spawnPos, Quaternion.identity, 0);
         }
 
-        void ActivatePlayers()
+        void ActivatePlayers()//? dont need for client?
         {
             //and enable all network players photon instantiated on join -  we kept them disabled
             List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;
@@ -132,7 +132,7 @@ namespace DellyWellyWelly
                 if (players[i].GetComponent<PlayerStarter>() == null)
                     Debug.Log("no player start");
 
-                players[i].GetComponent<PlayerStarter>().enabled = true;
+               // players[i].GetComponent<PlayerStarter>().enabled = true;
             }
         }
 
@@ -273,16 +273,19 @@ namespace DellyWellyWelly
                         //start generation
                         mg.Lloyds();
 
-                        //sync cells' info. height etc
-                        SyncCells(cellHeights,controlledBy);
+                        //so we don't do this every time a client joins
+                        mapLoaded = true;
 
-                        //now we can spawn player, we need the map to havew been created before we could do this
+                        //sync cells' info. height etc
+                        SyncCells(cellHeights, controlledBy);
+
+                        //now we can spawn player, we need the map to have been created before we could do this
                         SpawnPlayer(playerPrefab);
 
-                        //turn all players on!
-                        ActivatePlayers();
+                        //turn all players on! ??? not needed
+                        // ActivatePlayers();
 
-                        if(startCanvas)
+                        if (startCanvas)
                             //start UI
                             AddCanvas();
 
@@ -290,7 +293,13 @@ namespace DellyWellyWelly
 
                     }
                     else
+                    {
                         Debug.Log("Client already received map data - ignore");
+
+                        //need to spawn other clients?
+                        //ActivatePlayers();
+
+                    }
                 }
                 else
                     Debug.Log("Master sent itself map data");
@@ -314,6 +323,8 @@ namespace DellyWellyWelly
 
 
                 List<GameObject> players = GameObject.FindGameObjectWithTag("Code").GetComponent<PlayerGlobalInfo>().playerGlobalList;// GameObject.FindGameObjectsWithTag("Player");
+                //Debug.Log("[MASTER] - Players in global list count on client request = " + players.Count);
+
                 int[] views = new int[players.Count];
                 Vector3[] positions = new Vector3[players.Count];
                 //player info variables
@@ -376,7 +387,7 @@ namespace DellyWellyWelly
                 }
 
                 //pass back a list of viewID and a list of positions, and the photonview id of who requested it
-                //To create less traffic, i could sen only to who requested it but i dont know how to do that atm
+                //To create less traffic, i could sen only to who requested it but i dont know how to do that atm //OPTO
 
                 byte evCode = 11; // Custom Event 11: 
                 object[] content = new object[] { initialPhotonViewID, views, positions, respawns, lastDeathTimes, playerDespawned, teamNumbers, currentCell, healths, cellsUnderControls };
@@ -457,6 +468,10 @@ namespace DellyWellyWelly
 
                     }
                 }
+              //  else
+                {
+                 //   Debug.Log("[CLIENT] - Another client joined");
+                }
             }
 
             //respawn
@@ -532,27 +547,31 @@ namespace DellyWellyWelly
 
                 PlayerMovement pM = viewOwner.GetComponent<PlayerMovement>();
 
-                pM.bumpStartPos = startPos;
-                pM.bumpTarget = target;
-                pM.bumpStart = bumpStartTime;
-
-
-                //check if client flags are different from expected
-                //flags will not be the same if client has already finished bump and is in cooldown
-                if(pM.waitingForBumpReset)
+                if (pM != null)
                 {
-                    Debug.Log("Player is bump cooldown already");
+                    pM.bumpStartPos = startPos;
+                    pM.bumpTarget = target;
+                    pM.bumpStart = bumpStartTime;
 
-                    //move player to where master thinks it should be
-                    pM.transform.position = target;
-                    //don't overwrite flags
 
-                    //if further problems with bumps, consider creating a seperate event for cooldown with start and end times so comparisons can be made and overwrites to states possible.
-                    //e.g if cooldown start time > bump start time .. overwrite. something like that
+                    //check if client flags are different from expected
+                    //flags will not be the same if client has already finished bump and is in cooldown
+                    if (pM.waitingForBumpReset)
+                    {
+                        Debug.Log("Player is bump cooldown already");
+
+                        //move player to where master thinks it should be
+                        pM.transform.position = target;
+                        //don't overwrite flags
+
+                        //if further problems with bumps, consider creating a seperate event for cooldown with start and end times so comparisons can be made and overwrites to states possible.
+                        //e.g if cooldown start time > bump start time .. overwrite. something like that
+
+                    }
 
                 }
-
-
+                else
+                    Debug.Log("Player movement is null");
 
             }
 

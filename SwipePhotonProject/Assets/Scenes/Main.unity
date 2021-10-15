@@ -478,6 +478,7 @@ MonoBehaviour:
   playerPrefab: {fileID: 3990679284012222244, guid: d80033c13e639c348b92cb0091ac608d,
     type: 3}
   startData: []
+  mapLoaded: 0
 --- !u!114 &646830354
 MonoBehaviour:
   m_ObjectHideFlags: 0
