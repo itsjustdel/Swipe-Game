@@ -165,7 +165,7 @@ public class Swipe : MonoBehaviour {
     {
         //check user as released attack button after attacking
 
-        //start swipe planmning if attack button is pressed, stop planning when button is released
+        //start swipe planning if attack button is pressed, stop planning when button is released
         if(inputs.attack0 && overheadAvailable)
         {
             //gather points

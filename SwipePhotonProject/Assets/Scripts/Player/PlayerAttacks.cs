@@ -125,10 +125,11 @@ public class PlayerAttacks : MonoBehaviour {
 
 
     // Update is called once per frame
-    private void FixedUpdate()
+    private void FixedUpdate()//?fixed
     {
         if (skipFrame)
         {
+            //needs comment
             skipFrame = false;
             return;
         }
@@ -137,6 +138,7 @@ public class PlayerAttacks : MonoBehaviour {
             GetInputs();
 
             CalculateRightStickReset();
+
             //check for any attack with the right thumbstick
             swipe.SwipeOrder();
         }

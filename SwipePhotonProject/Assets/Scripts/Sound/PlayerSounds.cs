@@ -25,6 +25,10 @@ public class PlayerSounds : MonoBehaviour
     NoiseMaker walkNoise;
     //ProceduralAudioController walkPAC;
     // Start is called before the first frame update
+
+    private void Awake()
+    {
+    }
     void Start()
     {
         overlayDrawer = GameObject.FindGameObjectWithTag("Code").GetComponent<OverlayDrawer>();
@@ -32,6 +36,10 @@ public class PlayerSounds : MonoBehaviour
 
 
         SetMixers();
+
+        //work ourt volumes on start, other wise we get a pop
+        CellHeights();
+        Walk();
     }
 
     void SetMixers()
@@ -44,7 +52,7 @@ public class PlayerSounds : MonoBehaviour
         //stil to set mixers in unity
         AudioMixer mixer = Resources.Load("Sound/Walks") as AudioMixer;
         
-         walkSource.outputAudioMixerGroup = mixer.FindMatchingGroups("0")[0];
+        walkSource.outputAudioMixerGroup = mixer.FindMatchingGroups("0")[0];
      
 
 
