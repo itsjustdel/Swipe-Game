@@ -1,2 +1,1 @@
-# Photon-Test1
- Learning how photon works
+Fully procedurally generated networked fighting game
