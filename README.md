@@ -1,11 +1,11 @@
-### Prototype for an online fighting/area control game
+# Prototype for an online fighting/area control game
 
 A game which is completely procedurally generated, with the ability to 'draw' your own swords swings with the thumbstick of a game pad. Features client prediction to smooth out network issues and an authorative server to reduce glitches and cheating. Network connection code handled by [Photon](https://www.photonengine.com/pun), events and movement, self written. 
 
-## Unity (Raycasting)
+### Unity (Raycasting)
 <img src="https://pbs.twimg.com/media/D3_84G8X4AAxvvV?format=jpg&name=small" />
 
-## Videos
+### Videos
 
 
 https://user-images.githubusercontent.com/45520351/151211348-11337ae7-2342-4e97-bf79-7a116a3e0934.mp4
